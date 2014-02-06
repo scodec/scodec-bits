@@ -9,7 +9,13 @@ name := "scodec-bits"
 
 scalaVersion := "2.10.3"
 
-//crossScalaVersions := Seq("2.10.3", "2.11.0-M8")
+val latestScala211PreRelease = "2.11.0-M8"
+
+scalaBinaryVersion in update := (
+  if (scalaVersion.value == "2.11.0-SNAPSHOT") latestScala211PreRelease else scalaBinaryVersion.value
+)
+
+crossScalaVersions := Seq("2.10.3", latestScala211PreRelease)
 
 scalacOptions ++= Seq(
   "-feature",
@@ -34,7 +40,7 @@ triggeredMessage := (_ => Watched.clearScreen)
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
   "org.scalatest" %% "scalatest" % "2.1.0-RC2" % "test",
-  "org.scalacheck" %% "scalacheck" % "1.11.0" % "test"
+  "org.scalacheck" %% "scalacheck" % "1.11.3" % "test"
 )
 
 osgiSettings

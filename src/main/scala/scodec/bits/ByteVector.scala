@@ -134,18 +134,24 @@ object ByteVector {
   def fromHexDescriptive(str: String): Either[String, ByteVector] = {
     val prefixed = (str startsWith "0x") || (str startsWith "0X")
     val withoutPrefix = if (prefixed) str.substring(2) else str
-    var idx = 0
-    var hi: String = null
+    var idx, hi = 0
+    var midByte = false
     var err: String = null
-    var bldr = Vector.newBuilder[Byte]
+    val bldr = Vector.newBuilder[Byte]
     while (idx < withoutPrefix.length && (err eq null)) {
       withoutPrefix(idx) match {
         case c if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F') =>
-          if (hi eq null)
-            hi = c.toString
-          else {
-            bldr += java.lang.Integer.valueOf(hi + c, 16).toByte
-            hi = null
+          val nibble = {
+            if (c >= '0' && c <= '9') c - '0'
+            else if (c >= 'a' && c <= 'f') 10 + (c - 'a')
+            else 10 + (c - 'A')
+          }.toByte
+          if (midByte) {
+            bldr += (hi | nibble).toByte
+            midByte = false
+          } else {
+            hi = (nibble << 4).toByte
+            midByte = true
           }
         case c if c.isWhitespace || c == '_' =>
           // ignore
@@ -156,13 +162,10 @@ object ByteVector {
     }
     if (err eq null) {
       Right(
-        if (hi eq null) {
-          ByteVector(bldr.result)
-        } else {
-          val lastNibble = java.lang.Integer.valueOf(hi + '0', 16).toByte
-          bldr += lastNibble
+        if (midByte) {
+          bldr += hi.toByte
           ByteVector(bldr.result).rightShift(4, false)
-        }
+        } else ByteVector(bldr.result)
       )
     } else Left(err)
   }
@@ -194,7 +197,7 @@ object ByteVector {
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, byte, bits = 0
     var err: String = null
-    var bldr = Vector.newBuilder[Byte]
+    val bldr = Vector.newBuilder[Byte]
     while (idx < withoutPrefix.length && (err eq null)) {
       withoutPrefix(idx) match {
         case '0' =>

@@ -56,7 +56,6 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
 
   test("hashCode/equals") {
     forAll { (b: BitVector, b2: BitVector, m: Long) =>
-      val n = if (b.nonEmpty) (m % b.size).abs else 0
       (b.take(m) ++ b.drop(m)).hashCode shouldBe b.hashCode
       if (b.take(3) == b2.take(3)) {
         // kind of weak, since this will only happen 1/8th of attempts on average
