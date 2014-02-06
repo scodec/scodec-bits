@@ -27,11 +27,11 @@ This library works with Scala 2.10.* and 2.11.0-M8.
 
 ### Releases
 
-The latest released version is 1.0.0-SNAP1, which is a stable snapshot of 1.0.0.
+The latest released version is 1.0.0-M1, which is a stable snapshot of 1.0.0.
 
 For SBT users:
 
-    libraryDependencies += "com.github.scodec" %% "scodec-bits" % "1.0.0-SNAP1"
+    libraryDependencies += "com.github.scodec" %% "scodec-bits" % "1.0.0-M1"
 
 
 For Maven users:
@@ -40,7 +40,7 @@ For Maven users:
       <dependency>
         <groupId>com.github.scodec</groupId>
         <artifactId>scodec-bits_2.10</artifactId>
-        <version>1.0.0-SNAP1</version>
+        <version>1.0.0-M1</version>
       </dependency>
     </dependencies>
 
