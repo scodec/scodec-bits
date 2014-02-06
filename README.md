@@ -16,7 +16,7 @@ There are two fundamental data structures provided:
 
 TODO - examples, etc.
 
-For more information, see the [package documentation](src/main/scala/scodec/bits/package.scala)
+For more information, see the [package documentation](src/main/scala/scodec/bits/package.scala).
 
 For a combinator based approach to encoding values to/from binary, see the companion project [scodec](https://github.com/scodec/scodec).
 
