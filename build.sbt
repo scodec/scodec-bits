@@ -109,7 +109,16 @@ releaseProcess := Seq[ReleaseStep](
   commitReleaseVersion,
   tagRelease,
   publishArtifacts.copy(action = publishSignedAction),
+  releaseTask(GhPagesKeys.pushSite),
   setNextVersion,
   commitNextVersion,
   pushChanges
 )
+
+site.settings
+
+site.includeScaladoc()
+
+ghpages.settings
+
+git.remoteRepo := "git@github.com:scodec/scodec-bits.git"
