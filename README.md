@@ -31,14 +31,14 @@ The latest released version is 1.0.0-M1, which is a stable snapshot of 1.0.0.
 
 For SBT users:
 
-    libraryDependencies += "com.github.scodec" %% "scodec-bits" % "1.0.0-M1"
+    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.0-M1"
 
 
 For Maven users:
 
     <dependencies>
       <dependency>
-        <groupId>com.github.scodec</groupId>
+        <groupId>org.typelevel</groupId>
         <artifactId>scodec-bits_2.10</artifactId>
         <version>1.0.0-M1</version>
       </dependency>
@@ -53,7 +53,7 @@ For SBT users:
 
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-    libraryDependencies += "com.github.scodec" %% "scodec-bits" % "1.0.0-SNAPSHOT"
+    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.0-SNAPSHOT"
 
 
 For Maven users:
@@ -68,7 +68,7 @@ For Maven users:
 
     <dependencies>
       <dependency>
-        <groupId>com.github.scodec</groupId>
+        <groupId>org.typelevel</groupId>
         <artifactId>scodec-bits_2.10</artifactId>
         <version>1.0.0-SNAPSHOT</version>
       </dependency>

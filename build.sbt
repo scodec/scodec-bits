@@ -3,7 +3,7 @@ import ReleaseStateTransformations._
 import ReleasePlugin._
 import ReleaseKeys._
 
-organization := "com.github.scodec"
+organization := "org.typelevel"
 
 name := "scodec-bits"
 
