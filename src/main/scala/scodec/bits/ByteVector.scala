@@ -1,6 +1,6 @@
 package scodec.bits
 
-import scala.collection.IndexedSeqOptimized
+import scala.collection.{ GenTraversableOnce, IndexedSeqOptimized }
 
 import java.nio.ByteBuffer
 
@@ -95,6 +95,8 @@ object ByteVector {
     buffer.get(arr)
     apply(arr)
   }
+
+  def apply(bs: GenTraversableOnce[Byte]): ByteVector = apply(bs.toVector)
 
   /**
    * Create a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this

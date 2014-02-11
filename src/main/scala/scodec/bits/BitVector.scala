@@ -1,7 +1,7 @@
 package scodec.bits
 
 import java.nio.ByteBuffer
-import scala.collection.immutable.BitSet
+import scala.collection.GenTraversableOnce
 
 /**
  * Persistent vector of bits, stored as bytes.
@@ -673,6 +673,7 @@ object BitVector {
   def apply(bs: ByteVector): BitVector = bytes(bs, bs.size.toLong * 8)
   def apply(buffer: ByteBuffer): BitVector = apply(ByteVector(buffer))
   def apply(bs: Array[Byte]): BitVector = bytes(ByteVector(bs), bs.size.toLong * 8)
+  def apply(bs: GenTraversableOnce[Byte]): BitVector = apply(ByteVector(bs))
   def apply[A: Integral](bytes: A*): BitVector = apply(ByteVector(bytes: _*))
 
   /**
