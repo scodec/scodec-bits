@@ -82,6 +82,8 @@ trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOpera
     case that: ByteVector => this.toArray.deep == that.toArray.deep
     case other => false
   }
+
+  override def toString: String = s"ByteVector(0x${toHex})"
 }
 
 /** Companion for [[ByteVector]]. */

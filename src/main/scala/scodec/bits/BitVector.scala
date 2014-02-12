@@ -576,13 +576,13 @@ sealed trait BitVector {
   def toBin: String = toByteVector.toBin.take(size.toInt)
 
   override def equals(other: Any): Boolean = other match {
-    case o: BitVector if size == o.size => {
-      var i = 0L
-      while (i < size) {
-        if (get(i) != o.get(i)) return false
-        i += 1
+    case o: BitVector => {
+      val chunkSize = 8 * 1024 * 64
+      def go(x: BitVector, y: BitVector): Boolean = {
+        if (x.isEmpty) y.isEmpty
+        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep && go(x.drop(chunkSize), y.drop(chunkSize))
       }
-      return true
+      go(this, o)
     }
     case _ => false
   }
@@ -595,13 +595,12 @@ sealed trait BitVector {
     // todo: this could be recomputed more efficiently using the tree structure
     // given an associative hash function
     import util.hashing.MurmurHash3._
-    var h = stringHash("BitVector")
-    var i = 0L
-    while (i < size) {
-      h = mix(h, get(i).hashCode)
-      i = (i * 1.7).toLong + 1 // 0, 1, 2, 4, 7, 12, 21, ...
+    val chunkSize = 8 * 1024 * 64
+    def go(bits: BitVector, n: Int, h: Int): Int = {
+      if (bits.isEmpty) finalizeHash(h, n)
+      else go(bits.drop(chunkSize), n + 1, mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
     }
-    finalizeHash(h, size.toInt)
+    go(this, 0, stringHash("BitVector"))
   }
 
   /**
@@ -789,7 +788,7 @@ object BitVector {
    *
    * @param chunkSizeInBytes the number of bytes to read in each chunk
    */
-  def fromInputStream(in: java.io.InputStream, chunkSizeInBytes: Int = 4096 * 2): BitVector =
+  def fromInputStream(in: java.io.InputStream, chunkSizeInBytes: Int = 1024 * 1000 * 16): BitVector =
     unfold(in) { in =>
       val buf = new Array[Byte](chunkSizeInBytes)
       val nRead = in.read(buf)
@@ -810,7 +809,7 @@ object BitVector {
    * @param chunkSizeInBytes the number of bytes to read in each chunk
    * @param direct true if we should attempt to use a 'direct' [[java.nio.ByteBuffer]] for reads
    */
-  def fromChannel(in: java.nio.channels.ReadableByteChannel, chunkSizeInBytes: Int = 4096 * 2,
+  def fromChannel(in: java.nio.channels.ReadableByteChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16,
                   direct: Boolean = false): BitVector =
     unfold(in) { in =>
       val buf = if (direct) java.nio.ByteBuffer.allocateDirect(chunkSizeInBytes)
@@ -836,6 +835,7 @@ object BitVector {
     unfold(in -> 0L) { case (in,pos) =>
       if (pos == in.size) None
       else {
+        require (pos < in.size)
         val bytesToRead = (in.size - pos) min chunkSizeInBytes.toLong
         val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
         require(buf.limit == bytesToRead)

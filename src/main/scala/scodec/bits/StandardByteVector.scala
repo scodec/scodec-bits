@@ -58,8 +58,6 @@ final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVect
   override protected[this] def thisCollection = bytes
   override protected[this] def toCollection(repr: ByteVector): IndexedSeq[Byte] = bytes
 
-  override def toString: String = s"ByteVector(0x${toHex})"
-
   override def hashCode: Int = bytes.hashCode
 
   override def equals(other: Any): Boolean = other match {

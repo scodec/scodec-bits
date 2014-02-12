@@ -12,7 +12,10 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
     bytes <- Gen.listOfN(size, Gen.choose(0, 255))
   } yield ByteVector(bytes: _*)
 
-  val sliceByteVectors: Gen[ByteVector] = arbitrary[Array[Byte]] map { bytes => ByteVector.view(bytes) }
+  val sliceByteVectors: Gen[ByteVector] = for {
+    bytes <- arbitrary[Array[Byte]]
+    toDrop <- Gen.choose(0, bytes.size)
+  } yield ByteVector.view(bytes).drop(toDrop)
 
   val byteVectors: Gen[ByteVector] = Gen.oneOf(standardByteVectors, sliceByteVectors)
 
@@ -91,7 +94,25 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
 
   test("toIterable roundtrip") {
     forAll { (b: ByteVector) =>
-      b shouldBe ByteVector(b.toIterable)
+      val fromIter = ByteVector(b.toIterable)
+      b shouldBe fromIter
+      fromIter shouldBe b
+    }
+  }
+
+  test("toArray roundtrip") {
+    forAll { (b: ByteVector) =>
+      val fromArr = ByteVector(b.toArray)
+      b shouldBe fromArr
+      fromArr shouldBe b
+    }
+  }
+
+  test("dropping from a view is consistent with dropping from a strict vector") {
+    forAll { (b: ByteVector, n0: Int) =>
+      val view = ByteVector.view(b.toArray)
+      val n = n0.abs
+      b.drop(n) shouldBe view.drop(n)
     }
   }
 }

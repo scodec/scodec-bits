@@ -3,6 +3,8 @@ package scodec.bits
 /** A `ByteVector` built off a function from `Int => Byte` and an offset. */
 final class SliceByteVector(at: Int => Byte, offset: Int, size: Int) extends ByteVector { self =>
 
+  require(offset >= 0, "offset must be non-negative")
+
   override def apply(idx: Int): Byte = at(idx + offset)
 
   def lift(idx: Int): Option[Byte] =
@@ -11,8 +13,14 @@ final class SliceByteVector(at: Int => Byte, offset: Int, size: Int) extends Byt
 
   protected def toStandardByteVector = ByteVector(Vector.empty ++ toArray)
 
-  override def drop(n: Int): ByteVector = new SliceByteVector(at, offset + n, (size-n) max 0)
-  override def take(n: Int): ByteVector = new SliceByteVector(at, offset, size min n)
+  override def drop(n: Int): ByteVector =
+    if (n <= 0) this
+    else if (n > Int.MaxValue - offset) ByteVector.empty
+    else new SliceByteVector(at, offset + n, (size-n) max 0)
+
+  override def take(n: Int): ByteVector =
+    if (n <= 0) ByteVector.empty
+    else new SliceByteVector(at, offset, size min n)
 
   // these just convert to StandardByteVector
   def :+(b: Byte): ByteVector = toStandardByteVector :+ b
@@ -29,7 +37,7 @@ final class SliceByteVector(at: Int => Byte, offset: Int, size: Int) extends Byt
 
   def toArray: Array[Byte] = {
     val buf = new Array[Byte](size)
-    var i = offset
+    var i = 0
     while (i < size) {
       buf(i) = apply(i)
       i += 1
