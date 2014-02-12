@@ -2,6 +2,8 @@
 ========
  - Changed group id from com.github.scodec to org.typelevel
  - Added convenience constructors to `BitVector` and `ByteVector` from `GenTraversableOnce`
+ - Fixed various bugs in SliceByteVector
+ - Performance improvements
 
 1.0.0-M1
 ========
