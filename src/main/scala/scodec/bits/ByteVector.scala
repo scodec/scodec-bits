@@ -72,6 +72,16 @@ trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOpera
 
   def xor(other: ByteVector): ByteVector =
     zipWithI(other)(_ ^ _)
+
+  override protected[this] def thisCollection: IndexedSeq[Byte] = toArray
+  override protected[this] def toCollection(repr: ByteVector): IndexedSeq[Byte] = toArray
+
+  override def hashCode = this.toArray.hashCode
+
+  override def equals(other: Any) = other match {
+    case that: ByteVector => this.toArray.deep == that.toArray.deep
+    case other => false
+  }
 }
 
 /** Companion for [[ByteVector]]. */

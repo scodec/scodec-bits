@@ -1,9 +1,31 @@
 package scodec.bits
 
+import org.scalacheck.{Arbitrary, Gen, Shrink}
+import Arbitrary.arbitrary
 import org.scalatest._
+import org.scalatest.prop.GeneratorDrivenPropertyChecks
+
+class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
+
+  val standardByteVectors: Gen[ByteVector] = for {
+    size <- Gen.choose(0, 500)
+    bytes <- Gen.listOfN(size, Gen.choose(0, 255))
+  } yield ByteVector(bytes: _*)
+
+  val sliceByteVectors: Gen[ByteVector] = arbitrary[Array[Byte]] map { bytes => ByteVector.view(bytes) }
+
+  val byteVectors: Gen[ByteVector] = Gen.oneOf(standardByteVectors, sliceByteVectors)
+
+  implicit val arbitraryByteVectors: Arbitrary[ByteVector] = Arbitrary(byteVectors)
+
+  implicit val shrinkByteVector: Shrink[ByteVector] =
+    Shrink[ByteVector] { b =>
+      if (b.nonEmpty)
+        Stream.iterate(b.take(b.size / 2))(b2 => b2.take(b2.size / 2)).takeWhile(_.nonEmpty) ++ Stream(ByteVector.empty)
+      else Stream.empty
+    }
 
 
-class ByteVectorTest extends FunSuite with Matchers {
   val deadbeef = ByteVector(0xde, 0xad, 0xbe, 0xef)
 
   test("toHex") {
@@ -67,4 +89,9 @@ class ByteVectorTest extends FunSuite with Matchers {
     """hex"deadgg"""" shouldNot compile
   }
 
+  test("toIterable roundtrip") {
+    forAll { (b: ByteVector) =>
+      b shouldBe ByteVector(b.toIterable)
+    }
+  }
 }

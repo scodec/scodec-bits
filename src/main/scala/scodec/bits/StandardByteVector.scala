@@ -15,7 +15,7 @@ object StandardByteVector {
  * Note: This implementation has good algorithmic performance characteristics but results
  * in lots of boxing/unboxing of bytes.
  */
-final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVector {
+final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVector { self =>
 
   override def length = bytes.length
 
@@ -56,6 +56,7 @@ final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVect
   override def toArray: Array[Byte] = bytes.toArray
 
   override protected[this] def thisCollection = bytes
+  override protected[this] def toCollection(repr: ByteVector): IndexedSeq[Byte] = bytes
 
   override def toString: String = s"ByteVector(0x${toHex})"
 
@@ -63,8 +64,7 @@ final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVect
 
   override def equals(other: Any): Boolean = other match {
     case o: StandardByteVector => bytes == o.bytes
-    case o: ByteVector => bytes == o.toVector
-    case _ => false
+    case other => super.equals(other)
   }
 
   override protected[this] def newBuilder: Builder[Byte, ByteVector] = {
