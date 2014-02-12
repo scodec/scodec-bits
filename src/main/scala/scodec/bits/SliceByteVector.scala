@@ -1,7 +1,7 @@
 package scodec.bits
 
 /** A `ByteVector` built off a function from `Int => Byte` and an offset. */
-final class SliceByteVector(at: Int => Byte, offset: Int, size: Int) extends ByteVector { self =>
+private[bits] final class SliceByteVector(at: Int => Byte, offset: Int, size: Int) extends ByteVector { self =>
 
   require(offset >= 0, "offset must be non-negative")
 

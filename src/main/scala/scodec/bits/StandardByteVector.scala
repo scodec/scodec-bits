@@ -4,7 +4,7 @@ import scala.collection.mutable.Builder
 
 
 /** Companion for [[StandardByteVector]]. */
-object StandardByteVector {
+private[bits] object StandardByteVector {
   /** Constructs a `StandardByteVector` from a `Vector[Byte]`. */
   def apply(bytes: Vector[Byte]): StandardByteVector = new StandardByteVector(bytes)
 }
@@ -15,7 +15,7 @@ object StandardByteVector {
  * Note: This implementation has good algorithmic performance characteristics but results
  * in lots of boxing/unboxing of bytes.
  */
-final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVector { self =>
+private[bits] final class StandardByteVector(private val bytes: Vector[Byte]) extends ByteVector { self =>
 
   override def length = bytes.length
 
