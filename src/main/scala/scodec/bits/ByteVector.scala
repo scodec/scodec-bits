@@ -148,7 +148,7 @@ object ByteVector {
   def fromHexDescriptive(str: String): Either[String, ByteVector] =
     fromHexInternal(str).right.map { case (res, _) => res }
 
-  def fromHexInternal(str: String): Either[String, (ByteVector, Int)] = {
+  private[bits] def fromHexInternal(str: String): Either[String, (ByteVector, Int)] = {
     val prefixed = (str startsWith "0x") || (str startsWith "0X")
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, hi, count = 0
