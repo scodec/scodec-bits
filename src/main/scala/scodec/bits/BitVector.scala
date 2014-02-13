@@ -709,10 +709,11 @@ object BitVector {
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    */
-  def fromHexDescriptive(str: String): Either[String, BitVector] = {
-    if (str.size % 2 == 0) ByteVector.fromHexDescriptive(str).right.map { _.toBitVector }
-    else ByteVector.fromHexDescriptive(str :+ '0').right.map { bytes => bytes.toBitVector.take(bytes.size * 8 - 4) }
-  }
+  def fromHexDescriptive(str: String): Either[String, BitVector] =
+    ByteVector.fromHexInternal(str).right.map { case (bytes, count) =>
+      val toDrop = if (count % 2 == 0) 0 else 4
+      bytes.toBitVector.drop(toDrop)
+    }
 
   /**
    * Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
@@ -736,10 +737,15 @@ object BitVector {
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    */
-  def fromBinDescriptive(str: String): Either[String, BitVector] = {
-    if (str.size % 8 == 0) ByteVector.fromBinDescriptive(str).right.map { _.toBitVector }
-    else ByteVector.fromBinDescriptive(str ++ ("0" * (8 - (str.size % 8)))).right.map { bytes => bytes.toBitVector.take(str.size) }
-  }
+  def fromBinDescriptive(str: String): Either[String, BitVector] =
+    ByteVector.fromBinInternal(str).right.map { case (bytes, size) =>
+      val toDrop = size match {
+        case 0 => 0
+        case n if n % 8 == 0 => 0
+        case n => 8 - (n % 8)
+      }
+      bytes.toBitVector.drop(toDrop)
+    }
 
   /**
    * Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.

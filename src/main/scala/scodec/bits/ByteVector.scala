@@ -145,10 +145,13 @@ object ByteVector {
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    */
-  def fromHexDescriptive(str: String): Either[String, ByteVector] = {
+  def fromHexDescriptive(str: String): Either[String, ByteVector] =
+    fromHexInternal(str).right.map { case (res, _) => res }
+
+  def fromHexInternal(str: String): Either[String, (ByteVector, Int)] = {
     val prefixed = (str startsWith "0x") || (str startsWith "0X")
     val withoutPrefix = if (prefixed) str.substring(2) else str
-    var idx, hi = 0
+    var idx, hi, count = 0
     var midByte = false
     var err: String = null
     val bldr = Vector.newBuilder[Byte]
@@ -167,6 +170,7 @@ object ByteVector {
             hi = (nibble << 4).toByte
             midByte = true
           }
+          count += 1
         case c if c.isWhitespace || c == '_' =>
           // ignore
         case other =>
@@ -176,10 +180,10 @@ object ByteVector {
     }
     if (err eq null) {
       Right(
-        if (midByte) {
+        (if (midByte) {
           bldr += hi.toByte
           ByteVector(bldr.result).rightShift(4, false)
-        } else ByteVector(bldr.result)
+        } else ByteVector(bldr.result), count)
       )
     } else Left(err)
   }
@@ -206,10 +210,12 @@ object ByteVector {
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    */
-  def fromBinDescriptive(str: String): Either[String, ByteVector] = {
+  def fromBinDescriptive(str: String): Either[String, ByteVector] = fromBinInternal(str).right.map { case (res, _) => res }
+
+  private[bits] def fromBinInternal(str: String): Either[String, (ByteVector, Int)] = {
     val prefixed = (str startsWith "0b") || (str startsWith "0B")
     val withoutPrefix = if (prefixed) str.substring(2) else str
-    var idx, byte, bits = 0
+    var idx, byte, bits, count = 0
     var err: String = null
     val bldr = Vector.newBuilder[Byte]
     while (idx < withoutPrefix.length && (err eq null)) {
@@ -217,9 +223,11 @@ object ByteVector {
         case '0' =>
           byte <<= 1
           bits += 1
+          count += 1
         case '1' =>
           byte = ((byte << 1) | 1).toByte
           bits += 1
+          count += 1
         case c if c.isWhitespace || c == '_' =>
           // ignore
         case other =>
@@ -233,12 +241,12 @@ object ByteVector {
       idx += 1
     }
     if (err eq null) {
-      Right(if (bits > 0) {
+      Right((if (bits > 0) {
         bldr += (byte << (8 - bits)).toByte
-        ByteVector(bldr.result).rightShift(bits, false)
+        ByteVector(bldr.result).rightShift(8 - bits, false)
       } else {
         ByteVector(bldr.result)
-      })
+      }, count))
     } else Left(err)
   }
 

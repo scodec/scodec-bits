@@ -291,6 +291,7 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       val x = bv.padTo((bv.size + 3) / 4 * 4)
       BitVector.fromValidHex(x.toHex) shouldBe x
     }
+    BitVector.fromHexDescriptive("00 01 02 03") shouldBe Right(BitVector(0x00, 0x01, 0x02, 0x03))
   }
 
   test("fromValidHex") {
@@ -311,6 +312,7 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       BitVector.fromBinDescriptive(bv.toBin) shouldBe Right(bv)
     }
     BitVector.fromBinDescriptive("0102") shouldBe Left("Invalid binary character '2' at index 3")
+    BitVector.fromBinDescriptive("0000 0001 0010 0011") shouldBe Right(BitVector(0x01, 0x23))
   }
 
   test("fromValidBin") {
