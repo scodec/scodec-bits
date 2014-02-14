@@ -69,8 +69,11 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     }
   }
 
-  test("compact stack safety") {
-    forAll (hugeBitStreams) { b => b.compact shouldBe b }
+  test("compact/force stack safety") {
+    forAll (hugeBitStreams) { b =>
+      b.force shouldBe b
+      b.compact shouldBe b
+    }
   }
 
   test("hashCode/equals/take/drop stack safety") {

@@ -52,11 +52,15 @@ sealed trait BitVector {
    *
    * @group collection
    */
-  def sizeGreaterThan(n: Long): Boolean = this match {
-    case Append(l, r) => if (l.size > n) true else r.sizeGreaterThan(n - l.size)
-    case s@Suspend(_) => s.underlying.sizeGreaterThan(n)
-    case Drop(b, m) => b.sizeGreaterThan(m+n)
-    case _ => this.size > n
+  final def sizeGreaterThan(n: Long): Boolean = {
+    @annotation.tailrec
+    def go(cur: BitVector, n: Long): Boolean = cur match {
+      case Append(l, r) => if (l.size > n) true else go(r, n - l.size)
+      case s@Suspend(_) => go(s.underlying, n)
+      case Drop(b, m) => go(b, m+n)
+      case _ => cur.size > n
+    }
+    go(this, n)
   }
 
   /**
@@ -249,8 +253,6 @@ sealed trait BitVector {
     go(this, n0)
   }
 
-
-
   /**
    * Returns a vector whose contents are the results of skipping the last `n` bits of this vector.
    *
@@ -313,11 +315,16 @@ sealed trait BitVector {
    *
    * @group collection
    */
-  def force: BitVector = this match {
-    case b@Bytes(_,_) => b
-    case Append(l,r) => l.force ++ r.force
-    case Drop(b, from) => Drop(b.force.compact, from)
-    case s@Suspend(_) => s.underlying.force
+  def force: BitVector = {
+    @annotation.tailrec
+    def go(accL: Vector[BitVector], cur: BitVector): BitVector =
+      cur match {
+        case b@Bytes(_,_) => (accL :+ b).reduce(_ ++ _)
+        case Append(l,r) => go(accL :+ l.force, r)
+        case d@Drop(_, _) => (accL :+ d).reduce(_ ++ _)
+        case s@Suspend(_) => go(accL, s.underlying)
+      }
+    go(Vector(), this)
   }
 
   /**
@@ -604,7 +611,8 @@ sealed trait BitVector {
       @annotation.tailrec
       def go(x: BitVector, y: BitVector): Boolean = {
         if (x.isEmpty) y.isEmpty
-        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep && go(x.drop(chunkSize), y.drop(chunkSize))
+        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep &&
+             go(x.drop(chunkSize), y.drop(chunkSize))
       }
       go(this, o)
     }
