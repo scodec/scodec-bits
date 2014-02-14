@@ -271,14 +271,16 @@ sealed trait BitVector {
   def compact: Bytes = {
     if (bytesNeededForBits(size) > Int.MaxValue)
       throw new IllegalArgumentException(s"cannot compact bit vector of size ${size.toDouble / 8 / 1e9} GB")
-    def go(b: BitVector): Bytes = b match {
+
+    // we collect up all the chunks, then merge them in O(n * log n)
+    def go(b: BitVector): Vector[Bytes] = b match {
       case s@Suspend(_) => go(s.underlying)
-      case b@Bytes(_,_) => b
-      case Append(l,r) => l.compact.combine(r.compact)
+      case b@Bytes(_,_) => Vector(b)
+      case Append(l,r) => fastConcat(go(l), go(r))
       case Drop(b, from) =>
         val low = from max 0
         val newSize = b.size - low
-        if (newSize == 0) BitVector.empty.compact
+        if (newSize == 0) Vector(BitVector.empty.compact)
         else {
           val lowByte = (low / 8).toInt
           val shiftedByWholeBytes = b.compact.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
@@ -293,10 +295,10 @@ sealed trait BitVector {
               }
             }
           }
-          bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+          Vector(bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize))
         }
     }
-    go(this)
+    reduceBalanced(go(this))(_.size.toInt)(_ combine _)
   }
 
   /**
@@ -957,6 +959,36 @@ object BitVector {
     } else {
       bytes
     }
+  }
+
+  private def fastConcat[A](v: Vector[A], v2: Vector[A]): Vector[A] =
+    if (v.size < v2.size)
+      v.reverse.foldLeft(v2)((acc,l) => l +: acc)
+    else
+      v2.foldLeft(v)(_ :+ _)
+
+  /**
+   * Do a 'balanced' reduction of `v`. Provided `f` is associative, this
+   * returns the same result as `v.reduceLeft(f)`, but uses a balanced
+   * tree of concatenations, which is more efficient for operations that
+   * must copy both `A` values to combine them in `f`.
+   *
+   * Implementation uses a stack that combines the top two elements of the
+   * stack using `f` if the top element is more than half the size of the
+   * element below it.
+   */
+  private def reduceBalanced[A](v: TraversableOnce[A])(size: A => Int)(
+                                f: (A,A) => A): A = {
+    @annotation.tailrec
+    def fixup(stack: List[(A,Int)]): List[(A,Int)] = stack match {
+      // h actually appeared first in `v`, followed by `h2`, preserve this order
+      case (h2,n) :: (h,m) :: t if n > m/2 =>
+        fixup { (f(h, h2), m+n) :: t }
+      case _ => stack
+    }
+    v.foldLeft(List[(A,Int)]())((stack,a) => fixup((a -> size(a)) :: stack))
+     .reverse.map(_._1)
+     .reduceLeft(f)
   }
 }
 
