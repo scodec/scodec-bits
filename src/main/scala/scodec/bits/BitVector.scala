@@ -578,6 +578,7 @@ sealed trait BitVector {
   override def equals(other: Any): Boolean = other match {
     case o: BitVector => {
       val chunkSize = 8 * 1024 * 64
+      @annotation.tailrec
       def go(x: BitVector, y: BitVector): Boolean = {
         if (x.isEmpty) y.isEmpty
         else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep && go(x.drop(chunkSize), y.drop(chunkSize))
@@ -596,6 +597,7 @@ sealed trait BitVector {
     // given an associative hash function
     import util.hashing.MurmurHash3._
     val chunkSize = 8 * 1024 * 64
+    @annotation.tailrec
     def go(bits: BitVector, n: Int, h: Int): Int = {
       if (bits.isEmpty) finalizeHash(h, n)
       else go(bits.drop(chunkSize), n + 1, mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
