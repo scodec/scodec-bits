@@ -52,11 +52,15 @@ sealed trait BitVector {
    *
    * @group collection
    */
-  def sizeGreaterThan(n: Long): Boolean = this match {
-    case Append(l, r) => if (l.size > n) true else r.sizeGreaterThan(n - l.size)
-    case s@Suspend(_) => s.underlying.sizeGreaterThan(n)
-    case Drop(b, m) => b.sizeGreaterThan(m+n)
-    case _ => this.size > n
+  final def sizeGreaterThan(n: Long): Boolean = {
+    @annotation.tailrec
+    def go(cur: BitVector, n: Long): Boolean = cur match {
+      case Append(l, r) => if (l.size > n) true else go(r, n - l.size)
+      case s@Suspend(_) => go(s.underlying, n)
+      case Drop(b, m) => go(b, m+n)
+      case _ => cur.size > n
+    }
+    go(this, n)
   }
 
   /**
@@ -65,7 +69,8 @@ sealed trait BitVector {
    *
    * @group collection
    */
-  def sizeLessThan(n: Long): Boolean = this match {
+  @annotation.tailrec
+  final def sizeLessThan(n: Long): Boolean = this match {
     case Append(l, r) => if (l.size >= n) false else r.sizeLessThan(n - l.size)
     case s@Suspend(_) => s.underlying.sizeLessThan(n)
     case Drop(b, m) => (b.size - m).max(0L) < n
@@ -229,20 +234,23 @@ sealed trait BitVector {
    * @group collection
    */
   def drop(n0: Long): BitVector = {
-    val n = n0 max 0
-    if (n <= 0) this
-    else if (sizeLessThan(n+1)) BitVector.empty
-    else this match {
-      case Bytes(bs, m) =>
-        if (n % 8 == 0) bytes(bs.drop((n/8).toInt), m-n)
-        else Drop(this.asInstanceOf[Bytes], n)
-      case Append(l,r) =>
-        if (l.size <= n) r.drop(n - l.size)
-        else Append(l.drop(n), r)
-      case Drop(bytes, m) =>
-        bytes.drop(m + n)
-      case s@Suspend(_) => s.underlying.drop(n)
+    @annotation.tailrec
+    def go(cur: BitVector, n0: Long): BitVector = {
+      val n = n0 max 0
+      if (n <= 0) cur
+      else if (cur.sizeLessThan(n+1)) BitVector.empty
+      else cur match {
+        case Bytes(bs, m) =>
+          if (n % 8 == 0) bytes(bs.drop((n/8).toInt), m-n)
+          else Drop(cur.asInstanceOf[Bytes], n)
+        case Append(l,r) =>
+          if (l.size <= n) go(r, n - l.size)
+          else Append(l.drop(n), r) // not stack safe for left-recursion, but we disallow that
+        case Drop(bytes, m) => go(bytes, m + n)
+        case s@Suspend(_) => go(s.underlying, n)
+      }
     }
+    go(this, n0)
   }
 
   /**
@@ -271,14 +279,17 @@ sealed trait BitVector {
   def compact: Bytes = {
     if (bytesNeededForBits(size) > Int.MaxValue)
       throw new IllegalArgumentException(s"cannot compact bit vector of size ${size.toDouble / 8 / 1e9} GB")
-    def go(b: BitVector): Bytes = b match {
-      case s@Suspend(_) => go(s.underlying)
-      case b@Bytes(_,_) => b
-      case Append(l,r) => l.compact.combine(r.compact)
+
+    // we collect up all the chunks, then merge them in O(n * log n)
+    @annotation.tailrec
+    def go(b: BitVector, acc: Vector[Bytes]): Vector[Bytes] = b match {
+      case s@Suspend(_) => go(s.underlying, acc)
+      case b@Bytes(_,_) => acc :+ b
+      case Append(l,r) => go(r, acc :+ l.compact) // not stack safe for left-recursion
       case Drop(b, from) =>
         val low = from max 0
         val newSize = b.size - low
-        if (newSize == 0) BitVector.empty.compact
+        if (newSize == 0) acc
         else {
           val lowByte = (low / 8).toInt
           val shiftedByWholeBytes = b.compact.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
@@ -293,10 +304,10 @@ sealed trait BitVector {
               }
             }
           }
-          bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+          acc :+ bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
         }
     }
-    go(this)
+    reduceBalanced(go(this, Vector()))(_.size)(_ combine _)
   }
 
   /**
@@ -304,11 +315,16 @@ sealed trait BitVector {
    *
    * @group collection
    */
-  def force: BitVector = this match {
-    case b@Bytes(_,_) => b
-    case Append(l,r) => l.force ++ r.force
-    case Drop(b, from) => Drop(b.force.compact, from)
-    case s@Suspend(_) => s.underlying.force
+  def force: BitVector = {
+    @annotation.tailrec
+    def go(accL: Vector[BitVector], cur: BitVector): BitVector =
+      cur match {
+        case b@Bytes(_,_) => (accL :+ b).reduce(_ ++ _)
+        case Append(l,r) => go(accL :+ l.force, r)
+        case d@Drop(_, _) => (accL :+ d).reduce(_ ++ _)
+        case s@Suspend(_) => go(accL, s.underlying)
+      }
+    go(Vector(), this)
   }
 
   /**
@@ -452,21 +468,35 @@ sealed trait BitVector {
    * @group collection
    */
   def take(n0: Long): BitVector = {
-    val n = n0 max 0
-    if (n == 0) BitVector.empty
-    else if (sizeLessThan(n+1)) this
-    else this match {
-      case s@Suspend(_) => s.underlying.take(n0)
-      case Bytes(underlying, m) =>
-        // eagerly trim from underlying here
-        val m2 = n min m
-        val underlyingN = bytesNeededForBits(m2).toInt
-        bytes(underlying.take(underlyingN), m2)
-      case Drop(underlying, m) => underlying.take(m + n).drop(m)
-      case Append(l, r) =>
-        if (l.size >= n) l.take(n)
-        else Append(l, r.take(n-l.size))
+
+    // we have a final value, create a balanced tree from the vectors
+    // accumulated to our left, then append that to the final segment
+    def finish(accL: Vector[BitVector], lastSegment: BitVector): BitVector =
+      if (accL.isEmpty) lastSegment
+      else if (lastSegment.isEmpty) reduceBalanced(accL)(_.size)(Append(_,_))
+      else Append(reduceBalanced(accL)(_.size)(Append(_,_)), lastSegment)
+
+    // In order to make this function tail recursive, we accumulate a list
+    // of bit vectors that we need to concatenate on the left of our final value.
+    @annotation.tailrec
+    def go(accL: Vector[BitVector], cur: BitVector, n0: Long): BitVector = {
+      val n = n0 max 0
+      if (n == 0) finish(accL, BitVector.empty)
+      else if (sizeLessThan(n+1)) finish(accL, cur)
+      else cur match {
+        case s@Suspend(_) => go(accL, s.underlying, n)
+        case Bytes(underlying, m) =>
+          // eagerly trim from underlying here
+          val m2 = n min m
+          val underlyingN = bytesNeededForBits(m2).toInt
+          finish(accL, bytes(underlying.take(underlyingN), m2)) // call to take stack safe here, since that is a Bytes
+        case Drop(underlying, m) => finish(accL, underlying.take(m + n).drop(m))
+        case Append(l, r) =>
+          if (l.size >= n) go(accL, l, n)
+          else go(accL :+ l, r, n - l.size)
+      }
     }
+    go(Vector(), this, n0)
   }
 
   /**
@@ -578,9 +608,11 @@ sealed trait BitVector {
   override def equals(other: Any): Boolean = other match {
     case o: BitVector => {
       val chunkSize = 8 * 1024 * 64
+      @annotation.tailrec
       def go(x: BitVector, y: BitVector): Boolean = {
         if (x.isEmpty) y.isEmpty
-        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep && go(x.drop(chunkSize), y.drop(chunkSize))
+        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep &&
+             go(x.drop(chunkSize), y.drop(chunkSize))
       }
       go(this, o)
     }
@@ -596,6 +628,7 @@ sealed trait BitVector {
     // given an associative hash function
     import util.hashing.MurmurHash3._
     val chunkSize = 8 * 1024 * 64
+    @annotation.tailrec
     def go(bits: BitVector, n: Int, h: Int): Int = {
       if (bits.isEmpty) finalizeHash(h, n)
       else go(bits.drop(chunkSize), n + 1, mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
@@ -955,6 +988,30 @@ object BitVector {
     } else {
       bytes
     }
+  }
+
+  /**
+   * Do a 'balanced' reduction of `v`. Provided `f` is associative, this
+   * returns the same result as `v.reduceLeft(f)`, but uses a balanced
+   * tree of concatenations, which is more efficient for operations that
+   * must copy both `A` values to combine them in `f`.
+   *
+   * Implementation uses a stack that combines the top two elements of the
+   * stack using `f` if the top element is more than half the size of the
+   * element below it.
+   */
+  private def reduceBalanced[A](v: TraversableOnce[A])(size: A => Long)(
+                                f: (A,A) => A): A = {
+    @annotation.tailrec
+    def fixup(stack: List[(A,Long)]): List[(A,Long)] = stack match {
+      // h actually appeared first in `v`, followed by `h2`, preserve this order
+      case (h2,n) :: (h,m) :: t if n > m/2 =>
+        fixup { (f(h, h2), m+n) :: t }
+      case _ => stack
+    }
+    v.foldLeft(List[(A,Long)]())((stack,a) => fixup((a -> size(a)) :: stack))
+     .reverse.map(_._1)
+     .reduceLeft(f)
   }
 }
 

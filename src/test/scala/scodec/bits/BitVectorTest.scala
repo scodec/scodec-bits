@@ -15,6 +15,11 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
   val chunk = Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors)
   val bitStreams = genBitStream(chunk, Gen.choose(0,5)) // streams of chunks
 
+  // very deeply right nested - to check for SOE
+  val hugeBitStreams = genBitStream(
+    genBitVector(30,7),
+    Gen.choose(1000,5000))
+
   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
     Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
   }
@@ -61,6 +66,20 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
         // kind of weak, since this will only happen 1/8th of attempts on average
         b.take(3).hashCode shouldBe b2.take(3).hashCode
       }
+    }
+  }
+
+  test("compact/force stack safety") {
+    forAll (hugeBitStreams) { b =>
+      b.force shouldBe b
+      b.compact shouldBe b
+    }
+  }
+
+  test("hashCode/equals/take/drop stack safety") {
+    forAll (hugeBitStreams) { b =>
+      b shouldBe b // this exercises take/drop
+      b.hashCode shouldBe b.hashCode
     }
   }
 
