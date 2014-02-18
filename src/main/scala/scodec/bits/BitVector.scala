@@ -2,7 +2,6 @@ package scodec.bits
 
 import java.nio.ByteBuffer
 import scala.collection.GenTraversableOnce
-import scala.collection.immutable.IndexedSeq
 
 /**
  * Persistent vector of bits, stored as bytes.
@@ -448,15 +447,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * Converts this vector in to a sequence of `n`-bit vectors.
    * @group collection
    */
-  final def grouped(n: Long): IndexedSeq[BitVector] = {
-    val bldr = Vector.newBuilder[BitVector]
-    var rem = this
-    while (rem.nonEmpty) {
-      bldr += rem.take(n)
-      rem = rem.drop(n)
-    }
-    bldr.result
-  }
+  final def grouped(n: Long): Stream[BitVector] =
+    if (isEmpty) Stream.empty
+    else take(n) #:: drop(n).grouped(n)
 
   /**
    * Return the sequence of bits in this vector. The returned
