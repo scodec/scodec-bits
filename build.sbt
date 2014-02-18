@@ -29,7 +29,12 @@ scalacOptions ++= Seq(
   "-Yinline",
   "-Ywarn-all")
 
-scalacOptions in (Compile, doc) += "-groups"
+scalacOptions in (Compile, doc) ++= Seq(
+  "-diagrams",
+  "-groups",
+  "-implicits",
+  "-implicits-show-all"
+)
 
 licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec/blob/master/LICENSE"))
 

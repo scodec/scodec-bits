@@ -4,112 +4,115 @@ package scodec.bits
  * Bitwise operations on a value of type `Repr`.
  *
  * @tparam Repr type that supports that supports bitwise operations
+ * @tparam Idx numeric index type
  *
  * @groupname bitwise Bitwise Operations
  * @groupprio bitwise 2
+ *
+ * @define bitwiseOperationsReprDescription <DEFINE IN SUBTYPE>
  */
-trait BitwiseOperations[Repr] {
+trait BitwiseOperations[Repr, Idx] {
 
   /**
-   * Returns a bit vector of the same size with each bit shifted to the left `n` bits.
+   * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the left `n` bits.
    *
    * @group bitwise
    */
-  final def <<(n: Int): Repr = leftShift(n)
+  final def <<(n: Idx): Repr = leftShift(n)
 
   /**
-   * Returns a bit vector of the same size with each bit shifted to the left `n` bits.
+   * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the left `n` bits.
    *
    * @group bitwise
    */
-  def leftShift(n: Int): Repr
+  def leftShift(n: Idx): Repr
 
   /**
-   * Returns a bit vector of the same size with each bit shifted to the right `n` bits where the `n` left-most bits are sign extended.
+   * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the right `n` bits where the `n` left-most bits are sign extended.
    *
    * @group bitwise
    */
-  final def >>(n: Int): Repr = rightShift(n, true)
+  final def >>(n: Idx): Repr = rightShift(n, true)
 
   /**
-   * Returns a bit vector of the same size with each bit shifted to the right `n` bits where the `n` left-most bits are low.
+   * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the right `n` bits where the `n` left-most bits are low.
    *
    * @group bitwise
    */
-  final def >>>(n: Int): Repr = rightShift(n, false)
+  final def >>>(n: Idx): Repr = rightShift(n, false)
 
   /**
-   * Returns a bit vector of the same size with each bit shifted to the right `n` bits.
+   * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the right `n` bits.
    *
    * @param signExtension whether the `n` left-msot bits should take on the value of bit 0
    *
    * @group bitwise
    */
-  def rightShift(n: Int, signExtension: Boolean): Repr
+  def rightShift(n: Idx, signExtension: Boolean): Repr
 
   /**
-   * Returns a bitwise complement of this vector.
+   * Returns a bitwise complement of this $bitwiseOperationsReprDescription.
    *
    * @group bitwise
    */
   final def unary_~(): Repr = not
 
   /**
-   * Returns a bitwise complement of this vector.
+   * Returns a bitwise complement of this $bitwiseOperationsReprDescription.
    *
    * @group bitwise
    */
   def not: Repr
 
   /**
-   * Returns a bitwise AND of this vector with the specified vector.
+   * Returns a bitwise AND of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */
   final def &(other: Repr): Repr = and(other)
 
   /**
-   * Returns a bitwise AND of this vector with the specified vector.
+   * Returns a bitwise AND of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */
   def and(other: Repr): Repr
 
   /**
-   * Returns a bitwise OR of this vector with the specified vector.
+   * Returns a bitwise OR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */
   final def |(other: Repr): Repr = or(other)
 
   /**
-   * Returns a bitwise OR of this vector with the specified vector.
+   * Returns a bitwise OR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */
   def or(other: Repr): Repr
 
   /**
-   * Returns a bitwise XOR of this vector with the specified vector.
+   * Returns a bitwise XOR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */
   final def ^(other: Repr): Repr = xor(other)
 
   /**
-   * Returns a bitwise XOR of this vector with the specified vector.
+   * Returns a bitwise XOR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting vector's size is the minimum of this vector's size and the specified vector's size.
+   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
    *
    * @group bitwise
    */

@@ -4,8 +4,12 @@ import scala.collection.{ GenTraversableOnce, IndexedSeqOptimized }
 
 import java.nio.ByteBuffer
 
-/** Immutable vector of bytes. */
-trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOperations[ByteVector] {
+/**
+ * Immutable vector of bytes.
+ *
+ * @define bitwiseOperationsReprDescription byte vector
+ */
+trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOperations[ByteVector, Long] {
 
   def lift(idx: Int): Option[Byte]
 
