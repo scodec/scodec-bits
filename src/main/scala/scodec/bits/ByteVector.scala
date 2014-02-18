@@ -9,7 +9,7 @@ import java.nio.ByteBuffer
  *
  * @define bitwiseOperationsReprDescription byte vector
  */
-trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOperations[ByteVector, Long] {
+trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOperations[ByteVector, Int] {
 
   def lift(idx: Int): Option[Byte]
 

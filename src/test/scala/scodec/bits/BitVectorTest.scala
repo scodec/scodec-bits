@@ -347,4 +347,12 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     bin"00$x" shouldBe BitVector(0x20).take(4)
     """bin"asdf"""" shouldNot compile
   }
+
+  test("grouped + concatenate") {
+    forAll { (bv: BitVector) =>
+      if (bv.size >= 3) {
+        bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+      }
+    }
+  }
 }
