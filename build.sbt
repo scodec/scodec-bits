@@ -29,12 +29,17 @@ scalacOptions ++= Seq(
   "-Yinline",
   "-Ywarn-all")
 
-scalacOptions in (Compile, doc) ++= Seq(
-  "-diagrams",
-  "-groups",
-  "-implicits",
-  "-implicits-show-all"
-)
+scalacOptions in (Compile, doc) ++= {
+  val tagOrBranch = if (version.value endsWith "SNAPSHOT") "master" else ("v" + version.value)
+  Seq(
+    "-diagrams",
+    "-groups",
+    "-implicits",
+    "-implicits-show-all",
+    "-sourcepath", baseDirectory.value.getAbsolutePath,
+    "-doc-source-url", "https:///github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
+  )
+}
 
 licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec/blob/master/LICENSE"))
 
