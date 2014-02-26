@@ -93,6 +93,12 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       b.dropRight(ind).toArray shouldBe ba.dropRight(ind)
       b.reverse.toArray shouldBe ba.reverse
       b.partialCompact(ind).toArray shouldBe ba
+      b.lastOption shouldBe ba.lastOption
+      b.nonEmpty shouldBe ba.nonEmpty
+      if (b.nonEmpty) {
+        b.last shouldBe ba.last
+        b.init.toArray shouldBe ba.init
+      }
       if (ind < b.size) {
         val actual = b.update(ind,9).toArray
         val correct = Vector(b.toArray: _*).updated(ind,9).toArray
