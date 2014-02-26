@@ -520,14 +520,37 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final def toByteBuffer: java.nio.ByteBuffer = toByteVector.toByteBuffer
 
   /**
+   * Converts the contents of this bit vector to a binary string of `size` digits.
+   *
+   * @group conversions
+   */
+  final def toBin: String = toByteVector.toBin.take(size.toInt)
+
+  /**
+   * Converts the contents of this bit vector to a binary string of `size` digits.
+   *
+   * @group conversions
+   */
+  final def toBin(alphabet: Bases.BinaryAlphabet): String = toByteVector.toBin(alphabet).take(size.toInt)
+
+  /**
    * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
    *
    * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
    *
    * @group conversions
    */
-  final def toHex: String = {
-    val full = toByteVector.toHex
+  final def toHex: String = toHex(Bases.Alphabets.HexLowercase)
+
+  /**
+   * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
+   *
+   * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
+   *
+   * @group conversions
+   */
+  final def toHex(alphabet: Bases.HexAlphabet): String = {
+    val full = toByteVector.toHex(alphabet)
     size % 8 match {
       case 0 => full
       case n if n <= 4 => full.init
@@ -536,11 +559,22 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Converts the contents of this bit vector to a binary string of `size` digits.
+   * Converts the contents of this vector to a base 64 string.
+   *
+   * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
    *
    * @group conversions
    */
-  final def toBin: String = toByteVector.toBin.take(size.toInt)
+  final def toBase64: String = toBase64(Bases.Alphabets.Base64)
+
+  /**
+   * Converts the contents of this vector to a base 64 string using the specified alphabet.
+   *
+   * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+   *
+   * @group conversions
+   */
+  final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
    * Returns true if the specified value is a `BitVector` with the same contents as this vector.
@@ -689,8 +723,8 @@ object BitVector {
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    */
-  def fromHexDescriptive(str: String): Either[String, BitVector] =
-    ByteVector.fromHexInternal(str).right.map { case (bytes, count) =>
+  def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
+    ByteVector.fromHexInternal(str, alphabet).right.map { case (bytes, count) =>
       val toDrop = if (count % 2 == 0) 0 else 4
       bytes.toBitVector.drop(toDrop)
     }
@@ -700,7 +734,7 @@ object BitVector {
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    */
-  def fromHex(str: String): Option[BitVector] = fromHexDescriptive(str).right.toOption
+  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str).right.toOption
 
   /**
    * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
@@ -709,7 +743,7 @@ object BitVector {
    *
    * @throws IllegalArgumentException if the string is not valid hexadecimal
    */
-  def fromValidHex(str: String): BitVector =
+  def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
     fromHexDescriptive(str).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
@@ -717,8 +751,8 @@ object BitVector {
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    */
-  def fromBinDescriptive(str: String): Either[String, BitVector] =
-    ByteVector.fromBinInternal(str).right.map { case (bytes, size) =>
+  def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, BitVector] =
+    ByteVector.fromBinInternal(str, alphabet).right.map { case (bytes, size) =>
       val toDrop = size match {
         case 0 => 0
         case n if n % 8 == 0 => 0
@@ -732,7 +766,7 @@ object BitVector {
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    */
-  def fromBin(str: String): Option[BitVector] = fromBinDescriptive(str).right.toOption
+  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).right.toOption
 
   /**
    * Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
@@ -741,8 +775,8 @@ object BitVector {
    *
    * @throws IllegalArgumentException if the string is not valid hexadecimal
    */
-  def fromValidBin(str: String): BitVector =
-    fromBinDescriptive(str).fold(msg => throw new IllegalArgumentException(msg), identity)
+  def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): BitVector =
+    fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
    * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.

@@ -153,6 +153,20 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
     an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000") }
   }
 
+  test("toBase64") {
+    forAll { (b: ByteVector) =>
+      val guavaB64 = com.google.common.io.BaseEncoding.base64
+      ByteVector.view(guavaB64.decode(b.toBase64)) shouldBe b
+    }
+  }
+
+  test("fromBase64") {
+    forAll { (b: ByteVector) =>
+      val guavaB64 = com.google.common.io.BaseEncoding.base64
+      ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) shouldBe b
+    }
+  }
+
   test("<<") {
     ByteVector(0x55, 0x55, 0x55) << 1 shouldBe ByteVector(0xaa, 0xaa, 0xaa)
   }

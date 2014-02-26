@@ -10,9 +10,6 @@ import scala.language.implicitConversions
  */
 package object bits {
 
-  /** Implicit conversion from `ByteVector` to `BitVector`. */
-  implicit def byteVectorToBitVector(byteVector: ByteVector): BitVector = byteVector.toBitVector
-
   /**
    * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
    */
