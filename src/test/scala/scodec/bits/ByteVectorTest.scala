@@ -7,8 +7,8 @@ import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
 class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
 
-  val standardByteVectors: Gen[ByteVector] = for {
-    size <- Gen.choose(0, 500)
+  def standardByteVectors(maxSize: Int): Gen[ByteVector] = for {
+    size <- Gen.choose(0, maxSize)
     bytes <- Gen.listOfN(size, Gen.choose(0, 255))
   } yield ByteVector(bytes: _*)
 
@@ -17,7 +17,27 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
     toDrop <- Gen.choose(0, bytes.size)
   } yield ByteVector.view(bytes).drop(toDrop)
 
-  val byteVectors: Gen[ByteVector] = Gen.oneOf(standardByteVectors, sliceByteVectors)
+  def genSplit(g: Gen[ByteVector]) = for {
+    b <- g
+    n <- Gen.choose(0, b.size+1)
+  } yield {
+    b.take(n) ++ b.drop(n)
+  }
+
+  def genConcat(g: Gen[ByteVector]) =
+    g.map { b => b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _) }
+
+  val byteVectors: Gen[ByteVector] = Gen.oneOf(
+    standardByteVectors(100),
+    genConcat(standardByteVectors(100)),
+    sliceByteVectors,
+    genSplit(sliceByteVectors),
+    genSplit(genConcat(standardByteVectors(500))))
+
+  val bytesWithIndex = for {
+    b <- byteVectors
+    i <- Gen.choose(0, b.size+1)
+  } yield (b, i)
 
   implicit val arbitraryByteVectors: Arbitrary[ByteVector] = Arbitrary(byteVectors)
 
@@ -28,6 +48,62 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       else Stream.empty
     }
 
+  test("hashCode/equals") {
+    forAll (bytesWithIndex) { case (b, m) =>
+      (b.take(m) ++ b.drop(m)) shouldBe b
+      (b.take(m) ++ b.drop(m)).hashCode shouldBe b.hashCode
+      if (b.take(3) == b.drop(3).take(3)) {
+        // kind of weak, since this will only happen 1/8th of attempts on average
+        b.take(3).hashCode shouldBe b.drop(3).take(3).hashCode
+      }
+    }
+  }
+
+  test("compact is a no-op for already compact byte vectors") {
+    val b = ByteVector(0x80)
+    (b.compact eq b.compact) shouldBe true
+  }
+
+  test("reverse.reverse == id") {
+    forAll { (b: ByteVector) => b.reverse.reverse shouldBe b }
+  }
+
+  test("foldRight/left") {
+    forAll { (b: ByteVector) => b.foldLeft(ByteVector.empty)(_ :+ _) shouldBe b }
+    forAll { (b: ByteVector) => b.foldRight(ByteVector.empty)(_ +: _) shouldBe b }
+  }
+
+  test("insert") {
+    val b = ByteVector.empty
+    b.insert(0, 1) shouldBe ByteVector(1)
+    ByteVector(1,2,3,4).insert(0, 0) shouldBe ByteVector(0,1,2,3,4)
+    ByteVector(1,2,3,4).insert(1, 0) shouldBe ByteVector(1,0,2,3,4)
+    forAll { (b: ByteVector) =>
+      b.foldLeft(ByteVector.empty)((acc,b) => acc.insert(acc.size, b)) shouldBe b
+    }
+  }
+
+  test("consistent with Array[Byte] implementations") {
+    forAll (bytesWithIndex) { case (b, ind) =>
+      val ba = b.toArray
+      b.take(ind).toArray shouldBe ba.take(ind)
+      b.drop(ind).toArray shouldBe ba.drop(ind)
+      b.lift(ind) shouldBe ba.lift(ind)
+      b.takeRight(ind).toArray shouldBe ba.takeRight(ind)
+      b.dropRight(ind).toArray shouldBe ba.dropRight(ind)
+      b.reverse.toArray shouldBe ba.reverse
+      b.partialCompact(ind).toArray shouldBe ba
+      if (ind < b.size) {
+        val actual = b.update(ind,9).toArray
+        val correct = Vector(b.toArray: _*).updated(ind,9).toArray
+        actual shouldBe correct
+      }
+
+    }
+    forAll { (b1: ByteVector, b2: ByteVector) =>
+      (b1 ++ b2).toArray shouldBe (b1.toArray ++ b2.toArray)
+    }
+  }
 
   val deadbeef = ByteVector(0xde, 0xad, 0xbe, 0xef)
 
