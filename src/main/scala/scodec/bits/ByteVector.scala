@@ -1,118 +1,383 @@
 package scodec.bits
 
-import scala.collection.{ GenTraversableOnce, IndexedSeqOptimized }
-
+import ByteVector._
 import java.nio.ByteBuffer
+import scala.collection.GenTraversableOnce
 
 /**
- * Immutable vector of bytes.
+ * An immutable vector of bytes, backed by a balanced binary tree of
+ * chunks. Most operations are logarithmic in the depth of this tree,
+ * including `++`, `:+`, `+:`, `update`, and `insert`. Where possible,
+ * operations return lazy views rather than copying any underlying bytes.
+ * Use `copy` to copy all underlying bytes to a fresh, array-backed `ByteVector`.
  *
- * @define bitwiseOperationsReprDescription byte vector
+ * Unless otherwise noted, operations follow the same naming as the scala
+ * standard library collections, though this class does not extend any of the
+ * standard scala collections. Use `toIndexedSeq`, `toSeq`, or `toIterable`
+ * to obtain a regular `scala.collection` type.
  */
-trait ByteVector extends IndexedSeqOptimized[Byte, ByteVector] with BitwiseOperations[ByteVector, Int] {
+trait ByteVector extends BitwiseOperations[ByteVector,Int] {
 
-  def lift(idx: Int): Option[Byte]
+  final def ++(other: ByteVector): ByteVector = {
+    def go(x: ByteVector, y: ByteVector, force: Boolean): ByteVector =
+      if (x.size >= y.size) x match {
+        case Append(l,r) if (x.size - y.size) > // only descend into subtree if its a closer
+                            (r.size - y.size).abs => // match in size
+          val r2 = r ++ y
+          // if the branches are not of roughly equal size,
+          // reinsert the left branch from the top
+          if (force || l.size*2 > r2.size) Append(l, r2)
+          else go(l, r2, force = true)
+        case _ => Append(x, y) // otherwise, insert at the 'top'
+      }
+      else y match {
+        case Append(l,r) if (y.size - x.size) >
+                            (r.size - x.size).abs =>
+          val l2 = x ++ l
+          if (force || r.size*2 > l2.size) Append(l2, r)
+          else go(l2, r, force = true)
+        case _ => Append(x, y)
+      }
+    if (other.isEmpty) this
+    else if (this.isEmpty) other
+    else go(this, other, false)
+  }
 
-  def updated(idx: Int, b: Byte): ByteVector
+  final def +:(byte: Byte): ByteVector = ByteVector(byte) ++ this
 
-  def +:(byte: Byte): ByteVector
+  final def :+(byte: Byte): ByteVector = this ++ ByteVector(byte)
 
-  def :+(byte: Byte): ByteVector
+  def and(other: ByteVector): ByteVector =
+    zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b & b2).toByte })
 
-  def ++(other: ByteVector): ByteVector
+  final def apply(n0: Int): Byte = {
+    checkIndex(n0)
+    @annotation.tailrec
+    def go(cur: ByteVector, n: Int): Byte = cur match {
+      case Append(l,r) => if (n < l.size) go(l, n)
+                          else go(r, n-l.size)
+      case Chunk(arr) => arr(n)
+    }
+    go(this, n0)
+  }
 
-  def map(f: Byte => Byte): ByteVector
+  final def compact: ByteVector = this match {
+    case Chunk(_) => this
+    case _ => this.copy
+  }
 
-  def mapI(f: Byte => Int): ByteVector =
+  final def copy: ByteVector = {
+    val arr = this.toArray
+    Chunk(View(AtArray(arr), 0, size))
+  }
+
+  final def drop(n: Int): ByteVector = {
+    val n1 = n min size max 0
+    if (n1 == size) ByteVector.empty
+    else if (n1 == 0) this
+    else {
+      @annotation.tailrec
+      def go(cur: ByteVector, n1: Int, accR: Vector[ByteVector]): ByteVector =
+        cur match {
+          case Chunk(bs) => accR.foldLeft(Chunk(bs.drop(n1)): ByteVector)(_ ++ _)
+          case Append(l,r) => if (n1 > l.size) go(r, n1-l.size, accR)
+                              else go(l, n1, r +: accR)
+        }
+      go(this, n1, Vector())
+    }
+  }
+
+  final def dropRight(n: Int): ByteVector =
+    take(size - n.max(0))
+
+  final def foldLeft[A](z: A)(f: (A,Byte) => A): A = {
+    var acc = z
+    foreachS { new F1BU { def apply(b: Byte) = { acc = f(acc,b) } } }
+    acc
+  }
+
+  final def foldRight[A](z: A)(f: (Byte,A) => A): A =
+    reverse.foldLeft(z)((tl,h) => f(h,tl))
+
+  final def foreach(f: Byte => Unit): Unit = foreachS(new F1BU { def apply(b: Byte) = f(b) })
+
+  private[scodec] final def foreachS(f: F1BU): Unit = {
+    @annotation.tailrec
+    def go(rem: Vector[ByteVector]): Unit = rem.headOption match {
+      case None => ()
+      case Some(bytes) => bytes match {
+        case Chunk(bs) => bs.foreach(f); go(rem.tail)
+        case Append(l,r) => go(l +: r +: rem.tail)
+      }
+    }
+    go(Vector(this))
+  }
+
+  final def grouped(chunkSize: Int): Stream[ByteVector] =
+    if (size <= chunkSize) Stream(this)
+    else take(chunkSize) #:: drop(chunkSize).grouped(chunkSize)
+
+  final def head: Byte = apply(0)
+
+  final def insert(idx: Int, b: Byte): ByteVector =
+    (take(idx) :+ b) ++ drop(idx)
+
+  final def isEmpty = size == 0
+
+  final def leftShift(n: Int): ByteVector =
+    BitVector(this).leftShift(n).toByteVector
+
+  final def length = size
+
+  final def lift(n0: Int): Option[Byte] = {
+    if (n0 >= 0 && n0 < size) Some(apply(n0))
+    else None
+  }
+
+  final def map(f: Byte => Byte): ByteVector =
+    ByteVector.view((i: Int) => f(apply(i)), size)
+
+  final def mapI(f: Byte => Int): ByteVector =
     map(f andThen { _.toByte })
 
-  def zipWith(other: ByteVector)(op: (Byte, Byte) => Byte): ByteVector
+  private[scodec] final def mapS(f: F1B): ByteVector =
+    ByteVector.view(new At { def apply(i: Int) = f(ByteVector.this(i)) }, size)
 
-  def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
-    zipWith(other) { case (l, r) => op(l, r).toByte }
+  def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
 
-  def toArray: Array[Byte]
+  def or(other: ByteVector): ByteVector =
+    zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b | b2).toByte })
 
-  def toByteBuffer: ByteBuffer = ByteBuffer.wrap(toArray)
-
-  def toBitVector: BitVector = BitVector(this)
-
-  /** Converts the contents of this byte vector to a hexadecimal string of `size * 2` nibbles.  */
-  def toHex: String = {
-    import ByteVector.HexChars
-    val bldr = new StringBuilder
-    foreach { b =>
-      bldr.append(HexChars(b >> 4 & 0x0f)).append(HexChars(b & 0x0f))
-    }
-    bldr.toString
+  /** Invokes `compact` on any subtrees whose size is `<= chunkSize`. */
+  final def partialCompact(chunkSize: Int): ByteVector = this match {
+    case small if small.size <= chunkSize => small.compact
+    case Append(l,r) => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
+    case _ => this
   }
+
+  final def reverse: ByteVector =
+    ByteVector.view(i => apply(size - i - 1), size)
+
+  final def rightShift(n: Int, signExtension: Boolean): ByteVector =
+    BitVector(this).rightShift(n, signExtension).toByteVector
+
+  def size: Int
+
+  final def splitAt(n: Int): (ByteVector, ByteVector) = (take(n), drop(n))
+
+  final def slice(from: Int, until: Int): ByteVector =
+    drop(from).take(until - from)
+
+  final def tail: ByteVector = drop(1)
+
+  final def take(n: Int): ByteVector = {
+    val n1 = n min size max 0
+    if (n1 == size) this
+    else if (n1 == 0) ByteVector.empty
+    else {
+      def go(accL: List[ByteVector], cur: ByteVector, n1: Int): ByteVector = cur match {
+        case Chunk(bs) => accL.foldLeft(Chunk(bs.take(n1)): ByteVector)((r,l) => l ++ r)
+        case Append(l,r) => if (n1 > l.size) go(l :: accL, r, n1-l.size)
+                            else go(accL, l, n1)
+      }
+      go(Nil, this, n1)
+    }
+  }
+
+  final def takeRight(n: Int): ByteVector =
+    drop(size - n)
+
+  final def toArray: Array[Byte] = {
+    val buf = new Array[Byte](size)
+    var i = 0
+    this.foreachS { new F1BU { def apply(b: Byte) = { buf(i) = b; i += 1 } }}
+    buf
+  }
+
+  final def toIndexedSeq: IndexedSeq[Byte] = new IndexedSeq[Byte] {
+    def length = ByteVector.this.size
+    def apply(i: Int) = ByteVector.this.apply(i)
+  }
+
+  final def toSeq: Seq[Byte] = toIndexedSeq
+
+  final def toIterable: Iterable[Byte] = toIndexedSeq
 
   /** Converts the contents of this byte vector to a binary string of `size * 8` digits.  */
   def toBin: String = {
     val bldr = new StringBuilder
-    foreach { b =>
+    foreachS { new F1BU { def apply(b: Byte) = {
       var n = 7
       while (n >= 0) {
         bldr.append(if ((0x01 & (b >> n)) != 0) "1" else "0")
         n -= 1
       }
-    }
+    }}}
     bldr.toString
   }
 
-  def leftShift(n: Int): ByteVector =
-    BitVector(this).leftShift(n).toByteVector
+  def toBitVector: BitVector = BitVector(this)
 
-  def rightShift(n: Int, signExtension: Boolean): ByteVector =
-    BitVector(this).rightShift(n, signExtension).toByteVector
+  def toByteBuffer: ByteBuffer = ByteBuffer.wrap(toArray)
 
-  def not: ByteVector = mapI { ~_ }
+  /** Converts the contents of this byte vector to a hexadecimal string of `size * 2` nibbles.  */
+  def toHex: String = {
+    import ByteVector.HexChars
+    val bldr = new StringBuilder
+    foreachS { new F1BU { def apply(b: Byte) =
+      bldr.append(HexChars(b >> 4 & 0x0f)).append(HexChars(b & 0x0f))
+    }}
+    bldr.toString
+  }
 
-  def and(other: ByteVector): ByteVector =
-    zipWithI(other)(_ & _)
-
-  def or(other: ByteVector): ByteVector =
-    zipWithI(other)(_ | _)
+  final def update(idx: Int, b: Byte): ByteVector = {
+    checkIndex(idx)
+    (take(idx) :+ b) ++ drop(idx+1)
+  }
 
   def xor(other: ByteVector): ByteVector =
-    zipWithI(other)(_ ^ _)
+    zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b ^ b2).toByte })
 
-  override protected[this] def thisCollection: IndexedSeq[Byte] = toArray
-  override protected[this] def toCollection(repr: ByteVector): IndexedSeq[Byte] = toArray
+  final def zipWith(other: ByteVector)(f: (Byte,Byte) => Byte): ByteVector =
+    zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b,b2) })
 
-  override def hashCode = this.toArray.hashCode
+  private[scodec] final def zipWithS(other: ByteVector)(f: F2B): ByteVector = {
+    val at = new At { def apply(i: Int) = f(ByteVector.this(i), other(i)) }
+    Chunk(View(at, 0, size min other.size))
+  }
+
+  final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
+    zipWith(other) { case (l, r) => op(l, r).toByte }
+
+  // implementation details, Object methods
+
+  override lazy val hashCode = {
+    // todo: this could be recomputed more efficiently using the tree structure
+    // given an associative hash function
+    import util.hashing.MurmurHash3._
+    val chunkSize = 1024 * 64
+    @annotation.tailrec
+    def go(bytes: ByteVector, h: Int): Int = {
+      if (bytes.isEmpty) finalizeHash(h, size)
+      else go(bytes.drop(chunkSize), mix(h, bytesHash(bytes.take(chunkSize).toArray)))
+    }
+    go(this, stringHash("ByteVector"))
+  }
 
   override def equals(other: Any) = other match {
-    case that: ByteVector => this.toArray.deep == that.toArray.deep
+    case that: ByteVector => this.size == that.size &&
+                             (0 until this.size).forall(i => this(i) == that(i))
     case other => false
   }
 
-  override def toString: String = s"ByteVector(0x${toHex})"
+  override def toString: String = s"ByteVector($size bytes, 0x${toHex})"
+
+  private[scodec] def pretty(prefix: String): String = this match {
+    case Append(l,r) => {
+      val psub = prefix + "|  "
+      prefix + "*" + "\n" +
+      l.pretty(psub) + "\n" +
+      r.pretty(psub)
+    }
+    case _ => prefix + (if (size < 16) "0x"+toHex else "#"+hashCode)
+  }
+
+  private def checkIndex(n: Int): Unit =
+    if (n < 0 || n >= size)
+      throw new IllegalArgumentException(s"invalid index: $n for size $size")
 }
 
-/** Companion for [[ByteVector]]. */
 object ByteVector {
+
+  // various specialized function types
+  private[scodec] abstract class At { def apply(i: Int): Byte }
+  private[scodec] abstract class F1B { def apply(b: Byte): Byte }
+  private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
+  private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
+
+  private val AtEmpty: At =
+    new At { def apply(i: Int) = throw new IllegalArgumentException("empty view") }
+
+  private def AtArray(arr: Array[Byte]): At =
+    new At { def apply(i: Int) = arr(i) }
+
+  private def AtByteBuffer(buf: ByteBuffer): At =
+    new At { def apply(i: Int) = buf.get(i) }
+
+  private def AtFnI(f: Int => Int): At = new At {
+    def apply(i: Int) = f(i).toByte
+  }
+
+
+  private[bits] case class View(at: At, offset: Int, size: Int) {
+    def apply(n: Int) = at(offset + n)
+    def foreach(f: F1BU): Unit = {
+      var i = 0
+      while (i < size) { f(at(offset+i)); i += 1 }
+      ()
+    }
+    def take(n: Int): View =
+      if (n <= 0) View.empty
+      else if (n >= size) this
+      else View(at, offset, n)
+    def drop(n: Int): View =
+      if (n <= 0) this
+      else if (n >= size) View.empty
+      else View(at, offset+n, size-n)
+  }
+  private[bits] object View {
+    val empty = View(AtEmpty, 0, 0)
+  }
+
+  private[bits] case class Chunk(bytes: View) extends ByteVector {
+    def size = bytes.size
+  }
+  private[bits] case class Append(left: ByteVector, right: ByteVector) extends ByteVector {
+    lazy val size = left.size + right.size
+  }
+
+  val empty: ByteVector = Chunk(View(AtEmpty, 0, 0))
 
   private val HexChars: Array[Char] = Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
 
-  val empty: ByteVector = StandardByteVector(Vector.empty)
-
   def apply[A: Integral](bytes: A*): ByteVector = {
     val integral = implicitly[Integral[A]]
-    StandardByteVector(bytes.map { i => integral.toInt(i).toByte }.toVector)
+    val buf = new Array[Byte](bytes.size)
+    var i = 0
+    bytes.foreach { b =>
+      buf(i) = integral.toInt(b).toByte
+      i += 1
+    }
+    view(buf)
   }
 
-  def apply(bytes: Vector[Byte]): ByteVector = StandardByteVector(bytes)
+  /** Create a `ByteVector` from a `Vector[Byte]`. */
+  def apply(bytes: Vector[Byte]): ByteVector = view(bytes, bytes.size)
 
-  def apply(bytes: Array[Byte]): ByteVector = StandardByteVector(bytes.toVector)
+  /**
+   * Create a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
+   * is copied to ensure the resulting `ByteVector` is immutable.
+   * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
+   */
+  def apply(bytes: Array[Byte]): ByteVector = {
+    val copy: Array[Byte] = bytes.clone()
+    view(copy)
+  }
 
+  /**
+   * Create a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
+   * is copied to ensure the resulting `ByteVector` is immutable.
+   * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
+   */
   def apply(buffer: ByteBuffer): ByteVector = {
     val arr = Array.ofDim[Byte](buffer.remaining)
     buffer.get(arr)
     apply(arr)
   }
 
-  def apply(bs: GenTraversableOnce[Byte]): ByteVector = apply(bs.toVector)
+  /** Create a `ByteVector` from a `scala.collection` source of bytes. */
+  def apply(bs: GenTraversableOnce[Byte]): ByteVector =
+    view(bs.toArray[Byte])
 
   /**
    * Create a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
@@ -120,7 +385,7 @@ object ByteVector {
    * not to modify the contents of the array passed to this function.
    */
   def view(bytes: Array[Byte]): ByteVector =
-    new SliceByteVector(ind => bytes(ind), 0, bytes.size)
+    Chunk(View(AtArray(bytes), 0, bytes.length))
 
   /**
    * Create a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
@@ -128,20 +393,44 @@ object ByteVector {
    * not to modify the contents of the buffer passed to this function.
    */
   def view(bytes: ByteBuffer): ByteVector =
-    new SliceByteVector(ind => bytes.get(ind), 0, bytes.limit)
+    Chunk(View(AtByteBuffer(bytes), 0, bytes.limit))
 
   /**
    * Create a `ByteVector` from a function from `Int => Byte` and a size.
    */
   def view(at: Int => Byte, size: Int): ByteVector =
-    new SliceByteVector(at, 0, size)
+    Chunk(View(new At { def apply(i: Int) = at(i) }, 0, size))
 
+  /**
+   * Create a `ByteVector` from a function from `Int => Byte` and a size.
+   */
+  private[scodec] def view(at: At, size: Int): ByteVector =
+    Chunk(View(at, 0, size))
+
+  /**
+   * Create a `ByteVector` from a function from `Int => Int` and a size,
+   * where the `Int` returned by `at` must fit in a `Byte`.
+   */
+  def viewI(at: Int => Int, size: Int): ByteVector =
+    Chunk(View(new At { def apply(i: Int) = at(i).toByte }, 0, size))
+
+  /**
+   * Create a `ByteVector` of the given size, where all bytes have the value `b`.
+   */
   def fill[A: Integral](size: Int)(b: A): ByteVector = {
     val integral = implicitly[Integral[A]]
-    StandardByteVector(Vector.fill[Byte](size)(integral.toInt(b).toByte))
+    val v = integral.toInt(b).toByte
+    view(Array.fill(size)(v))
   }
 
+  /**
+   * Create a `ByteVector` of the given size, where all bytes have the value `0`.
+   */
   def low(size: Int): ByteVector = fill(size)(0)
+
+  /**
+   * Create a `ByteVector` of the given size, where all bytes have the value `0xff`.
+   */
   def high(size: Int): ByteVector = fill(size)(0xff)
 
   /**
@@ -186,7 +475,8 @@ object ByteVector {
       Right(
         (if (midByte) {
           bldr += hi.toByte
-          ByteVector(bldr.result).rightShift(4, false)
+          val result = bldr.result
+          ByteVector(result).rightShift(4, false)
         } else ByteVector(bldr.result), count)
       )
     } else Left(err)

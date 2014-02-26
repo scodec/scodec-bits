@@ -39,21 +39,21 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    *
    * @group individual
    */
-  def updated(n: Long, high: Boolean): BitVector
+  def update(n: Long, high: Boolean): BitVector
 
   /**
    * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
    *
    * @group individual
    */
-  final def set(n: Long): BitVector = updated(n, true)
+  final def set(n: Long): BitVector = update(n, true)
 
   /**
    * Returns a new bit vector with the `n`th bit low (and all other bits unmodified).
    *
    * @group individual
    */
-  final def clear(n: Long): BitVector = updated(n, false)
+  final def clear(n: Long): BitVector = update(n, false)
 
   /**
    * Returns number of bits in this vector.
@@ -347,7 +347,23 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
           acc :+ bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
         }
     }
-    reduceBalanced(go(this, Vector()))(_.size)(_ combine _)
+    reduceBalanced(go(this, Vector()))(_.size)(_ combine _) match {
+      case Bytes(b,n) => Bytes(b.compact,n) // we compact the underlying ByteVector as well
+    }
+  }
+
+  /**
+   * Return a `BitVector` with the same contents as `this`, but
+   * based off a single flat `ByteVector`. This function is guaranteed
+   * to copy all the bytes in this `BitVector`, unlike `compact`, which
+   * may no-op if this `BitVector` already consists of a single `ByteVector`
+   * chunk.
+   *
+   * @group collection
+   */
+  final def copy: Bytes = this match {
+    case Bytes(b,n) => Bytes(b.copy, n)
+    case _ => this.compact
   }
 
   /**
@@ -536,8 +552,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       @annotation.tailrec
       def go(x: BitVector, y: BitVector): Boolean = {
         if (x.isEmpty) y.isEmpty
-        else x.take(chunkSize).toByteArray.deep == y.take(chunkSize).toByteArray.deep &&
-             go(x.drop(chunkSize), y.drop(chunkSize))
+        else {
+          val chunkX = x.take(chunkSize)
+          val chunkY = y.take(chunkSize)
+          chunkX.size == chunkY.size &&
+          chunkX.toByteVector == chunkY.toByteVector &&
+          go(x.drop(chunkSize), y.drop(chunkSize))
+        }
       }
       go(this, o)
     }
@@ -555,11 +576,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     import util.hashing.MurmurHash3._
     val chunkSize = 8 * 1024 * 64
     @annotation.tailrec
-    def go(bits: BitVector, n: Int, h: Int): Int = {
-      if (bits.isEmpty) finalizeHash(h, n)
-      else go(bits.drop(chunkSize), n + 1, mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
+    def go(bits: BitVector, h: Int): Int = {
+      if (bits.isEmpty) finalizeHash(h, (size % Int.MaxValue.toLong).toInt + 1)
+      else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
     }
-    go(this, 0, stringHash("BitVector"))
+    go(this, stringHash("BitVector"))
   }
 
   /**
@@ -622,7 +643,7 @@ object BitVector {
 
   def bits(b: Iterable[Boolean]): BitVector =
     b.zipWithIndex.foldLeft(low(b.size))((acc,b) =>
-      acc.updated(b._2, b._1)
+      acc.update(b._2, b._1)
     )
 
   def high(n: Long): BitVector = fill(n)(true)
@@ -822,9 +843,9 @@ object BitVector {
       checkBounds(n)
       getBit(underlying((n / 8).toInt), (n % 8).toInt)
     }
-    def updated(n: Long, high: Boolean): BitVector = {
+    def update(n: Long, high: Boolean): BitVector = {
       checkBounds(n)
-      val b2 = underlying.updated(
+      val b2 = underlying.update(
         (n / 8).toInt,
         underlying.lift((n / 8).toInt).map(setBit(_, (n % 8).toInt, high)).getOrElse {
           outOfBounds(n)
@@ -844,7 +865,7 @@ object BitVector {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
         val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size)).toByte
-        val updatedOurBytes = bytesCleared.updated(bytesCleared.size - 1, (hi | lo).toByte)
+        val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
         val updatedOtherBytes = other.drop(invalidBits).toByteVector
         bytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
       }
@@ -855,22 +876,22 @@ object BitVector {
     val size = (underlying.size - m) max 0
     def get(n: Long): Boolean =
       underlying.get(m + n)
-    def updated(n: Long, high: Boolean): BitVector =
-      Drop(underlying.updated(m + n, high).compact, m)
+    def update(n: Long, high: Boolean): BitVector =
+      Drop(underlying.update(m + n, high).compact, m)
   }
   private[scodec] case class Append(left: BitVector, right: BitVector) extends BitVector {
     lazy val size = left.size + right.size
     def get(n: Long): Boolean =
       if (n < left.size) left.get(n)
       else right.get(n - left.size)
-    def updated(n: Long, high: Boolean): BitVector =
-      if (n < left.size) Append(left.updated(n, high), right)
-      else Append(left, right.updated(n - left.size, high))
+    def update(n: Long, high: Boolean): BitVector =
+      if (n < left.size) Append(left.update(n, high), right)
+      else Append(left, right.update(n - left.size, high))
   }
   private[scodec] case class Suspend(thunk: () => BitVector) extends BitVector {
     lazy val underlying = thunk()
     def get(n: Long): Boolean = underlying.get(n)
-    def updated(n: Long, high: Boolean): BitVector = underlying.updated(n, high)
+    def update(n: Long, high: Boolean): BitVector = underlying.update(n, high)
     def size = underlying.size
   }
 
@@ -910,7 +931,7 @@ object BitVector {
     if (bytes.nonEmpty && valid < 8) {
       val idx = bytes.size - 1
       val last = bytes(idx)
-      bytes.updated(idx, (last & topNBits(valid)).toByte)
+      bytes.update(idx, (last & topNBits(valid)).toByte)
     } else {
       bytes
     }

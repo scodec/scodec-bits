@@ -69,11 +69,13 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     }
   }
 
-  test("compact/force stack safety") {
-    forAll (hugeBitStreams) { b =>
-      b.force shouldBe b
-      b.compact shouldBe b
-    }
+  test("compact is a no-op for already compact bit vectors") {
+    val b = BitVector(0x80,0x90)
+    (b.compact.underlying eq b.compact.underlying) shouldBe true
+    (b.toByteVector eq b.toByteVector) shouldBe true
+    val b2 = b.drop(8) // also make sure this works if we're talking about a byte-aligned slice
+    (b2.compact.underlying eq b2.compact.underlying) shouldBe true
+    (b2.toByteVector eq b2.toByteVector) shouldBe true
   }
 
   test("hashCode/equals/take/drop stack safety") {
