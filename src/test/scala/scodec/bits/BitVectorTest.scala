@@ -352,7 +352,11 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
 
   test("grouped + concatenate") {
     forAll { (bv: BitVector) =>
-      if (bv.size >= 3) {
+      if (bv.isEmpty) {
+        bv.grouped(1) shouldBe Stream.empty
+      } else if (bv.size < 3) {
+        bv.grouped(bv.size) shouldBe Stream(bv)
+      } else {
         bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) => acc ++ b } shouldBe bv
       }
     }

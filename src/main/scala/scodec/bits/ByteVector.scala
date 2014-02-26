@@ -114,7 +114,8 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   }
 
   final def grouped(chunkSize: Int): Stream[ByteVector] =
-    if (size <= chunkSize) Stream(this)
+    if (isEmpty) Stream.empty
+    else if (size <= chunkSize) Stream(this)
     else take(chunkSize) #:: drop(chunkSize).grouped(chunkSize)
 
   final def head: Byte = apply(0)

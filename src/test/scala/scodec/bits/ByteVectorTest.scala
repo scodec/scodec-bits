@@ -197,4 +197,16 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       b.drop(n) shouldBe view.drop(n)
     }
   }
+
+  test("grouped + concatenate") {
+    forAll { (bv: ByteVector) =>
+      if (bv.isEmpty) {
+        bv.grouped(1) shouldBe Stream.empty
+      } else if (bv.size < 3) {
+        bv.grouped(bv.size) shouldBe Stream(bv)
+      } else {
+        bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+      }
+    }
+  }
 }
