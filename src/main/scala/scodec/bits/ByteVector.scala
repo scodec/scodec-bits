@@ -119,10 +119,17 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
 
   final def head: Byte = apply(0)
 
+  final def headOption: Option[Byte] = lift(0)
+
+  final def init: ByteVector = dropRight(1)
+
   final def insert(idx: Int, b: Byte): ByteVector =
     (take(idx) :+ b) ++ drop(idx)
 
   final def isEmpty = size == 0
+
+  final def last: Byte = apply(size-1)
+  final def lastOption: Option[Byte] = lift(size-1)
 
   final def leftShift(n: Int): ByteVector =
     BitVector(this).leftShift(n).toByteVector
@@ -143,9 +150,11 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   private[scodec] final def mapS(f: F1B): ByteVector =
     ByteVector.view(new At { def apply(i: Int) = f(ByteVector.this(i)) }, size)
 
-  def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
+  final def nonEmpty: Boolean = !isEmpty
 
-  def or(other: ByteVector): ByteVector =
+  final def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
+
+  final def or(other: ByteVector): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b | b2).toByte })
 
   /** Invokes `compact` on any subtrees whose size is `<= chunkSize`. */
