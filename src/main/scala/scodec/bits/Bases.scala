@@ -54,7 +54,7 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
-    /** Binary alphabet that uses `{0, 1}` and allows whitespace and underscores for separation. */
+    /** Binary alphabet that uses `{t, f}` and allows whitespace and underscores for separation. */
     object Truthy extends BinaryAlphabet {
       def toChar(i: Int) = if (i == 0) 't' else 'f'
       def toIndex(c: Char) = c match {
@@ -65,7 +65,7 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
-    /** Abstract hex alphabet that supports `0-9 A-F a-f` for looking up an index from a char. */
+    /** Abstract hex alphabet that supports `{0-9, A-F, a-f}` for looking up an index from a char. */
     private[bits] abstract class LenientHex extends HexAlphabet {
       def toIndex(c: Char) = c match {
         case c if c >= '0' && c <= '9' => c - '0'
@@ -76,13 +76,13 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
-    /** Base 16 alphabet that uses `0-9 a-f`. Whitespace and underscores are ignored. */
+    /** Base 16 alphabet that uses `{0-9, a-f}`. Whitespace and underscores are ignored. */
     object HexLowercase extends LenientHex {
       private val Chars = Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
       def toChar(i: Int) = Chars(i)
     }
 
-    /** Base 16 alphabet that uses `0-9 A-F`. Whitespace and underscores are ignored. */
+    /** Base 16 alphabet that uses `{0-9, A-F}`. Whitespace and underscores are ignored. */
     object HexUppercase extends LenientHex {
       private val Chars = Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
       def toChar(i: Int) = Chars(i)
