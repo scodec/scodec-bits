@@ -635,6 +635,18 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
       throw new IndexOutOfBoundsException(s"invalid index: $n for size $size")
 }
 
+/**
+ * Companion for [[ByteVector]].
+ *
+ * @groupname constants Constants
+ * @groupprio constants 0
+ *
+ * @groupname constructors Constructors
+ * @groupprio constructors 1
+ *
+ * @groupname base Base Conversions
+ * @groupprio base 2
+ */
 object ByteVector {
 
   // various specialized function types
@@ -656,7 +668,6 @@ object ByteVector {
     def apply(i: Int) = f(i).toByte
   }
 
-
   private[bits] case class View(at: At, offset: Int, size: Int) {
     def apply(n: Int) = at(offset + n)
     def foreach(f: F1BU): Unit = {
@@ -673,6 +684,7 @@ object ByteVector {
       else if (n >= size) View.empty
       else View(at, offset+n, size-n)
   }
+
   private[bits] object View {
     val empty = View(AtEmpty, 0, 0)
   }
@@ -680,12 +692,22 @@ object ByteVector {
   private[bits] case class Chunk(bytes: View) extends ByteVector {
     def size = bytes.size
   }
+
   private[bits] case class Append(left: ByteVector, right: ByteVector) extends ByteVector {
     lazy val size = left.size + right.size
   }
 
+  /**
+   * Empty byte vector.
+   * @group constants
+   */
   val empty: ByteVector = Chunk(View(AtEmpty, 0, 0))
 
+  /**
+   * Constructs a `ByteVector` from a list of literal bytes. Only the least significant
+   * byte is used of each integral value.
+   * @group constructors
+   */
   def apply[A: Integral](bytes: A*): ByteVector = {
     val integral = implicitly[Integral[A]]
     val buf = new Array[Byte](bytes.size)
@@ -697,13 +719,17 @@ object ByteVector {
     view(buf)
   }
 
-  /** Constructs a `ByteVector` from a `Vector[Byte]`. */
+  /**
+   * Constructs a `ByteVector` from a collection of bytes.
+   * @group constructors
+   */
   def apply(bytes: Vector[Byte]): ByteVector = view(bytes, bytes.size)
 
   /**
    * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
    * is copied to ensure the resulting `ByteVector` is immutable.
-   * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
+   * If this is not desired, use `[[ByteVector.view]]`.
+   * @group constructors
    */
   def apply(bytes: Array[Byte]): ByteVector = {
     val copy: Array[Byte] = bytes.clone()
@@ -713,7 +739,8 @@ object ByteVector {
   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
    * is copied to ensure the resulting `ByteVector` is immutable.
-   * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
+   * If this is not desired, use `[[ByteVector.view]]`.
+   * @group constructors
    */
   def apply(buffer: ByteBuffer): ByteVector = {
     val arr = Array.ofDim[Byte](buffer.remaining)
@@ -721,7 +748,10 @@ object ByteVector {
     apply(arr)
   }
 
-  /** Constructs a `ByteVector` from a `scala.collection` source of bytes. */
+  /**
+   * Constructs a `ByteVector` from a `scala.collection` source of bytes.
+   * @group constructors
+   */
   def apply(bs: GenTraversableOnce[Byte]): ByteVector =
     view(bs.toArray[Byte])
 
@@ -729,6 +759,7 @@ object ByteVector {
    * Constructs a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
    * does not make a copy of the input array, so callers should take care
    * not to modify the contents of the array passed to this function.
+   * @group constructors
    */
   def view(bytes: Array[Byte]): ByteVector =
     Chunk(View(AtArray(bytes), 0, bytes.length))
@@ -737,12 +768,14 @@ object ByteVector {
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
+   * @group constructors
    */
   def view(bytes: ByteBuffer): ByteVector =
     Chunk(View(AtByteBuffer(bytes), 0, bytes.limit))
 
   /**
    * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * @group constructors
    */
   def view(at: Int => Byte, size: Int): ByteVector =
     Chunk(View(new At { def apply(i: Int) = at(i) }, 0, size))
@@ -756,12 +789,14 @@ object ByteVector {
   /**
    * Constructs a `ByteVector` from a function from `Int => Int` and a size,
    * where the `Int` returned by `at` must fit in a `Byte`.
+   * @group constructors
    */
   def viewI(at: Int => Int, size: Int): ByteVector =
     Chunk(View(new At { def apply(i: Int) = at(i).toByte }, 0, size))
 
   /**
    * Constructs a `ByteVector` of the given size, where all bytes have the value `b`.
+   * @group constructors
    */
   def fill[A: Integral](size: Int)(b: A): ByteVector = {
     val integral = implicitly[Integral[A]]
@@ -771,11 +806,13 @@ object ByteVector {
 
   /**
    * Constructs a `ByteVector` of the given size, where all bytes have the value `0`.
+   * @group constructors
    */
   def low(size: Int): ByteVector = fill(size)(0)
 
   /**
    * Constructs a `ByteVector` of the given size, where all bytes have the value `0xff`.
+   * @group constructors
    */
   def high(size: Int): ByteVector = fill(size)(0xff)
 
@@ -783,6 +820,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, ByteVector] =
     fromHexInternal(str, alphabet).right.map { case (res, _) => res }
@@ -829,6 +867,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
    *
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[ByteVector] = fromHexDescriptive(str, alphabet).right.toOption
 
@@ -838,6 +877,7 @@ object ByteVector {
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    *
    * @throws IllegalArgumentException if the string is not valid hexadecimal
+   * @group base
    */
   def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): ByteVector =
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
@@ -847,6 +887,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a binary string or returns an error message if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, ByteVector] = fromBinInternal(str, alphabet).right.map { case (res, _) => res }
 
@@ -889,6 +930,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[ByteVector] = fromBinDescriptive(str, alphabet).right.toOption
 
@@ -898,6 +940,7 @@ object ByteVector {
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    *
    * @throws IllegalArgumentException if the string is not valid binary
+   * @group base
    */
   def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
@@ -906,6 +949,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a base 64 string or returns an error message if the string is not valid base 64.
    *
    * The string may contain whitespace characters.
+   * @group base
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
     val Pad = alphabet.pad
@@ -942,6 +986,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 64.
    *
    * The string may contain whitespace characters.
+   * @group base
    */
   def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[ByteVector] = fromBase64Descriptive(str, alphabet).right.toOption
 
@@ -951,6 +996,7 @@ object ByteVector {
    * The string may contain whitespace characters.
    *
    * @throws IllegalArgumentException if the string is not valid base 64
+   * @group base
    */
   def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): ByteVector =
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
