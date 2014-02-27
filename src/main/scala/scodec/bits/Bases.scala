@@ -4,7 +4,7 @@ package scodec.bits
 object Bases {
 
   /**
-   * Partial mapping between characters and bytes used in base conversions.
+   * Partial mapping between characters and indices used in base conversions.
    */
   trait Alphabet {
     /**
