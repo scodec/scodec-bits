@@ -132,13 +132,13 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   }
 
   /**
-   * Returns a new vector with the specified byte appended.
+   * Returns a new vector with the specified byte prepended.
    * @group collection
    */
   final def +:(byte: Byte): ByteVector = ByteVector(byte) ++ this
 
   /**
-   * Returns a new vector with the specified byte prepended.
+   * Returns a new vector with the specified byte appended.
    * @group collection
    */
   final def :+(byte: Byte): ByteVector = this ++ ByteVector(byte)
@@ -224,6 +224,31 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     drop(from).take(until - from)
 
   /**
+   * Returns a vector whose contents are the results of taking the first `n` bytes of this vector.
+   *
+   * If this vector does not contain at least `n` bytes, an error message is returned.
+   *
+   * @see take
+   * @group collection
+   */
+  def acquire(n: Int): Either[String, ByteVector] =
+    if (n <= size) Right(take(n))
+    else Left(s"cannot acquire $n bytes from a vector that contains $size bytes")
+
+  /**
+   * Consumes the first `n` bytes of this vector and decodes them with the specified function,
+   * resulting in a vector of the remaining bytes and the decoded value. If this vector
+   * does not have `n` bytes or an error occurs while decoding, an error is returned instead.
+   *
+   * @group collection
+   */
+  final def consume[A](n: Int)(decode: ByteVector => Either[String, A]): Either[String, (ByteVector, A)] =
+    for {
+      toDecode <- acquire(n).right
+      decoded <- decode(toDecode).right
+    } yield (drop(n), decoded)
+
+  /**
    * Applies a binary operator to a start value and all elements of this vector, going left to right.
    * @param z starting value
    * @param f operator to apply
@@ -306,6 +331,27 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
    * @group collection
    */
   final def lastOption: Option[Byte] = lift(size-1)
+
+  /**
+   * Returns an `n`-byte vector whose contents are this vector's contents followed by 0 or more zero bytes.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padTo(n: Int): ByteVector =
+    if (n < size) throw new IllegalArgumentException(s"ByteVector.padTo($n)")
+    else this ++ ByteVector.fill(n - size)(0)
+
+  /**
+   * Returns an `n`-bytes vector whose contents are 0 or more zero bytes followed by this vector's contents.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padToRight(n: Int): ByteVector =
+    if (n < size) throw new IllegalArgumentException(s"ByteVector.padToRight($n)")
+    else ByteVector.fill(n - size)(0) ++ this
+
 
   /**
    * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.

@@ -122,6 +122,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   def update(n: Long, high: Boolean): BitVector
 
   /**
+   * Returns a vector with the specified bit inserted at the specified index.
+   * @group collection
+   */
+  final def insert(idx: Int, b: Boolean): BitVector =
+    (take(idx) :+ b) ++ drop(idx)
+
+  /**
    * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
    *
    * @group collection
@@ -168,6 +175,18 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     else if (this.isEmpty) b2
     else go(this, b2)
   }
+
+  /**
+   * Returns a new vector with the specified bit prepended.
+   * @group collection
+   */
+  final def +:(b: Boolean): BitVector  = (if (b) BitVector.zero else BitVector.one) ++ this
+
+  /**
+   * Returns a new vector with the specified bit appended.
+   * @group collection
+   */
+  final def :+(b: Boolean): BitVector = this ++ (if (b) BitVector.zero else BitVector.one)
 
   /**
    * Returns `true` if the depth of this tree is `> d`. The result
@@ -371,6 +390,16 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final def padTo(n: Long): BitVector =
     if (n < size) throw new IllegalArgumentException(s"BitVector.padTo($n)")
     else this ++ BitVector.fill(n - size)(false)
+
+  /**
+   * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padToRight(n: Long): BitVector =
+    if (n < size) throw new IllegalArgumentException(s"BitVector.padToRight($n)")
+    else BitVector.fill(n - size)(false) ++ this
 
   /**
    * Reverse the bits of this vector.
