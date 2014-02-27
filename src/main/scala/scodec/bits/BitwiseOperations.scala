@@ -9,7 +9,7 @@ package scodec.bits
  * @groupname bitwise Bitwise Operations
  * @groupprio bitwise 2
  *
- * @define bitwiseOperationsReprDescription <DEFINE IN SUBTYPE>
+ * @define bitwiseOperationsReprDescription value
  */
 trait BitwiseOperations[Repr, Idx] {
 

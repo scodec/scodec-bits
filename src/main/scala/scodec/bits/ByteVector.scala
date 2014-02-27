@@ -19,19 +19,93 @@ import scala.collection.GenTraversableOnce
  * @groupname collection Collection Like Methods
  * @groupprio collection 0
  *
- * @groupname individual Operations on Individual Bits
- * @groupprio individual 1
- *
  * @groupname bitwise Bitwise Operations
- * @groupprio bitwise 2
+ * @groupprio bitwise 1
  *
  * @groupname conversions Conversions
- * @groupprio conversions 3
+ * @groupprio conversions 2
  *
  * @define bitwiseOperationsReprDescription bit vector
+ * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
  */
 trait ByteVector extends BitwiseOperations[ByteVector,Int] {
 
+  /**
+   * Returns the number of bytes in this vector.
+   * @group collection
+   */
+  def size: Int
+
+  /**
+   * Alias for [[size]].
+   * @group collection
+   */
+  final def length = size
+
+  /**
+   * Returns true if this vector has no bytes.
+   * @group collection
+   */
+  final def isEmpty = size == 0
+
+  /**
+   * Returns true if this vector has a non-zero number of bytes.
+   * @group collection
+   */
+  final def nonEmpty: Boolean = !isEmpty
+
+  /**
+   * Gets the byte at the specified index.
+   * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
+   * @group collection
+   */
+  final def get(index: Int): Byte = {
+    checkIndex(index)
+    @annotation.tailrec
+    def go(cur: ByteVector, n: Int): Byte = cur match {
+      case Append(l,r) => if (n < l.size) go(l, n)
+                          else go(r, n-l.size)
+      case Chunk(arr) => arr(n)
+    }
+    go(this, index)
+  }
+
+  /**
+   * Alias for [[get]].
+   * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
+   * @group collection
+   */
+  final def apply(index: Int): Byte = get(index)
+
+  /**
+   * Returns the byte at the specified index, or `None` if the index is out of range.
+   * @group collection
+   */
+  final def lift(index: Int): Option[Byte] = {
+    if (index >= 0 && index < size) Some(apply(index))
+    else None
+  }
+
+  /**
+   * Returns a vector with the byte at the specified index replaced with the specified byte.
+   * @group collection
+   */
+  final def update(idx: Int, b: Byte): ByteVector = {
+    checkIndex(idx)
+    (take(idx) :+ b) ++ drop(idx+1)
+  }
+
+  /**
+   * Returns a vector with the specified byte inserted at the specified index.
+   * @group collection
+   */
+  final def insert(idx: Int, b: Byte): ByteVector =
+    (take(idx) :+ b) ++ drop(idx)
+
+  /**
+   * Returns a new byte vector representing this vector's contents followed by the specified vector's contents.
+   * @group collection
+   */
   final def ++(other: ByteVector): ByteVector = {
     def go(x: ByteVector, y: ByteVector, force: Boolean): ByteVector =
       if (x.size >= y.size) x match {
@@ -57,31 +131,25 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     else go(this, other, false)
   }
 
+  /**
+   * Returns a new vector with the specified byte appended.
+   * @group collection
+   */
   final def +:(byte: Byte): ByteVector = ByteVector(byte) ++ this
 
+  /**
+   * Returns a new vector with the specified byte prepended.
+   * @group collection
+   */
   final def :+(byte: Byte): ByteVector = this ++ ByteVector(byte)
 
-  final def apply(n0: Int): Byte = {
-    checkIndex(n0)
-    @annotation.tailrec
-    def go(cur: ByteVector, n: Int): Byte = cur match {
-      case Append(l,r) => if (n < l.size) go(l, n)
-                          else go(r, n-l.size)
-      case Chunk(arr) => arr(n)
-    }
-    go(this, n0)
-  }
-
-  final def compact: ByteVector = this match {
-    case Chunk(_) => this
-    case _ => this.copy
-  }
-
-  final def copy: ByteVector = {
-    val arr = this.toArray
-    Chunk(View(AtArray(arr), 0, size))
-  }
-
+  /**
+   * Returns a vector of all bytes in this vector except the first `n` bytes.
+   *
+   * The resulting vector's size is `0 max (size - n)`.
+   *
+   * @group collection
+   */
   final def drop(n: Int): ByteVector = {
     val n1 = n min size max 0
     if (n1 == size) ByteVector.empty
@@ -98,94 +166,26 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     }
   }
 
+  /**
+   * Returns a vector of all bytes in this vector except the last `n` bytes.
+   *
+   * The resulting vector's size is `0 max (size - n)`.
+   *
+   * @group collection
+   */
   final def dropRight(n: Int): ByteVector =
     take(size - n.max(0))
 
-  final def foldLeft[A](z: A)(f: (A,Byte) => A): A = {
-    var acc = z
-    foreachS { new F1BU { def apply(b: Byte) = { acc = f(acc,b) } } }
-    acc
-  }
-
-  final def foldRight[A](z: A)(f: (Byte,A) => A): A =
-    reverse.foldLeft(z)((tl,h) => f(h,tl))
-
-  final def foreach(f: Byte => Unit): Unit = foreachS(new F1BU { def apply(b: Byte) = f(b) })
-
-  private[scodec] final def foreachS(f: F1BU): Unit = {
-    @annotation.tailrec
-    def go(rem: Vector[ByteVector]): Unit = rem.headOption match {
-      case None => ()
-      case Some(bytes) => bytes match {
-        case Chunk(bs) => bs.foreach(f); go(rem.tail)
-        case Append(l,r) => go(l +: r +: rem.tail)
-      }
-    }
-    go(Vector(this))
-  }
-
-  final def grouped(chunkSize: Int): Stream[ByteVector] =
-    if (isEmpty) Stream.empty
-    else if (size <= chunkSize) Stream(this)
-    else take(chunkSize) #:: drop(chunkSize).grouped(chunkSize)
-
-  final def head: Byte = apply(0)
-
-  final def headOption: Option[Byte] = lift(0)
-
-  final def init: ByteVector = dropRight(1)
-
-  final def insert(idx: Int, b: Byte): ByteVector =
-    (take(idx) :+ b) ++ drop(idx)
-
-  final def isEmpty = size == 0
-
-  final def last: Byte = apply(size-1)
-  final def lastOption: Option[Byte] = lift(size-1)
-
-  final def leftShift(n: Int): ByteVector =
-    BitVector(this).leftShift(n).toByteVector
-
-  final def length = size
-
-  final def lift(n0: Int): Option[Byte] = {
-    if (n0 >= 0 && n0 < size) Some(apply(n0))
-    else None
-  }
-
-  final def map(f: Byte => Byte): ByteVector =
-    ByteVector.view((i: Int) => f(apply(i)), size)
-
-  final def mapI(f: Byte => Int): ByteVector =
-    map(f andThen { _.toByte })
-
-  private[scodec] final def mapS(f: F1B): ByteVector =
-    ByteVector.view(new At { def apply(i: Int) = f(ByteVector.this(i)) }, size)
-
-  final def nonEmpty: Boolean = !isEmpty
-
-  /** Invokes `compact` on any subtrees whose size is `<= chunkSize`. */
-  final def partialCompact(chunkSize: Int): ByteVector = this match {
-    case small if small.size <= chunkSize => small.compact
-    case Append(l,r) => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
-    case _ => this
-  }
-
-  final def reverse: ByteVector =
-    ByteVector.view(i => apply(size - i - 1), size)
-
-  final def rightShift(n: Int, signExtension: Boolean): ByteVector =
-    BitVector(this).rightShift(n, signExtension).toByteVector
-
-  def size: Int
-
-  final def splitAt(n: Int): (ByteVector, ByteVector) = (take(n), drop(n))
-
-  final def slice(from: Int, until: Int): ByteVector =
-    drop(from).take(until - from)
-
-  final def tail: ByteVector = drop(1)
-
+  /**
+   * Returns a vector of the first `n` bytes of this vector.
+   *
+   * The resulting vector's size is `n min size`.
+   *
+   * Note: if an `n`-bit vector is required, use the `acquire` method instead.
+   *
+   * @see acquire
+   * @group collection
+   */
   final def take(n: Int): ByteVector = {
     val n1 = n min size max 0
     if (n1 == size) this
@@ -200,8 +200,181 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     }
   }
 
+  /**
+   * Returns a vector of the last `n` bytes of this vector.
+   *
+   * The resulting vector's size is `n min size`.
+   *
+   * @group collection
+   */
   final def takeRight(n: Int): ByteVector =
     drop(size - n)
+
+  /**
+   * Returns a pair of vectors that is equal to `(take(n), drop(n))`.
+   * @group collection
+   */
+  final def splitAt(n: Int): (ByteVector, ByteVector) = (take(n), drop(n))
+
+  /**
+   * Returns a vector made up of the bytes starting at index `from` up to index `until`.
+   * @group collection
+   */
+  final def slice(from: Int, until: Int): ByteVector =
+    drop(from).take(until - from)
+
+  /**
+   * Applies a binary operator to a start value and all elements of this vector, going left to right.
+   * @param z starting value
+   * @param f operator to apply
+   * @group collection
+   */
+  final def foldLeft[A](z: A)(f: (A, Byte) => A): A = {
+    var acc = z
+    foreachS { new F1BU { def apply(b: Byte) = { acc = f(acc,b) } } }
+    acc
+  }
+
+  /**
+   * Applies a binary operator to a start value and all elements of this vector, going right to left.
+   * @param z starting value
+   * @param f operator to apply
+   * @group collection
+   */
+  final def foldRight[A](z: A)(f: (Byte, A) => A): A =
+    reverse.foldLeft(z)((tl,h) => f(h,tl))
+
+  /**
+   * Applies the specified function to each element of this vector.
+   * @group collection
+   */
+  final def foreach(f: Byte => Unit): Unit = foreachS(new F1BU { def apply(b: Byte) = f(b) })
+
+  private[scodec] final def foreachS(f: F1BU): Unit = {
+    @annotation.tailrec
+    def go(rem: Vector[ByteVector]): Unit = rem.headOption match {
+      case None => ()
+      case Some(bytes) => bytes match {
+        case Chunk(bs) => bs.foreach(f); go(rem.tail)
+        case Append(l,r) => go(l +: r +: rem.tail)
+      }
+    }
+    go(Vector(this))
+  }
+
+  /**
+   * Converts this vector in to a sequence of `n`-bit vectors.
+   * @group collection
+   */
+  final def grouped(chunkSize: Int): Stream[ByteVector] =
+    if (isEmpty) Stream.empty
+    else if (size <= chunkSize) Stream(this)
+    else take(chunkSize) #:: drop(chunkSize).grouped(chunkSize)
+
+  /**
+   * Returns the first byte of this vector or throws if vector is emtpy.
+   * @group collection
+   */
+  final def head: Byte = apply(0)
+
+  /**
+   * Returns the first byte of this vector or `None` if vector is emtpy.
+   * @group collection
+   */
+  final def headOption: Option[Byte] = lift(0)
+
+  /**
+   * Returns a vector of all bytes in this vector except the first byte.
+   * @group collection
+   */
+  final def tail: ByteVector = drop(1)
+
+  /**
+   * Returns a vector of all bytes in this vector except the last byte.
+   * @group collection
+   */
+  final def init: ByteVector = dropRight(1)
+
+  /**
+   * Returns the last byte in this vector or throws if vector is empty.
+   * @group collection
+   */
+  final def last: Byte = apply(size-1)
+
+  /**
+   * Returns the last byte in this vector or returns `None` if vector is empty.
+   * @group collection
+   */
+  final def lastOption: Option[Byte] = lift(size-1)
+
+  /**
+   * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
+   * $returnsView
+   * @group collection
+   */
+  final def map(f: Byte => Byte): ByteVector =
+    ByteVector.view((i: Int) => f(apply(i)), size)
+
+  /**
+   * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
+   * Only the least significant byte is used (the three most significant bytes are ignored).
+   * $returnsView
+   * @group collection
+   */
+  final def mapI(f: Byte => Int): ByteVector =
+    map(f andThen { _.toByte })
+
+  private[scodec] final def mapS(f: F1B): ByteVector =
+    ByteVector.view(new At { def apply(i: Int) = f(ByteVector.this(i)) }, size)
+
+  /**
+   * Returns a vector with the bytes of this vector in reverse order.
+   * $returnsView
+   * @group collection
+   */
+  final def reverse: ByteVector =
+    ByteVector.view(i => apply(size - i - 1), size)
+
+  final def leftShift(n: Int): ByteVector =
+    BitVector(this).leftShift(n).toByteVector
+
+  final def rightShift(n: Int, signExtension: Boolean): ByteVector =
+    BitVector(this).rightShift(n, signExtension).toByteVector
+
+  /**
+   * Returns a vector with the same contents but represented as a single tree node internally.
+   *
+   * This may involve copying data, but has the advantage that lookups index directly into a single
+   * node rather than traversing a logarithmic number of nodes in this tree.
+   *
+   * Calling this method on an already compacted vector is a no-op.
+   *
+   * @group collection
+   */
+  final def compact: ByteVector = this match {
+    case Chunk(_) => this
+    case _ => this.copy
+  }
+
+  /**
+   * Invokes `compact` on any subtrees whose size is `<= chunkSize`.
+   * @group collection
+   */
+  final def partialCompact(chunkSize: Int): ByteVector = this match {
+    case small if small.size <= chunkSize => small.compact
+    case Append(l,r) => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
+    case _ => this
+  }
+
+  /**
+   * Returns a vector with the same contents as this vector but with a single compacted node made up
+   * by evaluating all internal nodes and concatenating their values.
+   * @group collection
+   */
+  final def copy: ByteVector = {
+    val arr = this.toArray
+    Chunk(View(AtArray(arr), 0, size))
+  }
 
   /**
    * Converts the contents of this vector to a byte array.
@@ -242,7 +415,7 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   /**
    * @group conversions
    */
-  def toBitVector: BitVector = BitVector(this)
+  final def toBitVector: BitVector = BitVector(this)
 
   /**
    * Converts the contents of this vector to a `java.nio.ByteBuffer`.
@@ -324,11 +497,6 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     bldr.toString
   }
 
-  final def update(idx: Int, b: Byte): ByteVector = {
-    checkIndex(idx)
-    (take(idx) :+ b) ++ drop(idx+1)
-  }
-
   final def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
 
   final def or(other: ByteVector): ByteVector =
@@ -340,6 +508,13 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   final def xor(other: ByteVector): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b ^ b2).toByte })
 
+  /**
+   * Returns a new vector where each byte is the result of evaluating the specified function
+   * against the bytes of this vector and the specified vector at the corresponding index.
+   * The resulting vector has size `this.size min other.size`.
+   * $returnsView
+   * @group collection
+   */
   final def zipWith(other: ByteVector)(f: (Byte,Byte) => Byte): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b,b2) })
 
@@ -348,11 +523,24 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     Chunk(View(at, 0, size min other.size))
   }
 
+  /**
+   * Returns a new vector where each byte is the result of evaluating the specified function
+   * against the bytes of this vector and the specified vector at the corresponding index.
+   * The resulting vector has size `this.size min other.size`.
+   * Only the least significant byte is used (the three most significant bytes are ignored).
+   * $returnsView
+   * @group collection
+   */
+
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
 
   // implementation details, Object methods
 
+  /**
+   * Calculates the hash code of this vector. The result is cached.
+   * @group collection
+   */
   override lazy val hashCode = {
     // todo: this could be recomputed more efficiently using the tree structure
     // given an associative hash function
@@ -366,13 +554,25 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     go(this, stringHash("ByteVector"))
   }
 
+  /**
+   * Returns true if the specified value is a `ByteVector` with the same contents as this vector.
+   * @group collection
+   */
   override def equals(other: Any) = other match {
     case that: ByteVector => this.size == that.size &&
                              (0 until this.size).forall(i => this(i) == that(i))
     case other => false
   }
 
-  override def toString: String = s"ByteVector($size bytes, 0x${toHex})"
+  /**
+   * Display the size and bytes of this `ByteVector`.
+   * For bit vectors beyond a certain size, only a hash of the
+   * contents are shown.
+   * @group collection
+   */
+  override def toString: String =
+    if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
+    else s"ByteVector($size bytes, #${hashCode})"
 
   private[scodec] def pretty(prefix: String): String = this match {
     case Append(l,r) => {
@@ -386,7 +586,7 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
 
   private def checkIndex(n: Int): Unit =
     if (n < 0 || n >= size)
-      throw new IllegalArgumentException(s"invalid index: $n for size $size")
+      throw new IndexOutOfBoundsException(s"invalid index: $n for size $size")
 }
 
 object ByteVector {

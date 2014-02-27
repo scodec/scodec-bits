@@ -11,14 +11,11 @@ import scala.collection.GenTraversableOnce
  * @groupname collection Collection Like Methods
  * @groupprio collection 0
  *
- * @groupname individual Operations on Individual Bits
- * @groupprio individual 1
- *
  * @groupname bitwise Bitwise Operations
- * @groupprio bitwise 2
+ * @groupprio bitwise 1
  *
  * @groupname conversions Conversions
- * @groupprio conversions 3
+ * @groupprio conversions 2
  *
  * @define bitwiseOperationsReprDescription bit vector
  */
@@ -26,41 +23,39 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   import BitVector._
 
   /**
-   * Returns true if the `n`th bit is high, false otherwise.
-   *
-   * @throws NoSuchElementException if `n >= size`
-   *
-   * @group individual
-   */
-  def get(n: Long): Boolean
-
-  /**
-   * Returns a new bit vector with the `n`th bit high if `high` is true or low if `high` is false.
-   *
-   * @group individual
-   */
-  def update(n: Long, high: Boolean): BitVector
-
-  /**
-   * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
-   *
-   * @group individual
-   */
-  final def set(n: Long): BitVector = update(n, true)
-
-  /**
-   * Returns a new bit vector with the `n`th bit low (and all other bits unmodified).
-   *
-   * @group individual
-   */
-  final def clear(n: Long): BitVector = update(n, false)
-
-  /**
    * Returns number of bits in this vector.
    *
    * @group collection
    */
   def size: Long
+
+  /**
+   * Alias for [[size]].
+   * @group collection
+   */
+  final def length = size
+
+  /**
+   * Returns true if this vector has no bits.
+   *
+   * @group collection
+   */
+  final def isEmpty: Boolean = sizeLessThan(1)
+
+  /**
+   * Returns true if this vector has a non-zero number of bits.
+   *
+   * @group collection
+   */
+  final def nonEmpty: Boolean = !isEmpty
+
+  /**
+   * Returns the number of bits in this vector, or `None` if the size does not
+   * fit into an `Int`.
+   *
+   * @group collection
+   */
+  final def intSize: Option[Int] = if (size <= Int.MaxValue) Some(size.toInt) else None
 
   /**
    * Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
@@ -93,7 +88,52 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     case _ => this.size < n
   }
 
-  // derived functions
+  /**
+   * Returns true if the `n`th bit is high, false otherwise.
+   *
+   * @throws NoSuchElementException if `n >= size`
+   *
+   * @group collection
+   */
+  def get(n: Long): Boolean
+
+  /**
+   * Alias for `get`.
+   *
+   * @group collection
+   * @see get(Long)
+   */
+  final def apply(n: Long): Boolean = get(n)
+
+  /**
+   * Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >= size`.
+   *
+   * @group collection
+   */
+  final def lift(n: Long): Option[Boolean] =
+    if (n < size) Some(get(n))
+    else None
+
+  /**
+   * Returns a new bit vector with the `n`th bit high if `high` is true or low if `high` is false.
+   *
+   * @group collection
+   */
+  def update(n: Long, high: Boolean): BitVector
+
+  /**
+   * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
+   *
+   * @group collection
+   */
+  final def set(n: Long): BitVector = update(n, true)
+
+  /**
+   * Returns a new bit vector with the `n`th bit low (and all other bits unmodified).
+   *
+   * @group collection
+   */
+  final def clear(n: Long): BitVector = update(n, false)
 
   /**
    * Returns a new bit vector representing this vector's contents followed by the specified vector's contents.
@@ -129,63 +169,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     else go(this, b2)
   }
 
-  def not: BitVector = mapBytes(_.not)
-  def and(other: BitVector): BitVector = zipBytesWith(other)(_ & _)
-  def or(other: BitVector): BitVector = zipBytesWith(other)(_ | _)
-  def xor(other: BitVector): BitVector = zipBytesWith(other)(_ ^ _)
-
-  def leftShift(n: Long): BitVector =
-    if (n <= 0) this
-    else if (n >= size) BitVector.low(size)
-    else drop(n) ++ BitVector.low(n)
-
-  def rightShift(n: Long, signExtension: Boolean): BitVector = {
-    if (isEmpty || n <= 0) this
-    else {
-      val extensionHigh = signExtension && head
-      if (n >= size) {
-        if (extensionHigh) BitVector.high(size) else BitVector.low(size)
-      }
-      else {
-        (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++
-        take(size - n)
-      }
-    }
-  }
-
-  /**
-   * Alias for `get`.
-   *
-   * @group individual
-   * @see get(Long)
-   */
-  final def apply(n: Long): Boolean = get(n)
-
-  /**
-   * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
-   *
-   * If this vector does not contain at least `n` bits, an error message is returned.
-   *
-   * @see take
-   * @group collection
-   */
-  def acquire(n: Long): Either[String, BitVector] =
-    if (n <= size) Right(take(n))
-    else Left(s"cannot acquire $n bits from a vector that contains $size bits")
-
-  /**
-   * Consumes the first `n` bits of this vector and decodes them with the specified function,
-   * resulting in a vector of the remaining bits and the decoded value. If this vector
-   * does not have `n` bits or an error occurs while decoding, an error is returned instead.
-   *
-   * @group collection
-   */
-  final def consume[A](n: Long)(decode: BitVector => Either[String, A]): Either[String, (BitVector, A)] =
-    for {
-      toDecode <- acquire(n).right
-      decoded <- decode(toDecode).right
-    } yield (drop(n), decoded)
-
   /**
    * Returns `true` if the depth of this tree is `> d`. The result
    * of `compact` has depth 0.
@@ -203,7 +186,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Returns a vector whose contents are the results of skipping the first `n` bits of this vector and taking the rest.
+   * Returns a vector of all bits in this vector except the first `n` bits.
    *
    * The resulting vector's size is `0 max (size - n)`.
    *
@@ -230,9 +213,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Returns a vector whose contents are the results of skipping the last `n` bits of this vector.
+   * Returns a vector of all bits in this vector except the last `n` bits.
    *
-   * The resulting vector's size is `0 max (size - n)`
+   * The resulting vector's size is `0 max (size - n)`.
    *
    * @group collection
    */
@@ -242,7 +225,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     else take(size - n)
 
   /**
-   * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
+   * Returns a vector of the first `n` bits of this vector.
    *
    * The resulting vector's size is `n min size`.
    *
@@ -284,13 +267,10 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Returns a vector whose contents are the results of taking the last `n` bits of this vector.
+   * Returns a vector of the last `n` bits of this vector.
    *
    * The resulting vector's size is `n min size`.
    *
-   * Note: if an `n`-bit vector is required, use the `acquire` method instead.
-   *
-   * @see acquire
    * @group collection
    */
   final def takeRight(n: Long): BitVector =
@@ -306,6 +286,146 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final def splitAt(n: Long): (BitVector, BitVector) = (take(n), drop(n))
 
   /**
+   * Returns a vector made up of the bits starting at index `from` up to index `until`.
+   * @group collection
+   */
+  final def slice(from: Int, until: Int): BitVector =
+    drop(from).take(until - from)
+
+  /**
+   * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
+   *
+   * If this vector does not contain at least `n` bits, an error message is returned.
+   *
+   * @see take
+   * @group collection
+   */
+  def acquire(n: Long): Either[String, BitVector] =
+    if (n <= size) Right(take(n))
+    else Left(s"cannot acquire $n bits from a vector that contains $size bits")
+
+  /**
+   * Consumes the first `n` bits of this vector and decodes them with the specified function,
+   * resulting in a vector of the remaining bits and the decoded value. If this vector
+   * does not have `n` bits or an error occurs while decoding, an error is returned instead.
+   *
+   * @group collection
+   */
+  final def consume[A](n: Long)(decode: BitVector => Either[String, A]): Either[String, (BitVector, A)] =
+    for {
+      toDecode <- acquire(n).right
+      decoded <- decode(toDecode).right
+    } yield (drop(n), decoded)
+
+  /**
+   * Converts this vector in to a sequence of `n`-bit vectors.
+   * @group collection
+   */
+  final def grouped(n: Long): Stream[BitVector] =
+    if (isEmpty) Stream.empty
+    else take(n) #:: drop(n).grouped(n)
+
+  /**
+   * Returns the first bit of this vector or throws if vector is emtpy.
+   * @group collection
+   */
+  final def head: Boolean = get(0)
+
+  /**
+   * Returns the first bit of this vector or `None` if vector is emtpy.
+   * @group collection
+   */
+  final def headOption: Option[Boolean] = lift(0)
+
+  /**
+   * Returns a vector of all bits in this vector except the first bit.
+   * @group collection
+   */
+  final def tail: BitVector = drop(1)
+
+  /**
+   * Returns a vector of all bits in this vector except the last bit.
+   * @group collection
+   */
+  final def init: BitVector = dropRight(1)
+
+  /**
+   * Returns the last bit in this vector or throws if vector is empty.
+   * @group collection
+   */
+  final def last: Boolean = apply(size - 1)
+
+  /**
+   * Returns the last bit in this vector or returns `None` if vector is empty.
+   * @group collection
+   */
+  final def lastOption: Option[Boolean] = lift(size - 1)
+
+
+  /**
+   * Returns an `n`-bit vector whose contents are this vector's contents followed by 0 or more low bits.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padTo(n: Long): BitVector =
+    if (n < size) throw new IllegalArgumentException(s"BitVector.padTo($n)")
+    else this ++ BitVector.fill(n - size)(false)
+
+  /**
+   * Reverse the bits of this vector.
+   *
+   * @group collection
+   */
+  final def reverse: BitVector =
+    // todo: this has a log time implementation, assuming a balanced tree
+    BitVector(compact.underlying.reverse.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+
+  /**
+   * Returns a new vector of the same size with the byte order reversed.
+   *
+   * @group collection
+   */
+  final def reverseByteOrder: BitVector = {
+    if (size % 8 == 0) bytes(compact.underlying.reverse, size)
+    else {
+      val validFinalBits = validBitsInLastByte(size)
+      val last = take(validFinalBits).compact
+      val b = drop(validFinalBits).toByteVector.reverse
+      val init = bytes(b, size-last.size)
+      val res = (init ++ last)
+      require(res.size == size)
+      res
+    }
+  }
+
+  def not: BitVector = mapBytes(_.not)
+  def and(other: BitVector): BitVector = zipBytesWith(other)(_ & _)
+  def or(other: BitVector): BitVector = zipBytesWith(other)(_ | _)
+  def xor(other: BitVector): BitVector = zipBytesWith(other)(_ ^ _)
+
+  def leftShift(n: Long): BitVector =
+    if (n <= 0) this
+    else if (n >= size) BitVector.low(size)
+    else drop(n) ++ BitVector.low(n)
+
+  def rightShift(n: Long, signExtension: Boolean): BitVector = {
+    if (isEmpty || n <= 0) this
+    else {
+      val extensionHigh = signExtension && head
+      if (n >= size) {
+        if (extensionHigh) BitVector.high(size) else BitVector.low(size)
+      }
+      else {
+        (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++
+        take(size - n)
+      }
+    }
+  }
+
+
+
+  /**
    * Return a `BitVector` with the same contents as `this`, but
    * based off a single `ByteVector`.
    *
@@ -313,6 +433,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * has the advantage that lookups index directly into a single
    * `ByteVector` rather than traversing a logarithmic number of nodes
    * in this tree.
+   *
+   * Calling this method on an already compacted vector is a no-op.
    *
    * @group collection
    */
@@ -384,97 +506,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Returns the first bit in this vector.
-   *
-   * @throws IllegalArgumentException if this vector is empty
-   * @group individual
-   */
-  final def head: Boolean = get(0)
-
-  /**
-   * Returns true if this bit vector has no bits.
-   *
-   * @group collection
-   */
-  final def isEmpty = sizeLessThan(1)
-
-  /**
-   * Returns the number of bits in this vector, or `None` if the size does not
-   * fit into an `Int`.
-   *
-   * @group collection
-   */
-  final def intSize: Option[Int] = if (size <= Int.MaxValue) Some(size.toInt) else None
-
-  /**
-   * Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >= size`.
-   *
-   * @group individual
-   */
-  final def lift(n: Long): Option[Boolean] =
-    if (n < size) Some(get(n))
-    else None
-
-  /**
-   * Returns true if this bit vector has a non-zero number of bits.
-   *
-   * @group collection
-   */
-  final def nonEmpty = size > 0L
-
-  /**
-   * Returns an `n`-bit vector whose contents are this vector's contents followed by 0 or more low bits.
-   *
-   * @throws IllegalArgumentException if `n < size`
-   * @group collection
-   */
-  final def padTo(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"BitVector.padTo($n)")
-    else this ++ BitVector.fill(n - size)(false)
-
-  /**
-   * Reverse the bits of this vector.
-   *
-   * @group collection
-   */
-  final def reverse: BitVector =
-    // todo: this has a log time implementation, assuming a balanced tree
-    BitVector(compact.underlying.reverse.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
-
-  /**
-   * Returns a new vector of the same size with the byte order reversed.
-   *
-   * @group collection
-   */
-  final def reverseByteOrder: BitVector = {
-    if (size % 8 == 0) bytes(compact.underlying.reverse, size)
-    else {
-      val validFinalBits = validBitsInLastByte(size)
-      val last = take(validFinalBits).compact
-      val b = drop(validFinalBits).toByteVector.reverse
-      val init = bytes(b, size-last.size)
-      val res = (init ++ last)
-      require(res.size == size)
-      res
-    }
-  }
-
-  /**
-   * Converts this vector in to a sequence of `n`-bit vectors.
-   * @group collection
-   */
-  final def grouped(n: Long): Stream[BitVector] =
-    if (isEmpty) Stream.empty
-    else take(n) #:: drop(n).grouped(n)
-
-  /**
    * Return the sequence of bits in this vector. The returned
    * `IndexedSeq` is just a view; nothing is actually copied.
    *
    * @throws IllegalArgumentException if this vector's size exceeds Int.MaxValue
    * @see acquire
    * @see toIndexedSeq
-   * @group collection
+   * @group conversions
    */
   final def toIndexedSeq: IndexedSeq[Boolean] = {
     intSize.map { n =>
@@ -600,8 +638,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
-   * Computed by sampling bits `Stream.iterate(0L)(n => (n*1.7).toLong + 1)`,
-   * up until the maximum index. The result is cached.
+   * Calculates the hash code of this vector. The result is cached.
    * @group collection
    */
   override final lazy val hashCode = {
@@ -624,7 +661,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   override final def toString =
-    if (size < 512) s"BitVector($size bits, 0x${toHex})"
+    if (sizeLessThan(512)) s"BitVector($size bits, 0x${toHex})"
     else s"BitVector($size bits, #${hashCode})"
 
   // impl details
