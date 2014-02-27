@@ -180,13 +180,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * Returns a new vector with the specified bit prepended.
    * @group collection
    */
-  final def +:(b: Boolean): BitVector  = (if (b) BitVector.zero else BitVector.one) ++ this
+  final def +:(b: Boolean): BitVector  = BitVector.bit(b) ++ this
 
   /**
    * Returns a new vector with the specified bit appended.
    * @group collection
    */
-  final def :+(b: Boolean): BitVector = this ++ (if (b) BitVector.zero else BitVector.one)
+  final def :+(b: Boolean): BitVector = this ++ BitVector.bit(b)
 
   /**
    * Returns `true` if the depth of this tree is `> d`. The result
@@ -730,39 +730,126 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 }
 
-/** Companion for [[BitVector]]. */
+/**
+ * Companion for [[BitVector]].
+ *
+ * @groupname constants Constants
+ * @groupprio constants 0
+ *
+ * @groupname constructors Constructors
+ * @groupprio constructors 1
+ *
+ * @groupname base Base Conversions
+ * @groupprio base 2
+ */
 object BitVector {
 
+  /**
+   * Empty bit vector.
+   * @group constants
+   */
   val empty: BitVector = bytes(ByteVector.empty, 0)
+
+  /**
+   * 1-bit vector with only bit set low.
+   * @group constants
+   */
   val zero: BitVector = bytes(ByteVector(0), 1)
+
+  /**
+   * 1-bit vector with only bit set high.
+   * @group constants
+   */
   val one: BitVector = bytes(ByteVector(1), 1)
-  val highByte: BitVector = bytes(ByteVector.fill(8)(1), 8)
+
+  /**
+   * 8-bit vector with all bits set low.
+   * @group constants
+   */
   val lowByte: BitVector = bytes(ByteVector.fill(8)(0), 8)
 
-  def bit(high: Boolean): BitVector = fill(1)(high)
+  /**
+   * 8-bit vector with all bits set high.
+   * @group constants
+   */
+  val highByte: BitVector = bytes(ByteVector.fill(8)(1), 8)
 
+  /**
+   * 1-bit vector with only bit set to specified value.
+   * @group constructors
+   */
+  def bit(high: Boolean): BitVector = if(high) zero else one
+
+  /**
+   * n-bit vector with bit at index `i` set to value of boolean at index `i` in specified iterable.
+   * @group constructors
+   */
   def bits(b: Iterable[Boolean]): BitVector =
     b.zipWithIndex.foldLeft(low(b.size))((acc,b) =>
       acc.update(b._2, b._1)
     )
 
+  /**
+   * n-bit vector with all bits set high.
+   * @group constructors
+   */
   def high(n: Long): BitVector = fill(n)(true)
+
+  /**
+   * n-bit vector with all bits set low.
+   * @group constructors
+   */
   def low(n: Long): BitVector = fill(n)(false)
 
+  /**
+   * Constructs a `BitVector` from a `ByteVector`.
+   * This method has runtime O(1).
+   * @group constructors
+   */
   def apply(bs: ByteVector): BitVector = bytes(bs, bs.size.toLong * 8)
+
+  /**
+   * Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
+   * is copied to ensure the resulting `BitVector` is immutable.
+   * If this is not desired, use `[[BitVector.view]]`.
+   * @group constructors
+   */
   def apply(buffer: ByteBuffer): BitVector = apply(ByteVector(buffer))
+
+  /**
+   * Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is
+   * is copied to ensure the resulting `BitVector` is immutable.
+   * If this is not desired, use `[[BitVector.view]]`.
+   * @group constructors
+   */
   def apply(bs: Array[Byte]): BitVector = bytes(ByteVector(bs), bs.size.toLong * 8)
+
+  /**
+   * Constructs a `BitVector` from a collection of bytes.
+   * @group constructors
+   */
   def apply(bs: GenTraversableOnce[Byte]): BitVector = apply(ByteVector(bs))
+
+  /**
+   * Constructs a `BitVector` from a list of literal bytes. Only the least significant
+   * byte is used of each integral value.
+   * @group constructors
+   */
   def apply[A: Integral](bytes: A*): BitVector = apply(ByteVector(bytes: _*))
 
   /**
-   * Like `apply`, but no copy of the underlying `ByteBuffer` is made. Uses `buffer.limit`
-   * to compute the size.
+   * Constructs a `BitVector` from a `ByteBuffer` using the buffer limit * 8 as the size.
+   * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
+   * not to modify the contents of the buffer passed to this function.
+   * @group constructors
    */
   def view(buffer: ByteBuffer): BitVector = bytes(ByteVector.view(buffer), buffer.limit.toLong * 8)
 
   /**
-   * Like `apply`, but no copy of the underlying `ByteBuffer` is made.
+   * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
+   * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
+   * not to modify the contents of the buffer passed to this function.
+   * @group constructors
    */
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
     if (bytesNeededForBits(sizeInBits) > Int.MaxValue)
@@ -770,9 +857,18 @@ object BitVector {
     bytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
   }
 
-  /** Like `apply`, but no copy of the underlying array is made. */
+  /**
+   * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
+   * does not make a copy of the input array, so callers should take care
+   * not to modify the contents of the array passed to this function.
+   * @group constructors
+   */
   def view(bs: Array[Byte]): BitVector = bytes(ByteVector.view(bs), bs.size.toLong * 8)
 
+  /**
+   * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
+   * @group constructors
+   */
   def fill(n: Long)(high: Boolean): BitVector = {
     val needed = bytesNeededForBits(n)
     if (needed < Int.MaxValue) {
@@ -785,37 +881,10 @@ object BitVector {
   }
 
   /**
-   * Constructs a `BitVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   */
-  def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
-    ByteVector.fromHexInternal(str, alphabet).right.map { case (bytes, count) =>
-      val toDrop = if (count % 2 == 0) 0 else 4
-      bytes.toBitVector.drop(toDrop)
-    }
-
-  /**
-   * Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   */
-  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str).right.toOption
-
-  /**
-   * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   *
-   * @throws IllegalArgumentException if the string is not valid hexadecimal
-   */
-  def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
-    fromHexDescriptive(str).fold(msg => throw new IllegalArgumentException(msg), identity)
-
-  /**
    * Constructs a `BitVector` from a binary string or returns an error message if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, BitVector] =
     ByteVector.fromBinInternal(str, alphabet).right.map { case (bytes, size) =>
@@ -831,6 +900,7 @@ object BitVector {
    * Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+   * @group base
    */
   def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).right.toOption
 
@@ -840,9 +910,69 @@ object BitVector {
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    *
    * @throws IllegalArgumentException if the string is not valid hexadecimal
+   * @group base
    */
   def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): BitVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+   * Constructs a `BitVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
+   *
+   * The string may start with a `0x` and it may contain whitespace or underscore characters.
+   * @group base
+   */
+  def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
+    ByteVector.fromHexInternal(str, alphabet).right.map { case (bytes, count) =>
+      val toDrop = if (count % 2 == 0) 0 else 4
+      bytes.toBitVector.drop(toDrop)
+    }
+
+  /**
+   * Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
+   *
+   * The string may start with a `0x` and it may contain whitespace or underscore characters.
+   * @group base
+   */
+  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str).right.toOption
+
+  /**
+   * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
+   *
+   * The string may start with a `0x` and it may contain whitespace or underscore characters.
+   *
+   * @throws IllegalArgumentException if the string is not valid hexadecimal
+   * @group base
+   */
+  def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
+    fromHexDescriptive(str).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+   * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
+   *
+   * The string may contain whitespace characters.
+   * @group base
+   */
+  def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, BitVector] =
+    ByteVector.fromBase64Descriptive(str, alphabet).right.map { _.toBitVector }
+
+  /**
+   * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
+   *
+   * The string may contain whitespace characters.
+   * @group base
+   */
+  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[BitVector] = fromBase64Descriptive(str, alphabet).right.toOption
+
+  /**
+   * Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
+   *
+   * The string may contain whitespace characters.
+   *
+   * @throws IllegalArgumentException if the string is not valid base 64
+   * @group base
+   */
+  def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): BitVector =
+    fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
    * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
@@ -854,6 +984,8 @@ object BitVector {
    *
    * Use `force` if you wish to convert the result to an in-memory strict
    * `BitVector` backed by a balanced tree.
+   *
+   * @group constructors
    */
   def unfold[S](s: S)(f: S => Option[(BitVector, S)]): BitVector =
     Suspend { () => f(s).map { case (h,t) => Append(h, unfold(t)(f)) }
@@ -873,6 +1005,7 @@ object BitVector {
    * stream to be retained in memory.
    *
    * @param chunkSizeInBytes the number of bytes to read in each chunk
+   * @group constructors
    */
   def fromInputStream(in: java.io.InputStream, chunkSizeInBytes: Int = 1024 * 1000 * 16): BitVector =
     unfold(in) { in =>
@@ -894,6 +1027,7 @@ object BitVector {
    *
    * @param chunkSizeInBytes the number of bytes to read in each chunk
    * @param direct true if we should attempt to use a 'direct' [[java.nio.ByteBuffer]] for reads
+   * @group constructors
    */
   def fromChannel(in: java.nio.channels.ReadableByteChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16,
                   direct: Boolean = false): BitVector =
@@ -916,6 +1050,7 @@ object BitVector {
    * file being written.
    *
    * @param chunkSizeInBytes the number of bytes to read in each chunk
+   * @group constructors
    */
   def fromMmap(in: java.nio.channels.FileChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16): BitVector =
     unfold(in -> 0L) { case (in,pos) =>

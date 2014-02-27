@@ -697,11 +697,11 @@ object ByteVector {
     view(buf)
   }
 
-  /** Create a `ByteVector` from a `Vector[Byte]`. */
+  /** Constructs a `ByteVector` from a `Vector[Byte]`. */
   def apply(bytes: Vector[Byte]): ByteVector = view(bytes, bytes.size)
 
   /**
-   * Create a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
+   * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
    * is copied to ensure the resulting `ByteVector` is immutable.
    * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
    */
@@ -711,7 +711,7 @@ object ByteVector {
   }
 
   /**
-   * Create a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
+   * Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
    * is copied to ensure the resulting `ByteVector` is immutable.
    * If this is not desired, use `[[scodec.bits.ByteVector.view]]`.
    */
@@ -721,12 +721,12 @@ object ByteVector {
     apply(arr)
   }
 
-  /** Create a `ByteVector` from a `scala.collection` source of bytes. */
+  /** Constructs a `ByteVector` from a `scala.collection` source of bytes. */
   def apply(bs: GenTraversableOnce[Byte]): ByteVector =
     view(bs.toArray[Byte])
 
   /**
-   * Create a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
+   * Constructs a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
    * does not make a copy of the input array, so callers should take care
    * not to modify the contents of the array passed to this function.
    */
@@ -734,7 +734,7 @@ object ByteVector {
     Chunk(View(AtArray(bytes), 0, bytes.length))
 
   /**
-   * Create a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
+   * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
    */
@@ -742,26 +742,26 @@ object ByteVector {
     Chunk(View(AtByteBuffer(bytes), 0, bytes.limit))
 
   /**
-   * Create a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
    */
   def view(at: Int => Byte, size: Int): ByteVector =
     Chunk(View(new At { def apply(i: Int) = at(i) }, 0, size))
 
   /**
-   * Create a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
    */
   private[scodec] def view(at: At, size: Int): ByteVector =
     Chunk(View(at, 0, size))
 
   /**
-   * Create a `ByteVector` from a function from `Int => Int` and a size,
+   * Constructs a `ByteVector` from a function from `Int => Int` and a size,
    * where the `Int` returned by `at` must fit in a `Byte`.
    */
   def viewI(at: Int => Int, size: Int): ByteVector =
     Chunk(View(new At { def apply(i: Int) = at(i).toByte }, 0, size))
 
   /**
-   * Create a `ByteVector` of the given size, where all bytes have the value `b`.
+   * Constructs a `ByteVector` of the given size, where all bytes have the value `b`.
    */
   def fill[A: Integral](size: Int)(b: A): ByteVector = {
     val integral = implicitly[Integral[A]]
@@ -770,12 +770,12 @@ object ByteVector {
   }
 
   /**
-   * Create a `ByteVector` of the given size, where all bytes have the value `0`.
+   * Constructs a `ByteVector` of the given size, where all bytes have the value `0`.
    */
   def low(size: Int): ByteVector = fill(size)(0)
 
   /**
-   * Create a `ByteVector` of the given size, where all bytes have the value `0xff`.
+   * Constructs a `ByteVector` of the given size, where all bytes have the value `0xff`.
    */
   def high(size: Int): ByteVector = fill(size)(0xff)
 
