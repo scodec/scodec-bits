@@ -515,9 +515,16 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   final def toIterable: Iterable[Byte] = toIndexedSeq
 
   /**
+   * Converts the contents of this vector to a bit vector of `size * 8` bits.
    * @group conversions
    */
   final def toBitVector: BitVector = BitVector(this)
+
+  /**
+   * Alias for [[toBitVector]].
+   * @group conversions
+   */
+  final def bits: BitVector = toBitVector
 
   /**
    * Converts the contents of this vector to a `java.nio.ByteBuffer`.

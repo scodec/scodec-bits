@@ -233,7 +233,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       else if (cur.sizeLessThan(npos + 1)) BitVector.empty
       else cur match {
         case Bytes(bs, m) =>
-          if (npos % 8 == 0) bytes(bs.drop((npos / 8).toInt), m - npos)
+          if (npos % 8 == 0) toBytes(bs.drop((npos / 8).toInt), m - npos)
           else Drop(cur.asInstanceOf[Bytes], npos)
         case Append(l, r) =>
           if (l.size <= npos) go(r, npos - l.size)
@@ -289,7 +289,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
           // eagerly trim from underlying here
           val m2 = npos min m
           val underlyingN = bytesNeededForBits(m2).toInt
-          finish(accL, bytes(underlying.take(underlyingN), m2)) // call to take stack safe here, since that is a Bytes
+          finish(accL, toBytes(underlying.take(underlyingN), m2)) // call to take stack safe here, since that is a Bytes
         case Drop(underlying, m) => finish(accL, underlying.take(m + npos).drop(m))
         case Append(l, r) =>
           if (l.size >= npos) go(accL, l, npos)
@@ -471,12 +471,12 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   final def reverseByteOrder: BitVector = {
-    if (size % 8 == 0) bytes(compact.underlying.reverse, size)
+    if (size % 8 == 0) toBytes(compact.underlying.reverse, size)
     else {
       val validFinalBits = validBitsInLastByte(size)
       val last = take(validFinalBits).compact
       val b = drop(validFinalBits).toByteVector.reverse
-      val init = bytes(b, size-last.size)
+      val init = toBytes(b, size-last.size)
       val res = (init ++ last)
       require(res.size == size)
       res
@@ -564,7 +564,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
               }
             }
           }
-          acc :+ bytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+          acc :+ toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
         }
     }
     reduceBalanced(go(this, Vector()))(_.size)(_ combine _) match {
@@ -633,6 +633,12 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    */
   final def toByteVector: ByteVector =
     clearUnneededBits(size, compact.underlying)
+
+  /**
+   * Alias for [[toByteVector]].
+   * @group conversions
+   */
+  final def bytes: ByteVector = toByteVector
 
   /**
    * Converts the contents of this vector to a byte array.
@@ -771,7 +777,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     throw new NoSuchElementException(s"invalid index: $n of $size")
 
   private def mapBytes(f: ByteVector => ByteVector): BitVector = this match {
-    case Bytes(bs, n) => bytes(f(bs), n)
+    case Bytes(bs, n) => toBytes(f(bs), n)
     case Append(l,r) => Append(l.mapBytes(f), r.mapBytes(f))
     case Drop(b,n) => Drop(b.mapBytes(f).compact, n)
     case s@Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
@@ -795,7 +801,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   private def zipBytesWith(other: BitVector)(op: (Byte, Byte) => Int): BitVector = {
     // todo: this has a much more efficient recursive algorithm -
     // only need to compact close to leaves of the tree
-    bytes(this.compact.underlying.zipWithI(other.compact.underlying)(op), this.size min other.size)
+    toBytes(this.compact.underlying.zipWithI(other.compact.underlying)(op), this.size min other.size)
   }
 }
 
@@ -817,31 +823,31 @@ object BitVector {
    * Empty bit vector.
    * @group constants
    */
-  val empty: BitVector = bytes(ByteVector.empty, 0)
+  val empty: BitVector = toBytes(ByteVector.empty, 0)
 
   /**
    * 1-bit vector with only bit set low.
    * @group constants
    */
-  val zero: BitVector = bytes(ByteVector(0), 1)
+  val zero: BitVector = toBytes(ByteVector(0), 1)
 
   /**
    * 1-bit vector with only bit set high.
    * @group constants
    */
-  val one: BitVector = bytes(ByteVector(1), 1)
+  val one: BitVector = toBytes(ByteVector(1), 1)
 
   /**
    * 8-bit vector with all bits set low.
    * @group constants
    */
-  val lowByte: BitVector = bytes(ByteVector.fill(8)(0), 8)
+  val lowByte: BitVector = toBytes(ByteVector.fill(8)(0), 8)
 
   /**
    * 8-bit vector with all bits set high.
    * @group constants
    */
-  val highByte: BitVector = bytes(ByteVector.fill(8)(1), 8)
+  val highByte: BitVector = toBytes(ByteVector.fill(8)(1), 8)
 
   /**
    * 1-bit vector with only bit set to specified value.
@@ -875,7 +881,7 @@ object BitVector {
    * This method has runtime O(1).
    * @group constructors
    */
-  def apply(bs: ByteVector): BitVector = bytes(bs, bs.size.toLong * 8)
+  def apply(bs: ByteVector): BitVector = toBytes(bs, bs.size.toLong * 8)
 
   /**
    * Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
@@ -891,7 +897,7 @@ object BitVector {
    * If this is not desired, use `[[BitVector.view]]`.
    * @group constructors
    */
-  def apply(bs: Array[Byte]): BitVector = bytes(ByteVector(bs), bs.size.toLong * 8)
+  def apply(bs: Array[Byte]): BitVector = toBytes(ByteVector(bs), bs.size.toLong * 8)
 
   /**
    * Constructs a `BitVector` from a collection of bytes.
@@ -912,7 +918,7 @@ object BitVector {
    * not to modify the contents of the buffer passed to this function.
    * @group constructors
    */
-  def view(buffer: ByteBuffer): BitVector = bytes(ByteVector.view(buffer), buffer.limit.toLong * 8)
+  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit.toLong * 8)
 
   /**
    * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
@@ -921,9 +927,9 @@ object BitVector {
    * @group constructors
    */
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
-    if (bytesNeededForBits(sizeInBits) > Int.MaxValue)
-      sys.error("Cannot have BitVector chunk larger than Int.MaxValue bytes: " + sizeInBits)
-    bytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
+    require(bytesNeededForBits(sizeInBits) <= Int.MaxValue,
+      "Cannot have BitVector chunk larger than Int.MaxValue bytes: " + sizeInBits)
+    toBytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
   }
 
   /**
@@ -932,7 +938,7 @@ object BitVector {
    * not to modify the contents of the array passed to this function.
    * @group constructors
    */
-  def view(bs: Array[Byte]): BitVector = bytes(ByteVector.view(bs), bs.size.toLong * 8)
+  def view(bs: Array[Byte]): BitVector = toBytes(ByteVector.view(bs), bs.size.toLong * 8)
 
   /**
    * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
@@ -942,7 +948,7 @@ object BitVector {
     val needed = bytesNeededForBits(n)
     if (needed < Int.MaxValue) {
       val bs = ByteVector.fill(needed.toInt)(if (high) -1 else 0)
-      bytes(bs, n)
+      toBytes(bs, n)
     }
     else {
       fill(n / 2)(high) ++ fill(n - (n/2))(high)
@@ -1134,7 +1140,7 @@ object BitVector {
     }
 
   /** Smart constructor for `Bytes`. */
-  private[scodec] def bytes(bs: ByteVector, sizeInBits: Long): Bytes = {
+  private[scodec] def toBytes(bs: ByteVector, sizeInBits: Long): Bytes = {
     val needed = bytesNeededForBits(sizeInBits)
     require(needed <= bs.size)
     val b = if (bs.size > needed) bs.take(needed.toInt) else bs
@@ -1164,14 +1170,14 @@ object BitVector {
       } else if (otherBytes.isEmpty) {
         this
       } else if (invalidBits == 0) {
-        bytes(underlying ++ otherBytes, size + other.size)
+        toBytes(underlying ++ otherBytes, size + other.size)
       } else {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
         val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size)).toByte
         val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
         val updatedOtherBytes = other.drop(invalidBits).toByteVector
-        bytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
+        toBytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
       }
     }
   }
