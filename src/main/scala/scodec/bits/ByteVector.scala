@@ -103,6 +103,20 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     (take(idx) :+ b) ++ drop(idx)
 
   /**
+   * Returns a vector with the specified byte vector inserted at the specified index.
+   * @group collection
+   */
+  final def splice(idx: Int, b: ByteVector): ByteVector =
+    take(idx) ++ b ++ drop(idx)
+
+  /**
+   * Returns a vector with the specified byte vector replacing bytes `[idx, idx + b.size]`.
+   * @group collection
+   */
+  final def patch(idx: Int, b: ByteVector): ByteVector =
+    take(idx) ++ b ++ drop(idx + b.size)
+
+  /**
    * Returns a new byte vector representing this vector's contents followed by the specified vector's contents.
    * @group collection
    */

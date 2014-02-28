@@ -389,4 +389,20 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       if (slice.nonEmpty) bv.endsWith(~slice) shouldBe false
     }
   }
+
+  test("splice") {
+    forAll { (x: BitVector, y: BitVector, n0: Long) =>
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0l
+      x.splice(n, BitVector.empty) shouldBe x
+      x.splice(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n))
+    }
+  }
+
+  test("patch") {
+    forAll { (x: BitVector, y: BitVector, n0: Long) =>
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0l
+      x.patch(n, x.slice(n, n)) shouldBe x
+      x.patch(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n + y.size))
+    }
+  }
 }

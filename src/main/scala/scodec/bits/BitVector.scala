@@ -129,6 +129,20 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     (take(idx) :+ b) ++ drop(idx)
 
   /**
+   * Returns a vector with the specified bit vector inserted at the specified index.
+   * @group collection
+   */
+  final def splice(idx: Long, b: BitVector): BitVector =
+    take(idx) ++ b ++ drop(idx)
+
+  /**
+   * Returns a vector with the specified bit vector replacing bits `[idx, idx + b.size]`.
+   * @group collection
+   */
+  final def patch(idx: Long, b: BitVector): BitVector =
+    take(idx) ++ b ++ drop(idx + b.size)
+
+  /**
    * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
    *
    * @group collection

@@ -244,4 +244,20 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       if (slice.nonEmpty) bv.endsWith(~slice) shouldBe false
     }
   }
+
+  test("splice") {
+    forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
+      x.splice(n, ByteVector.empty) shouldBe x
+      x.splice(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n))
+    }
+  }
+
+  test("patch") {
+    forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
+      x.patch(n, x.slice(n, n)) shouldBe x
+      x.patch(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n + y.size))
+    }
+  }
 }
