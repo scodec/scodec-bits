@@ -361,4 +361,11 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       }
     }
   }
+
+  test("population count") {
+    forAll { (bv: BitVector) =>
+      val cnt = bv.toIndexedSeq.foldLeft(0) { (acc, b) => if (b) acc + 1 else acc }
+      bv.populationCount shouldBe cnt
+    }
+  }
 }

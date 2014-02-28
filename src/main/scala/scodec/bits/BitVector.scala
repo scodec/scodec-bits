@@ -380,7 +380,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    */
   final def lastOption: Option[Boolean] = lift(size - 1)
 
-
   /**
    * Returns an `n`-bit vector whose contents are this vector's contents followed by 0 or more low bits.
    *
@@ -426,6 +425,20 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       require(res.size == size)
       res
     }
+  }
+
+  /**
+   * Returns the number of bits that are high.
+   *
+   * @group bitwise
+   */
+  final def populationCount: Long = {
+    @annotation.tailrec
+    def go(b: BitVector, acc: Long): Long = {
+      if (b.isEmpty) acc
+      else go(b.tail, if (b.head) acc + 1 else acc)
+    }
+    go(this, 0)
   }
 
   def not: BitVector = mapBytes(_.not)
