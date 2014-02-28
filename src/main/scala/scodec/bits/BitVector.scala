@@ -125,7 +125,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * Returns a vector with the specified bit inserted at the specified index.
    * @group collection
    */
-  final def insert(idx: Int, b: Boolean): BitVector =
+  final def insert(idx: Long, b: Boolean): BitVector =
     (take(idx) :+ b) ++ drop(idx)
 
   /**
@@ -308,7 +308,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * Returns a vector made up of the bits starting at index `from` up to index `until`.
    * @group collection
    */
-  final def slice(from: Int, until: Int): BitVector =
+  final def slice(from: Long, until: Long): BitVector =
     drop(from).take(until - from)
 
   /**
@@ -335,6 +335,48 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       toDecode <- acquire(n).right
       decoded <- decode(toDecode).right
     } yield (drop(n), decoded)
+
+  /**
+   * Returns true if this bit vector starts with the specified vector.
+   * @group collection
+   */
+  final def startsWith(b: BitVector): Boolean =
+    take(b.size) == b
+
+  /**
+   * Returns true if this bit vector ends with the specified vector.
+   * @group collection
+   */
+  final def endsWith(b: BitVector): Boolean =
+    takeRight(b.size) == b
+
+  /**
+   * Finds the first index of the specified bit pattern in this vector.
+   * @return index of slice or -1 if not found
+   * @group collection
+   */
+  final def indexOfSlice(slice: BitVector): Long = indexOfSlice(slice, 0)
+
+  /**
+   * Finds the first index after `from` of the specified bit pattern in this vector.
+   * @return index of slice or -1 if not found
+   * @group collection
+   */
+  final def indexOfSlice(slice: BitVector, from: Long): Long = {
+    @annotation.tailrec
+    def go(b: BitVector, idx: Long): Long = {
+      if (b startsWith slice) idx
+      else if (b.isEmpty) -1
+      else go(b.tail, idx + 1)
+    }
+    go(drop(from), from)
+  }
+
+  /**
+   * Determines if the specified slice is in this vector.
+   * @group collection
+   */
+  final def containsSlice(slice: BitVector): Boolean = indexOfSlice(slice) >= 0
 
   /**
    * Converts this vector in to a sequence of `n`-bit vectors.

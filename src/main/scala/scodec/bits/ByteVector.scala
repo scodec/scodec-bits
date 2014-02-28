@@ -288,7 +288,49 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   }
 
   /**
-   * Converts this vector in to a sequence of `n`-bit vectors.
+   * Returns true if this byte vector starts with the specified vector.
+   * @group collection
+   */
+  final def startsWith(b: ByteVector): Boolean =
+    take(b.size) == b
+
+  /**
+   * Returns true if this byte vector ends with the specified vector.
+   * @group collection
+   */
+  final def endsWith(b: ByteVector): Boolean =
+    takeRight(b.size) == b
+
+  /**
+   * Finds the first index of the specified byte pattern in this vector.
+   * @return index of slice or -1 if not found
+   * @group collection
+   */
+  final def indexOfSlice(slice: ByteVector): Int = indexOfSlice(slice, 0)
+
+  /**
+   * Finds the first index after `from` of the specified byte pattern in this vector.
+   * @return index of slice or -1 if not found
+   * @group collection
+   */
+  final def indexOfSlice(slice: ByteVector, from: Int): Int = {
+    @annotation.tailrec
+    def go(b: ByteVector, idx: Int): Int = {
+      if (b startsWith slice) idx
+      else if (b.isEmpty) -1
+      else go(b.tail, idx + 1)
+    }
+    go(drop(from), from)
+  }
+
+  /**
+   * Determines if the specified slice is in this vector.
+   * @group collection
+   */
+  final def containsSlice(slice: ByteVector): Boolean = indexOfSlice(slice) >= 0
+
+  /**
+   * Converts this vector in to a sequence of `chunkSize`-byte vectors.
    * @group collection
    */
   final def grouped(chunkSize: Int): Stream[ByteVector] =

@@ -223,4 +223,25 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       }
     }
   }
+
+  test("indexOfSlice/containsSlice/startsWith") {
+    forAll { (bv: ByteVector, m0: Int, n0: Int) =>
+      val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
+      val slice = bv.slice(m min n, m max n)
+      val idx = bv.indexOfSlice(slice)
+      idx shouldBe bv.toIndexedSeq.indexOfSlice(slice.toIndexedSeq)
+      bv.containsSlice(slice) shouldBe true
+      if (bv.nonEmpty) bv.containsSlice(bv ++ bv) shouldBe false
+    }
+  }
+
+  test("endsWith") {
+    forAll { (bv: ByteVector, n0: Int) =>
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
+      val slice = bv.takeRight(n)
+      bv.endsWith(slice) shouldBe true
+      if (slice.nonEmpty) bv.endsWith(~slice) shouldBe false
+    }
+  }
 }

@@ -368,4 +368,25 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       bv.populationCount shouldBe cnt
     }
   }
+
+  test("indexOfSlice/containsSlice/startsWith") {
+    forAll { (bv: BitVector, m0: Long, n0: Long) =>
+      val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0l
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0l
+      val slice = bv.slice(m min n, m max n)
+      val idx = bv.indexOfSlice(slice)
+      idx shouldBe bv.toIndexedSeq.indexOfSlice(slice.toIndexedSeq)
+      bv.containsSlice(slice) shouldBe true
+      if (bv.nonEmpty) bv.containsSlice(bv ++ bv) shouldBe false
+    }
+  }
+
+  test("endsWith") {
+    forAll { (bv: BitVector, n0: Long) =>
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0l
+      val slice = bv.takeRight(n)
+      bv.endsWith(slice) shouldBe true
+      if (slice.nonEmpty) bv.endsWith(~slice) shouldBe false
+    }
+  }
 }
