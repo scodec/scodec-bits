@@ -334,7 +334,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   def acquire(n: Long): Either[String, BitVector] =
-    if (n <= size) Right(take(n))
+    if (sizeGreaterThan(n-1)) Right(take(n))
     else Left(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**

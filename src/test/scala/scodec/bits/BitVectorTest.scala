@@ -85,6 +85,28 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     }
   }
 
+  test("acquire stack safety for lazy BitVector") {
+    val nats = BitVector.unfold(0)(i => Some(BitVector.high(1000) -> (i+1)))
+    nats.acquire(100000).isRight shouldBe true
+  }
+
+  val bitVectorWithTakeIndex = Arbitrary.arbitrary[BitVector].flatMap { bits =>
+    Gen.choose(0L, bits.size+1) map ((bits,_))
+  }
+
+  test("acquire/take consistency") {
+    def check(bits: BitVector, n: Long): Unit =
+      bits.acquire(n) match {
+        case Left(_) => bits.size < n
+        case Right(hd) => hd shouldBe bits.take(n)
+      }
+
+    forAll (bitVectorWithTakeIndex) { case (bits, ind) =>
+      check(bits, ind)
+      check(bits, ind*2)
+    }
+  }
+
   test("construction via high") {
     BitVector.high(1).toByteVector shouldBe ByteVector(0x80)
     BitVector.high(2).toByteVector shouldBe ByteVector(0xc0)
