@@ -63,16 +63,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    *
    * @group collection
    */
-  final def sizeGreaterThan(n: Long): Boolean = {
-    @annotation.tailrec
-    def go(cur: BitVector, n: Long): Boolean = cur match {
-      case Append(l, r) => if (l.size > n) true else go(r, n - l.size)
-      case s@Suspend(_) => go(s.underlying, n)
-      case Drop(b, m) => go(b, m+n)
-      case _ => cur.size > n
-    }
-    go(this, n)
-  }
+  final def sizeGreaterThan(n: Long): Boolean = n < 0 || !sizeLessThan(n + 1)
 
   /**
    * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
@@ -85,7 +76,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     case Append(l, r) => if (l.size >= n) false else r.sizeLessThan(n - l.size)
     case s@Suspend(_) => s.underlying.sizeLessThan(n)
     case Drop(b, m) => (b.size - m).max(0L) < n
-    case _ => this.size < n
+    case _: Bytes => this.size < n
   }
 
   /**
@@ -111,7 +102,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   final def lift(n: Long): Option[Boolean] =
-    if (n < size) Some(get(n))
+    if (sizeGreaterThan(n)) Some(get(n))
     else None
 
   /**
@@ -513,10 +504,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       val extensionHigh = signExtension && head
       if (n >= size) {
         if (extensionHigh) BitVector.high(size) else BitVector.low(size)
-      }
-      else {
-        (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++
-        take(size - n)
+      } else {
+        (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++ dropRight(n)
       }
     }
   }
@@ -765,13 +754,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   override final def toString =
-    if (sizeLessThan(512)) s"BitVector($size bits, 0x${toHex})"
+    if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
     else s"BitVector($size bits, #${hashCode})"
 
   // impl details
 
   final protected def checkBounds(n: Long): Unit =
-    if (n >= size) outOfBounds(n)
+    if (!sizeGreaterThan(n)) outOfBounds(n)
 
   final protected def outOfBounds(n: Long): Nothing =
     throw new NoSuchElementException(s"invalid index: $n of $size")
