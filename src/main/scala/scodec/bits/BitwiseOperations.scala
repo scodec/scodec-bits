@@ -10,8 +10,9 @@ package scodec.bits
  * @groupprio bitwise 2
  *
  * @define bitwiseOperationsReprDescription value
+ * @define minsize The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
  */
-trait BitwiseOperations[Repr, Idx] {
+trait BitwiseOperations[Repr <: BitwiseOperations[Repr, Idx], Idx] {
 
   /**
    * Returns a $bitwiseOperationsReprDescription of the same size with each bit shifted to the left `n` bits.
@@ -67,7 +68,7 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise AND of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
@@ -76,7 +77,7 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise AND of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
@@ -85,7 +86,7 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise OR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
@@ -94,7 +95,7 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise OR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
@@ -103,7 +104,7 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise XOR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
@@ -112,9 +113,45 @@ trait BitwiseOperations[Repr, Idx] {
   /**
    * Returns a bitwise XOR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
    *
-   * The resulting $bitwiseOperationsReprDescription's size is the minimum of this $bitwiseOperationsReprDescription's size and the specified $bitwiseOperationsReprDescription's size.
+   * $minsize
    *
    * @group bitwise
    */
   def xor(other: Repr): Repr
+
+  /**
+   * Returns a bitwise implication of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
+   *
+   * $minsize
+   *
+   * @group bitwise
+   */
+  def implies(other: Repr): Repr = not.or(other)
+
+  /**
+   * Returns a bitwise if-and-only-if of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
+   *
+   * $minsize
+   *
+   * @group bitwise
+   */
+  def iff(other: Repr): Repr = xor(other).not
+
+  /**
+   * Returns a bitwise NAND of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
+   *
+   * $minsize
+   *
+   * @group bitwise
+   */
+  def nand(other: Repr): Repr = not.and(other)
+
+  /**
+   * Returns a bitwise NOR of this $bitwiseOperationsReprDescription with the specified $bitwiseOperationsReprDescription.
+   *
+   * $minsize
+   *
+   * @group bitwise
+   */
+  def nor(other: Repr): Repr = not.or(other)
 }
