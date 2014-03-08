@@ -89,7 +89,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       if (n < sizeLowerBound.get) false
       else if (n > sizeUpperBound.get) true
       else b match {
-        case Append(l, r) => if (l.size >= n) false else go(r, n - l.size)
+        case Append(l, r) =>
+          if (n - l.sizeLowerBound.get < r.sizeLowerBound.get) false
+          else if (n - l.sizeUpperBound.get > r.sizeUpperBound.get) true
+          else if (l.size >= n) false
+          else go(r, n - l.size)
         case s@Suspend(_) => go(s.underlying, n)
         case d: Drop => d.size < n
         case b: Bytes => b.size < n
