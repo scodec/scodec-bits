@@ -9,7 +9,7 @@ name := "scodec-bits"
 
 scalaVersion := "2.10.3"
 
-val latestScala211PreRelease = "2.11.0-M8"
+val latestScala211PreRelease = "2.11.0-RC1"
 
 scalaBinaryVersion in update := (
   if (scalaVersion.value == "2.11.0-SNAPSHOT") latestScala211PreRelease else scalaBinaryVersion.value
