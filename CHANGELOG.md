@@ -1,3 +1,8 @@
+1.0.0-RC2
+=========
+ - Added `BitVector#bytes` as alias for `toByteVector` and `ByteVector#bits` as alias for `toBitVector`
+ - Improved performance of `sizeLessThan` and `sizeGreaterThan`
+
 1.0.0-RC1
 =========
  - Much more performant implementation of ByteVector by Paul C. that implements various operations in constant/log time
