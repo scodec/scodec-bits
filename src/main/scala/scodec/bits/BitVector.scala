@@ -1,6 +1,7 @@
 package scodec.bits
 
 import java.nio.ByteBuffer
+import java.util.concurrent.atomic.AtomicLong
 import scala.collection.GenTraversableOnce
 
 /**
@@ -49,13 +50,24 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    */
   final def nonEmpty: Boolean = !isEmpty
 
-  /**
-   * Returns the number of bits in this vector, or `None` if the size does not
-   * fit into an `Int`.
-   *
-   * @group collection
-   */
-  final def intSize: Option[Int] = if (size <= Int.MaxValue) Some(size.toInt) else None
+  private val sizeLowerBound: AtomicLong = new AtomicLong(0L)
+  private val sizeUpperBound: AtomicLong = new AtomicLong(Long.MaxValue)
+
+  @annotation.tailrec
+  private def sizeIsAtLeast(n: Long): Unit = {
+    val cur = sizeLowerBound.get
+    if (cur >= n) ()
+    else if (sizeLowerBound.compareAndSet(cur, n)) ()
+    else sizeIsAtLeast(n)
+  }
+
+  @annotation.tailrec
+  private def sizeIsAtMost(n: Long): Unit = {
+    val cur = sizeUpperBound.get
+    if (cur <= n) ()
+    else if (sizeUpperBound.compareAndSet(cur, n)) ()
+    else sizeIsAtMost(n)
+  }
 
   /**
    * Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
@@ -71,13 +83,34 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    *
    * @group collection
    */
-  @annotation.tailrec
-  final def sizeLessThan(n: Long): Boolean = this match {
-    case Append(l, r) => if (l.size >= n) false else r.sizeLessThan(n - l.size)
-    case s@Suspend(_) => s.underlying.sizeLessThan(n)
-    case Drop(b, m) => (b.size - m).max(0L) < n
-    case _: Bytes => this.size < n
+  final def sizeLessThan(n: Long): Boolean = {
+    @annotation.tailrec
+    def go(b: BitVector, n: Long): Boolean = {
+      if (n < b.sizeLowerBound.get) false
+      else if (n > b.sizeUpperBound.get) true
+      else b match {
+        case Append(l, r) =>
+          if (n - l.sizeLowerBound.get < r.sizeLowerBound.get) false
+          else if (n - l.sizeUpperBound.get > r.sizeUpperBound.get) true
+          else if (l.size >= n) false
+          else go(r, n - l.size)
+        case s@Suspend(_) => go(s.underlying, n)
+        case d: Drop => d.size < n
+        case b: Bytes => b.size < n
+      }
+    }
+    val result = go(this, n)
+    if (result) sizeIsAtMost(n - 1) else sizeIsAtLeast(n)
+    result
   }
+
+  /**
+   * Returns the number of bits in this vector, or `None` if the size does not
+   * fit into an `Int`.
+   *
+   * @group collection
+   */
+  final def intSize: Option[Int] = if (size <= Int.MaxValue) Some(size.toInt) else None
 
   /**
    * Returns true if the `n`th bit is high, false otherwise.
@@ -468,9 +501,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       val last = take(validFinalBits).compact
       val b = drop(validFinalBits).toByteVector.reverse
       val init = toBytes(b, size-last.size)
-      val res = (init ++ last)
-      require(res.size == size)
-      res
+      init ++ last
     }
   }
 
@@ -1179,7 +1210,12 @@ object BitVector {
       Drop(underlying.update(m + n, high).compact, m)
   }
   private[scodec] case class Append(left: BitVector, right: BitVector) extends BitVector {
-    lazy val size = left.size + right.size
+    lazy val size = {
+      val sz = left.size + right.size
+      sizeLowerBound.set(sz)
+      sizeUpperBound.set(sz)
+      sz
+    }
     def get(n: Long): Boolean =
       if (n < left.size) left.get(n)
       else right.get(n - left.size)

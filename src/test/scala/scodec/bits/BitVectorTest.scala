@@ -427,4 +427,34 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       x.patch(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n + y.size))
     }
   }
+
+  test("sizeLessThan") { forAll { (x: BitVector) =>
+    x.sizeLessThan(x.size+1) shouldBe true
+    x.sizeLessThan(x.size) shouldBe false
+  }}
+
+  test("sizeGreaterThan") { forAll { (x: BitVector) =>
+    (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i)) shouldBe true
+    x.sizeLessThan(x.size+1) shouldBe true
+  }}
+
+  test("sizeGreater/LessThan concurrent") { forAll { (x: BitVector) =>
+    val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
+    def t = new Thread {
+      override def start = {
+        (0 until x.size.toInt).foreach { i =>
+          ok.compareAndSet(true, x.sizeGreaterThan(i))
+          ()
+        }
+      }
+    }
+    val t1 = t
+    val t2 = t
+    t1.start
+    t2.start
+    ok.compareAndSet(true, x.sizeLessThan(x.size+1))
+    t1.join
+    t2.join
+    ok.get shouldBe true
+  }}
 }
