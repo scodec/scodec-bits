@@ -26,8 +26,7 @@ scalacOptions ++= Seq(
   "-Xlint",
   "-Xverify",
   "-Yclosure-elim",
-  "-Yinline",
-  "-Ywarn-all")
+  "-Yinline")
 
 scalacOptions in (Compile, doc) ++= {
   val tagOrBranch = if (version.value endsWith "SNAPSHOT") "master" else ("v" + version.value)

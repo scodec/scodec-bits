@@ -50,11 +50,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    */
   final def nonEmpty: Boolean = !isEmpty
 
-  private val sizeLowerBound: AtomicLong = new AtomicLong(0L)
-  private val sizeUpperBound: AtomicLong = new AtomicLong(Long.MaxValue)
+  final protected val sizeLowerBound: AtomicLong = new AtomicLong(0L)
+  final protected val sizeUpperBound: AtomicLong = new AtomicLong(Long.MaxValue)
 
   @annotation.tailrec
-  private def sizeIsAtLeast(n: Long): Unit = {
+  final protected def sizeIsAtLeast(n: Long): Unit = {
     val cur = sizeLowerBound.get
     if (cur >= n) ()
     else if (sizeLowerBound.compareAndSet(cur, n)) ()
@@ -62,7 +62,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   @annotation.tailrec
-  private def sizeIsAtMost(n: Long): Unit = {
+  final protected def sizeIsAtMost(n: Long): Unit = {
     val cur = sizeUpperBound.get
     if (cur <= n) ()
     else if (sizeUpperBound.compareAndSet(cur, n)) ()
@@ -796,7 +796,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final protected def outOfBounds(n: Long): Nothing =
     throw new NoSuchElementException(s"invalid index: $n of $size")
 
-  private def mapBytes(f: ByteVector => ByteVector): BitVector = this match {
+  final protected def mapBytes(f: ByteVector => ByteVector): BitVector = this match {
     case Bytes(bs, n) => toBytes(f(bs), n)
     case Append(l,r) => Append(l.mapBytes(f), r.mapBytes(f))
     case Drop(b,n) => Drop(b.mapBytes(f).compact, n)
