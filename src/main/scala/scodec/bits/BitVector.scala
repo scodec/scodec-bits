@@ -86,8 +86,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final def sizeLessThan(n: Long): Boolean = {
     @annotation.tailrec
     def go(b: BitVector, n: Long): Boolean = {
-      if (n < sizeLowerBound.get) false
-      else if (n > sizeUpperBound.get) true
+      if (n < b.sizeLowerBound.get) false
+      else if (n > b.sizeUpperBound.get) true
       else b match {
         case Append(l, r) =>
           if (n - l.sizeLowerBound.get < r.sizeLowerBound.get) false

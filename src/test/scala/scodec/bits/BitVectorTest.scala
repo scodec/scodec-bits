@@ -430,10 +430,12 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
 
   test("sizeLessThan") { forAll { (x: BitVector) =>
     x.sizeLessThan(x.size+1) shouldBe true
+    x.sizeLessThan(x.size) shouldBe false
   }}
 
   test("sizeGreaterThan") { forAll { (x: BitVector) =>
     (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i)) shouldBe true
+    x.sizeLessThan(x.size+1) shouldBe true
   }}
 
   test("sizeGreater/LessThan concurrent") { forAll { (x: BitVector) =>
