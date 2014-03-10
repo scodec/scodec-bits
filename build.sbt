@@ -41,6 +41,8 @@ scalacOptions in (Compile, doc) ++= {
   )
 }
 
+testOptions in Test += Tests.Argument("-oD")
+
 licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec/blob/master/LICENSE"))
 
 unmanagedResources in Compile <++= baseDirectory map { base => Seq(base / "NOTICE", base / "LICENSE") }
@@ -49,7 +51,7 @@ triggeredMessage := (_ => Watched.clearScreen)
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scalatest" %% "scalatest" % "2.1.0-RC2" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.0" % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
   "com.google.guava" % "guava" % "16.0.1" % "test",
   "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
