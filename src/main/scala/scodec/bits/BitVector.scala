@@ -802,9 +802,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   override final def toString =
-    "\n" + internalPretty("")
-
-  def repr: String =
     if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
     else s"BitVector($size bits, #${hashCode})"
 
