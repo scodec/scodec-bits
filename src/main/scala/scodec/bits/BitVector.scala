@@ -583,29 +583,47 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
       case s@Suspend(_) => go(s.underlying, acc)
       case b@Bytes(_,_) => acc :+ b
       case Append(l,r) => go(r, acc :+ l.compact) // not stack safe for left-recursion
-      case Drop(b, from) =>
-        val low = from max 0
-        val newSize = b.size - low
-        if (newSize == 0) acc
-        else {
-          val lowByte = (low / 8).toInt
-          val shiftedByWholeBytes = b.compact.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
-          val bitsToShiftEachByte = (low % 8).toInt
-          val newBytes = {
-            if (bitsToShiftEachByte == 0) shiftedByWholeBytes
-            else {
-              (shiftedByWholeBytes zipWithI (shiftedByWholeBytes.drop(1) :+ (0: Byte))) { case (a, b) =>
-                val hi = (a << bitsToShiftEachByte)
-                val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
-                hi | low
-              }
+      case Drop(b, from) => acc :+ interpretDrop(b,from)
+    }
+
+    def interpretDrop(b: Bytes, from: Long): Bytes = {
+      val low = from max 0
+      val newSize = b.size - low
+      if (newSize == 0) BitVector.empty.compact
+      else {
+        val lowByte = (low / 8).toInt
+        val shiftedByWholeBytes = b.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
+        val bitsToShiftEachByte = (low % 8).toInt
+        val newBytes = {
+          if (bitsToShiftEachByte == 0) shiftedByWholeBytes
+          else {
+            (shiftedByWholeBytes zipWithI (shiftedByWholeBytes.drop(1) :+ (0: Byte))) { case (a, b) =>
+              val hi = (a << bitsToShiftEachByte)
+              val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
+              hi | low
             }
           }
-          acc :+ toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
         }
+        toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+      }
     }
-    reduceBalanced(go(this, Vector()))(_.size)(_ combine _) match {
-      case Bytes(b,n) => Bytes(b.compact,n) // we compact the underlying ByteVector as well
+
+    this match {
+      // common case, we have a single flat `Bytes`, in which case we compact and return it directly
+      case bs@Bytes(b,n) =>
+        val b2 = b.compact
+        if (b2 eq b) bs
+        else Bytes(b2,n)
+      // other common case is a drop of a single flat `Bytes`
+      case Drop(b,from) =>
+        val bs = interpretDrop(b,from)
+        val b2 = bs.underlying.compact
+        if (b2 eq bs.underlying) bs
+        else Bytes(b2, bs.size)
+      // otherwise we fall back to general purpose algorithm
+      case _ => reduceBalanced(go(this, Vector()))(_.size)(_ combine _) match {
+        case Bytes(b,n) => Bytes(b.compact,n) // we compact the underlying ByteVector as well
+      }
     }
   }
 
