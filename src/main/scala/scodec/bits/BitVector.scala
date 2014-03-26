@@ -75,7 +75,15 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    *
    * @group collection
    */
-  final def sizeGreaterThan(n: Long): Boolean = n < 0 || !sizeLessThan(n + 1)
+  final def sizeGreaterThan(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n)
+
+  /**
+   * Returns `true` if the size of this `BitVector` is greater than or equal to `n`. Unlike `size`, this
+   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+   *
+   * @group collection
+   */
+  final def sizeGreaterThanOrEqual(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n-1)
 
   /**
    * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
@@ -103,6 +111,15 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     if (result) sizeIsAtMost(n - 1) else sizeIsAtLeast(n)
     result
   }
+
+  /**
+   * Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`, this
+   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+   *
+   * @group collection
+   */
+  final def sizeLessThanOrEqual(n: Long): Boolean =
+    n == Long.MaxValue || sizeLessThan(n+1)
 
   /**
    * Returns the number of bits in this vector, or `None` if the size does not
@@ -254,13 +271,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     def go(cur: BitVector, n: Long): BitVector = {
       val npos = n max 0
       if (npos <= 0) cur
-      else if (cur.sizeLessThan(npos + 1)) BitVector.empty
+      else if (cur.sizeLessThanOrEqual(npos)) BitVector.empty
       else cur match {
         case Bytes(bs, m) =>
           if (npos % 8 == 0) toBytes(bs.drop((npos / 8).toInt), m - npos)
           else Drop(cur.asInstanceOf[Bytes], npos)
         case Append(l, r) =>
-          if (l.size <= npos) go(r, npos - l.size)
+          if (l.sizeLessThanOrEqual(npos)) go(r, npos - l.size)
           else Append(l.drop(npos), r) // not stack safe for left-recursion, but we disallow that
         case Drop(bytes, m) => go(bytes, m + npos)
         case s@Suspend(_) => go(s.underlying, npos)
@@ -306,7 +323,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     def go(accL: Vector[BitVector], cur: BitVector, n: Long): BitVector = {
       val npos = n max 0
       if (npos == 0) finish(accL, BitVector.empty)
-      else if (sizeLessThan(npos + 1)) finish(accL, cur)
+      else if (cur.sizeLessThanOrEqual(npos)) finish(accL, cur)
       else cur match {
         case s@Suspend(_) => go(accL, s.underlying, npos)
         case Bytes(underlying, m) =>
@@ -316,7 +333,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
           finish(accL, toBytes(underlying.take(underlyingN), m2)) // call to take stack safe here, since that is a Bytes
         case Drop(underlying, m) => finish(accL, underlying.take(m + npos).drop(m))
         case Append(l, r) =>
-          if (l.size >= npos) go(accL, l, npos)
+          if (l.sizeGreaterThanOrEqual(npos)) go(accL, l, npos)
           else go(accL :+ l, r, npos - l.size)
       }
     }
@@ -358,7 +375,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   def acquire(n: Long): Either[String, BitVector] =
-    if (sizeGreaterThan(n-1)) Right(take(n))
+    if (sizeGreaterThanOrEqual(n)) Right(take(n))
     else Left(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
@@ -785,6 +802,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group collection
    */
   override final def toString =
+    "\n" + internalPretty("")
+
+  def repr: String =
     if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
     else s"BitVector($size bits, #${hashCode})"
 
