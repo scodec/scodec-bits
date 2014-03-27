@@ -7,15 +7,15 @@ organization := "org.typelevel"
 
 name := "scodec-bits"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.4"
 
-val latestScala211PreRelease = "2.11.0-RC1"
+val latestScala211PreRelease = "2.11.0-RC3"
 
 scalaBinaryVersion in update := (
   if (scalaVersion.value == "2.11.0-SNAPSHOT") latestScala211PreRelease else scalaBinaryVersion.value
 )
 
-crossScalaVersions := Seq("2.10.3", latestScala211PreRelease)
+crossScalaVersions := Seq("2.10.4", latestScala211PreRelease)
 
 scalacOptions ++= Seq(
   "-feature",
@@ -50,7 +50,7 @@ triggeredMessage := (_ => Watched.clearScreen)
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scalatest" %% "scalatest" % "2.1.0" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.2" % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
   "com.google.guava" % "guava" % "16.0.1" % "test",
   "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
