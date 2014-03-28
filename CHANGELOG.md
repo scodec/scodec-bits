@@ -1,3 +1,8 @@
+1.0.0
+=====
+ - Added `scodec.bits.crc` for calculating cyclic redundancy checks
+ - Improved performance of `drop`
+
 1.0.0-RC2
 =========
  - Added `BitVector#bytes` as alias for `toByteVector` and `ByteVector#bits` as alias for `toBitVector`
