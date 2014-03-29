@@ -4,6 +4,8 @@
  - Improved performance of `drop`
  - Added `digest` to `BitVector` and `ByteVector`
  - Renamed `padToRight` to `padLeft` and aliased `padTo` to `padRight`
+ - Renamed `leftShift/rightShift` to `shiftLeft/shiftRight`
+ - Added `rotateLeft` and `rotateRight`
 
 1.0.0-RC2
 =========

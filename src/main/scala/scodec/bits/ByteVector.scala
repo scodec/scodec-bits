@@ -445,11 +445,17 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   final def reverse: ByteVector =
     ByteVector.view(i => apply(size - i - 1), size)
 
-  final def leftShift(n: Int): ByteVector =
-    BitVector(this).leftShift(n).toByteVector
+  final def shiftLeft(n: Int): ByteVector =
+    BitVector(this).shiftLeft(n).toByteVector
 
-  final def rightShift(n: Int, signExtension: Boolean): ByteVector =
-    BitVector(this).rightShift(n, signExtension).toByteVector
+  final def shiftRight(n: Int, signExtension: Boolean): ByteVector =
+    BitVector(this).shiftRight(n, signExtension).toByteVector
+
+  final def rotateLeft(n: Int): ByteVector =
+    BitVector(this).rotateLeft(n).toByteVector
+
+  final def rotateRight(n: Int): ByteVector =
+    BitVector(this).rotateRight(n).toByteVector
 
   /**
    * Returns a vector with the same contents but represented as a single tree node internally.
@@ -606,7 +612,7 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
     grouped(3) foreach { triple =>
       val paddingBytes = 3 - triple.size
       triple.toBitVector.grouped(6) foreach { group =>
-        val idx = group.padTo(8).rightShift(2, false).toByteVector.head
+        val idx = group.padTo(8).shiftRight(2, false).toByteVector.head
         bldr.append(alphabet.toChar(idx))
       }
       if (paddingBytes > 0) bldr.append(alphabet.pad.toString * paddingBytes)
@@ -945,7 +951,7 @@ object ByteVector {
         (if (midByte) {
           bldr += hi.toByte
           val result = bldr.result
-          ByteVector(result).rightShift(4, false)
+          ByteVector(result).shiftRight(4, false)
         } else ByteVector(bldr.result), count)
       )
     } else Left(err)
@@ -1007,7 +1013,7 @@ object ByteVector {
     if (err eq null) {
       Right((if (bits > 0) {
         bldr += (byte << (8 - bits)).toByte
-        ByteVector(bldr.result).rightShift(8 - bits, false)
+        ByteVector(bldr.result).shiftRight(8 - bits, false)
       } else {
         ByteVector(bldr.result)
       }, count))

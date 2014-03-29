@@ -182,6 +182,15 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
     ByteVector(0xaa, 0xaa, 0xaa) >>> 1 shouldBe ByteVector(0x55, 0x55, 0x55)
   }
 
+  test("rotations") {
+    forAll { (b: ByteVector, n: Int) =>
+      b.rotateLeft(b.size * 8) shouldBe b
+      b.rotateRight(b.size * 8) shouldBe b
+      b.rotateRight(n).rotateLeft(n) shouldBe b
+      b.rotateLeft(n).rotateRight(n) shouldBe b
+    }
+  }
+
   test("hex string interpolator") {
     hex"deadbeef" shouldBe deadbeef
     val x = ByteVector.fromValidHex("be")

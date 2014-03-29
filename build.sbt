@@ -42,7 +42,7 @@ scalacOptions in (Compile, doc) ++= {
 
 testOptions in Test += Tests.Argument("-oD")
 
-licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec/blob/master/LICENSE"))
+licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec-bits/blob/master/LICENSE"))
 
 unmanagedResources in Compile <++= baseDirectory map { base => Seq(base / "NOTICE", base / "LICENSE") }
 

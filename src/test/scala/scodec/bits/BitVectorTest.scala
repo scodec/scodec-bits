@@ -210,6 +210,18 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     (BitVector.high(8) >>> 7).toByteVector shouldBe ByteVector(0x01)
   }
 
+  test("rotations") {
+    bin"10101".rotateRight(3) shouldBe bin"10110"
+    bin"10101".rotateLeft(3) shouldBe bin"01101"
+    forAll { (b: BitVector, n: Long) =>
+      b.rotateLeft(b.size) shouldBe b
+      b.rotateRight(b.size) shouldBe b
+      val n0 = if (b.nonEmpty) n % b.size else n
+      b.rotateRight(n0).rotateLeft(n0) shouldBe b
+      b.rotateLeft(n0).rotateRight(n0) shouldBe b
+    }
+  }
+
   test("padTo") {
     BitVector.high(2).padTo(8).toByteVector shouldBe ByteVector(0xc0)
     BitVector.high(16).padTo(32).toByteVector shouldBe ByteVector(0xff, 0xff, 0, 0)

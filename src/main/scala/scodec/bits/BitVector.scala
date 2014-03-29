@@ -553,17 +553,17 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     go(this, 0)
   }
 
-  def not: BitVector = mapBytes(_.not)
-  def and(other: BitVector): BitVector = zipBytesWith(other)(_ & _)
-  def or(other: BitVector): BitVector = zipBytesWith(other)(_ | _)
-  def xor(other: BitVector): BitVector = zipBytesWith(other)(_ ^ _)
+  final def not: BitVector = mapBytes(_.not)
+  final def and(other: BitVector): BitVector = zipBytesWith(other)(_ & _)
+  final def or(other: BitVector): BitVector = zipBytesWith(other)(_ | _)
+  final def xor(other: BitVector): BitVector = zipBytesWith(other)(_ ^ _)
 
-  def leftShift(n: Long): BitVector =
+  final def shiftLeft(n: Long): BitVector =
     if (n <= 0) this
     else if (n >= size) BitVector.low(size)
     else drop(n) ++ BitVector.low(n)
 
-  def rightShift(n: Long, signExtension: Boolean): BitVector = {
+  final def shiftRight(n: Long, signExtension: Boolean): BitVector = {
     if (isEmpty || n <= 0) this
     else {
       val extensionHigh = signExtension && head
@@ -575,7 +575,23 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     }
   }
 
+  final def rotateLeft(n: Long): BitVector =
+    if (n <= 0) this
+    else if (isEmpty) this
+    else {
+      val n0 = n % size
+      if (n0 == 0) this
+      else drop(n0) ++ take(n0)
+    }
 
+  final def rotateRight(n: Long): BitVector =
+    if (n <= 0) this
+    else if (isEmpty) this
+    else {
+      val n0 = n % size
+      if (n0 == 0) this
+      else takeRight(n0) ++ dropRight(n0)
+    }
 
   /**
    * Return a `BitVector` with the same contents as `this`, but
