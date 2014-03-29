@@ -3,10 +3,8 @@ package scodec.bits
 import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen, Shrink}
 import Arbitrary.arbitrary
-import org.scalatest._
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
 
-class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
+class ByteVectorTest extends BitsSuite {
 
   def standardByteVectors(maxSize: Int): Gen[ByteVector] = for {
     size <- Gen.choose(0, maxSize)
@@ -276,5 +274,9 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       val sha256 = MessageDigest.getInstance("SHA-256")
       x.digest("SHA-256") shouldBe ByteVector.view(sha256.digest(x.toArray))
     }
+  }
+
+  test("serialization") {
+    forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
   }
 }

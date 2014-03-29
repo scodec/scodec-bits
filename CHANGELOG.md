@@ -6,6 +6,7 @@
  - Renamed `padToRight` to `padLeft` and aliased `padTo` to `padRight`
  - Renamed `leftShift/rightShift` to `shiftLeft/shiftRight`
  - Added `rotateLeft` and `rotateRight`
+ - Added serialization support for `BitVector` and `ByteVector`
 
 1.0.0-RC2
 =========

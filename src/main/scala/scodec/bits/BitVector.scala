@@ -21,7 +21,7 @@ import scala.collection.GenTraversableOnce
  *
  * @define bitwiseOperationsReprDescription bit vector
  */
-sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
+sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializable {
   import BitVector._
 
   /**
@@ -907,6 +907,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
     // only need to compact close to leaves of the tree
     toBytes(this.compact.underlying.zipWithI(other.compact.underlying)(op), this.size min other.size)
   }
+
+  protected final def writeReplace(): AnyRef = new SerializationProxy(toByteArray, size)
 }
 
 /**
@@ -1042,7 +1044,16 @@ object BitVector {
    * not to modify the contents of the array passed to this function.
    * @group constructors
    */
-  def view(bs: Array[Byte]): BitVector = toBytes(ByteVector.view(bs), bs.size.toLong * 8)
+  def view(bs: Array[Byte]): BitVector = view(bs, bs.size.toLong * 8)
+
+  /**
+   * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
+   * does not make a copy of the input array, so callers should take care
+   * not to modify the contents of the array passed to this function.
+   * @group constructors
+   */
+  def view(bs: Array[Byte], sizeInBits: Long): BitVector = toBytes(ByteVector.view(bs), sizeInBits)
+
 
   /**
    * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
@@ -1378,6 +1389,11 @@ object BitVector {
     v.foldLeft(List[(A,Long)]())((stack,a) => fixup((a -> size(a)) :: stack))
      .reverse.map(_._1)
      .reduceLeft(f)
+  }
+
+  @SerialVersionUID(1L)
+  private class SerializationProxy(private val bytes: Array[Byte], private val size: Long) extends Serializable {
+    def readResolve: AnyRef = BitVector.view(bytes, size)
   }
 }
 

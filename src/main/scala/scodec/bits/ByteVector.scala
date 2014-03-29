@@ -29,7 +29,7 @@ import scala.collection.GenTraversableOnce
  * @define bitwiseOperationsReprDescription bit vector
  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
  */
-trait ByteVector extends BitwiseOperations[ByteVector,Int] {
+sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializable {
 
   /**
    * Returns the number of bytes in this vector.
@@ -727,6 +727,8 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   private def checkIndex(n: Int): Unit =
     if (n < 0 || n >= size)
       throw new IndexOutOfBoundsException(s"invalid index: $n for size $size")
+
+  protected final def writeReplace(): AnyRef = new SerializationProxy(toArray)
 }
 
 /**
@@ -1094,4 +1096,9 @@ object ByteVector {
    */
   def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): ByteVector =
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  @SerialVersionUID(1L)
+  private class SerializationProxy(private val bytes: Array[Byte]) extends Serializable {
+    def readResolve: AnyRef = ByteVector.view(bytes)
+  }
 }

@@ -2,11 +2,9 @@ package scodec.bits
 
 import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest._
-import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import Arbitraries._
 
-class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
+class BitVectorTest extends BitsSuite {
   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
     Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
   }
@@ -427,5 +425,9 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
       val sha256 = MessageDigest.getInstance("SHA-256")
       x.digest("SHA-256") shouldBe BitVector(ByteVector(sha256.digest(x.toByteArray)))
     }
+  }
+
+  test("serialization") {
+    forAll { (x: BitVector) => serializationShouldRoundtrip(x) }
   }
 }
