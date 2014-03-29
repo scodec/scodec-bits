@@ -2,7 +2,8 @@
 =====
  - Added `scodec.bits.crc` for calculating cyclic redundancy checks
  - Improved performance of `drop`
- - Added `BitVector#digest` and `ByteVector#digest`
+ - Added `digest` to `BitVector` and `ByteVector`
+ - Renamed `padToRight` to `padLeft` and aliased `padTo` to `padRight`
 
 1.0.0-RC2
 =========

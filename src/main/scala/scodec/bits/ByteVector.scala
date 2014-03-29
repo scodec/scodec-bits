@@ -390,13 +390,21 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
   final def lastOption: Option[Byte] = lift(size-1)
 
   /**
+   * Alias for `padRight`.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padTo(n: Int): ByteVector = padRight(n)
+
+  /**
    * Returns an `n`-byte vector whose contents are this vector's contents followed by 0 or more zero bytes.
    *
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padTo(n: Int): ByteVector =
-    if (n < size) throw new IllegalArgumentException(s"ByteVector.padTo($n)")
+  final def padRight(n: Int): ByteVector =
+    if (n < size) throw new IllegalArgumentException(s"ByteVector.padRight($n)")
     else this ++ ByteVector.fill(n - size)(0)
 
   /**
@@ -405,10 +413,9 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padToRight(n: Int): ByteVector =
-    if (n < size) throw new IllegalArgumentException(s"ByteVector.padToRight($n)")
+  final def padLeft(n: Int): ByteVector =
+    if (n < size) throw new IllegalArgumentException(s"ByteVector.padLeft($n)")
     else ByteVector.fill(n - size)(0) ++ this
-
 
   /**
    * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.

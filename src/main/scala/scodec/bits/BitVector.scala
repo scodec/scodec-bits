@@ -479,13 +479,21 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   final def lastOption: Option[Boolean] = lift(size - 1)
 
   /**
-   * Returns an `n`-bit vector whose contents are this vector's contents followed by 0 or more low bits.
+   * Alias for `padRight`.
    *
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padTo(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"BitVector.padTo($n)")
+  final def padTo(n: Long): BitVector = padRight(n)
+
+  /**
+   * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+   *
+   * @throws IllegalArgumentException if `n < size`
+   * @group collection
+   */
+  final def padRight(n: Long): BitVector =
+    if (n < size) throw new IllegalArgumentException(s"BitVector.padRight($n)")
     else this ++ BitVector.fill(n - size)(false)
 
   /**
@@ -494,8 +502,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padToRight(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"BitVector.padToRight($n)")
+  final def padLeft(n: Long): BitVector =
+    if (n < size) throw new IllegalArgumentException(s"BitVector.padLeft($n)")
     else BitVector.fill(n - size)(false) ++ this
 
   /**
