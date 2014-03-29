@@ -11,13 +11,11 @@ object crc {
    * Constructs a table-based CRC function using the specified polynomial.
    *
    * Each of the input vectors must be the same size.
-   * Only CRCs with length evenly divisible by 8 are supported.
    *
    * @return function that calculates a `n`-bit CRC where `n = poly.size`
    */
   def apply(poly: BitVector, initial: BitVector, reflectInput: Boolean, reflectOutput: Boolean, finalXor: BitVector): BitVector => BitVector = {
     require(poly.nonEmpty, "empty polynomial")
-    require(poly.size % 8 == 0, "only CRCs with length evenly divisible by 8 are supported")
     require(initial.size == poly.size && poly.size == finalXor.size, "poly, initial, and finalXor must be same length")
 
     var table = Array.ofDim[BitVector](256)
@@ -49,7 +47,7 @@ object crc {
       if (remaining.isEmpty) {
         output(crcreg)
       } else if (remaining sizeLessThan 8) {
-        output(goBitwise(poly, remaining, crcreg))
+        output(goBitwise(poly, if (reflectInput) remaining.reverseBitOrder else remaining, crcreg))
       } else {
         val shifted = crcreg << m
         val inputByte = remaining.take(m)
@@ -59,7 +57,8 @@ object crc {
       }
     }
 
-    a => calculate(a, initial)
+    if (poly.size < 8) a => output(goBitwise(poly, if (reflectInput) a.reverseBitOrder else a, initial))
+    else a => calculate(a, initial)
   }
 
   private def goBitwise(poly: BitVector, remaining: BitVector, crcreg: BitVector): BitVector =
@@ -77,8 +76,8 @@ object crc {
    *
    * @return function that calculates a `n`-bit CRC where `n = poly.size`
    */
-  def bitwise(poly: BitVector, initial: BitVector, reflectOutput: Boolean, finalXor: BitVector, value: BitVector): BitVector = {
-    val reg = goBitwise(poly, value, initial)
+  def bitwise(poly: BitVector, initial: BitVector, reflectInput: Boolean, reflectOutput: Boolean, finalXor: BitVector, value: BitVector): BitVector = {
+    val reg = goBitwise(poly, if (reflectInput) value.reverseBitOrder else value, initial)
     (if (reflectOutput) reg.reverse else reg) xor finalXor
   }
 }

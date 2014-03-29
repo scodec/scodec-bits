@@ -523,6 +523,14 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
   }
 
   /**
+   * Returns a new vector of the same size with the bit order reversed.
+   *
+   * @group collection
+   */
+  final def reverseBitOrder: BitVector =
+    BitVector(compact.underlying.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+
+  /**
    * Returns the number of bits that are high.
    *
    * @group bitwise
