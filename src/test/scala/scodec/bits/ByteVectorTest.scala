@@ -1,5 +1,6 @@
 package scodec.bits
 
+import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen, Shrink}
 import Arbitrary.arbitrary
 import org.scalatest._
@@ -258,6 +259,13 @@ class ByteVectorTest extends FunSuite with Matchers with GeneratorDrivenProperty
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       x.patch(n, x.slice(n, n)) shouldBe x
       x.patch(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n + y.size))
+    }
+  }
+
+  test("digest") {
+    forAll { (x: ByteVector) =>
+      val sha256 = MessageDigest.getInstance("SHA-256")
+      x.digest("SHA-256") shouldBe ByteVector.view(sha256.digest(x.toArray))
     }
   }
 }

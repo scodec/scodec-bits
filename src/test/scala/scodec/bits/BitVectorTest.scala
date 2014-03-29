@@ -1,5 +1,6 @@
 package scodec.bits
 
+import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalatest._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
@@ -408,4 +409,11 @@ class BitVectorTest extends FunSuite with Matchers with GeneratorDrivenPropertyC
     t2.join
     ok.get shouldBe true
   }}
+
+  test("digest") {
+    forAll { (x: BitVector) =>
+      val sha256 = MessageDigest.getInstance("SHA-256")
+      x.digest("SHA-256") shouldBe BitVector(ByteVector(sha256.digest(x.toByteArray)))
+    }
+  }
 }

@@ -2,6 +2,7 @@
 =====
  - Added `scodec.bits.crc` for calculating cyclic redundancy checks
  - Improved performance of `drop`
+ - Added `BitVector#digest` and `ByteVector#digest`
 
 1.0.0-RC2
 =========

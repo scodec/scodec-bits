@@ -1,6 +1,7 @@
 package scodec.bits
 
 import java.nio.ByteBuffer
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.GenTraversableOnce
 
@@ -780,6 +781,22 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] {
    * @group conversions
    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
+
+  /**
+   * Computes a digest of this bit vector.
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   * @param algoritm digest algorithm to use
+   * @group conversions
+   */
+  final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
+
+  /**
+   * Computes a digest of this bit vector.
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   * @param digest digest to use
+   * @group conversions
+   */
+  final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
 
   /**
    * Returns true if the specified value is a `BitVector` with the same contents as this vector.

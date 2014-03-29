@@ -2,6 +2,7 @@ package scodec.bits
 
 import ByteVector._
 import java.nio.ByteBuffer
+import java.security.MessageDigest
 import scala.collection.GenTraversableOnce
 
 /**
@@ -643,6 +644,23 @@ trait ByteVector extends BitwiseOperations[ByteVector,Int] {
 
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
+
+  /**
+   * Computes a digest of this byte vector.
+   * @param algoritm digest algorithm to use
+   * @group conversions
+   */
+  final def digest(algorithm: String): ByteVector = digest(MessageDigest.getInstance(algorithm))
+
+  /**
+   * Computes a digest of this byte vector.
+   * @param digest digest to use
+   * @group conversions
+   */
+  final def digest(digest: MessageDigest): ByteVector = {
+    foreachS { new F1BU { def apply(b: Byte) = digest.update(b) }}
+    ByteVector.view(digest.digest)
+  }
 
   // implementation details, Object methods
 
