@@ -15,7 +15,7 @@ scalaBinaryVersion in update := (
   if (scalaVersion.value == "2.11.0-SNAPSHOT") latestScala211PreRelease else scalaBinaryVersion.value
 )
 
-crossScalaVersions := Seq("2.10.4", latestScala211PreRelease)
+//crossScalaVersions := Seq("2.10.4", latestScala211PreRelease)
 
 scalacOptions ++= Seq(
   "-feature",
