@@ -36,7 +36,7 @@ scalacOptions in (Compile, doc) ++= {
     "-implicits",
     "-implicits-show-all",
     "-sourcepath", baseDirectory.value.getAbsolutePath,
-    "-doc-source-url", "https:///github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
+    "-doc-source-url", "https://github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
   )
 }
 
@@ -122,7 +122,6 @@ releaseProcess := Seq[ReleaseStep](
   commitReleaseVersion,
   tagRelease,
   publishArtifacts.copy(action = publishSignedAction),
-  releaseTask(GhPagesKeys.pushSite),
   setNextVersion,
   commitNextVersion,
   pushChanges
