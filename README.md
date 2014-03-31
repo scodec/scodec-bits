@@ -40,15 +40,17 @@ For a combinator based approach to encoding values to/from binary, see the compa
 Getting Binaries
 ----------------
 
-This library works with Scala 2.10.* and 2.11.0-M8.
+This library works with Scala 2.10 and 2.11.
 
 ### Releases
 
-The latest released version is 1.0.0-RC2, which is a stable snapshot of 1.0.0.
+The latest released version is 1.0.0.
+
+ - [ScalaDoc](http://docs.typelevel.org/api/scodec/bits/stable/1.0.0/)
 
 For SBT users:
 
-    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.0-RC2"
+    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.0"
 
 
 For Maven users:
@@ -57,7 +59,7 @@ For Maven users:
       <dependency>
         <groupId>org.typelevel</groupId>
         <artifactId>scodec-bits_2.10</artifactId>
-        <version>1.0.0-RC2</version>
+        <version>1.0.0</version>
       </dependency>
     </dependencies>
 
@@ -70,7 +72,7 @@ For SBT users:
 
     resolvers += "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots/"
 
-    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.0-SNAPSHOT"
+    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.1.0-SNAPSHOT"
 
 
 For Maven users:
@@ -87,7 +89,7 @@ For Maven users:
       <dependency>
         <groupId>org.typelevel</groupId>
         <artifactId>scodec-bits_2.10</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.1.0-SNAPSHOT</version>
       </dependency>
     </dependencies>
 
