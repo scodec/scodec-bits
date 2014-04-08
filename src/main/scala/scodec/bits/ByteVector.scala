@@ -733,7 +733,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   override def toString: String =
-    if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
+    if (isEmpty) "ByteVector(empty)"
+    else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
 
   private[scodec] def pretty(prefix: String): String = this match {

@@ -949,7 +949,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @group collection
    */
   override final def toString =
-    if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
+    if (isEmpty) "BitVector(empty)"
+    else if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
     else s"BitVector($size bits, #${hashCode})"
 
   // impl details
