@@ -1,6 +1,7 @@
 1.0.1
 =====
  - Added toInt/toLong/fromInt/fromLong to BitVector and ByteVector
+ - Changed toString of empty BitVector/ByteVector
 
 1.0.0
 =====
