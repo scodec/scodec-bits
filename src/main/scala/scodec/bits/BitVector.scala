@@ -1,6 +1,6 @@
 package scodec.bits
 
-import java.nio.ByteBuffer
+import java.nio.{ ByteBuffer, ByteOrder }
 import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicLong
 import scala.collection.GenTraversableOnce
@@ -807,6 +807,86 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
+   * Converts the contents of this vector to an int.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 32
+   * @group conversions
+   */
+  final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
+    require(sizeLessThanOrEqual(32))
+    val bits = intSize.get
+    val mod = bits % 8
+    var result = 0
+    ordering match {
+      case ByteOrdering.BigEndian =>
+        @annotation.tailrec
+        def go(bv: ByteVector): Unit =
+          if (bv.nonEmpty) {
+            result = (result << 8) | (0x0ff & bv.head)
+            go(bv.tail)
+          }
+        go(this.bytes)
+      case ByteOrdering.LittleEndian =>
+        @annotation.tailrec
+        def go(bv: ByteVector, i: Int): Unit =
+          if (bv.nonEmpty) {
+            result = result | ((0x0ff & bv.head) << (8 * i))
+            go(bv.tail, i + 1)
+          }
+        go(this.bytes, 0)
+    }
+    if (mod != 0) result = result >>> (8 - mod)
+    // Sign extend if necessary
+    if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
+      val toShift = 32 - bits
+      result = (result << toShift) >> toShift
+    }
+    result
+  }
+
+  /**
+   * Converts the contents of this vector to a long.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 64
+   * @group conversions
+   */
+  final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
+    require(sizeLessThanOrEqual(64))
+    val bits = intSize.get
+    val mod = bits % 8
+    var result = 0L
+    ordering match {
+      case ByteOrdering.BigEndian =>
+        @annotation.tailrec
+        def go(bv: ByteVector): Unit =
+          if (bv.nonEmpty) {
+            result = (result << 8) | (0x0ffL & bv.head)
+            go(bv.tail)
+          }
+        go(this.bytes)
+      case ByteOrdering.LittleEndian =>
+        @annotation.tailrec
+        def go(bv: ByteVector, i: Int): Unit =
+          if (bv.nonEmpty) {
+            result = result | ((0x0ffL & bv.head) << (8 * i))
+            go(bv.tail, i + 1)
+          }
+        go(this.bytes, 0)
+    }
+    if (mod != 0) result = result >>> (8 - mod)
+    // Sign extend if necessary
+    if (signed && bits != 64 && ((1 << (bits - 1)) & result) != 0) {
+      val toShift = 64 - bits
+      result = (result << toShift) >> toShift
+    }
+    result
+  }
+
+  /**
    * Computes a digest of this bit vector.
    * The last byte is zero padded if the size is not evenly divisible by 8.
    * @param algoritm digest algorithm to use
@@ -1054,7 +1134,6 @@ object BitVector {
    */
   def view(bs: Array[Byte], sizeInBits: Long): BitVector = toBytes(ByteVector.view(bs), sizeInBits)
 
-
   /**
    * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
    * @group constructors
@@ -1068,6 +1147,34 @@ object BitVector {
     else {
       fill(n / 2)(high) ++ fill(n - (n/2))(high)
     }
+  }
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param i value to encode
+   * @param size size of vector (<= 32)
+   * @param ordering byte ordering of vector
+   */
+  def fromInt(i: Int, size: Int = 32, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    require(size <= 32)
+    val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(i)
+    buffer.flip()
+    val relevantBits = (BitVector.view(buffer) << (32 - size)).take(size)
+    if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
+  }
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param i value to encode
+   * @param size size of vector (<= 64)
+   * @param ordering byte ordering of vector
+   */
+  def fromLong(l: Long, size: Int = 64, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    require(size <= 64)
+    val buffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(l)
+    buffer.flip()
+    val relevantBits = (BitVector.view(buffer) << (64 - size)).take(size)
+    if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
   /**

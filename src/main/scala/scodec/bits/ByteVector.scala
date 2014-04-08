@@ -620,6 +620,28 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     bldr.toString
   }
 
+  /**
+   * Converts the contents of this vector to an int.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 32
+   * @group conversions
+   */
+  final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int =
+    bits.toInt(signed, ordering)
+
+  /**
+   * Converts the contents of this vector to an int.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 64
+   * @group conversions
+   */
+  final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long =
+    bits.toLong(signed, ordering)
+
   final def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
 
   final def or(other: ByteVector): ByteVector =
@@ -911,6 +933,24 @@ object ByteVector {
    * @group constructors
    */
   def high(size: Int): ByteVector = fill(size)(0xff)
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param i value to encode
+   * @param size size of vector (<= 4)
+   * @param ordering byte ordering of vector
+   */
+  def fromInt(i: Int, size: Int = 4, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
+    BitVector.fromInt(i, size * 8, ordering).bytes
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param i value to encode
+   * @param size size of vector (<= 8)
+   * @param ordering byte ordering of vector
+   */
+  def fromLong(l: Long, size: Int = 8, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
+    BitVector.fromLong(l, size * 8, ordering).bytes
 
   /**
    * Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.

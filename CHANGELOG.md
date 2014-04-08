@@ -1,3 +1,7 @@
+1.0.1
+=====
+ - Added toInt/toLong/fromInt/fromLong to BitVector and ByteVector
+
 1.0.0
 =====
  - Added `scodec.bits.crc` for calculating cyclic redundancy checks
