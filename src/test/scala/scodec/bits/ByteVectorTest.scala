@@ -269,6 +269,20 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("int conversions") {
+    forAll { (n: Int) =>
+      ByteVector.fromInt(n).toInt() shouldBe n
+      ByteVector.fromInt(n, ordering = ByteOrdering.LittleEndian).toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
+    }
+  }
+
+  test("long conversions") {
+    forAll { (n: Int) =>
+      ByteVector.fromLong(n).toLong() shouldBe n
+      ByteVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+    }
+  }
+
   test("digest") {
     forAll { (x: ByteVector) =>
       val sha256 = MessageDigest.getInstance("SHA-256")
