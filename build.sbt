@@ -44,7 +44,7 @@ triggeredMessage := (_ => Watched.clearScreen)
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  "org.scalatest" %% "scalatest" % "2.1.2" % "test",
+  "org.scalatest" %% "scalatest" % "2.1.3" % "test",
   "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
   "com.google.guava" % "guava" % "16.0.1" % "test",
   "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
