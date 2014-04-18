@@ -505,8 +505,10 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 
   /**
    * Copies the contents of this vector to array `xs`, beginning at index `start`.
+   *
+   * @group conversions
    */
-  private[scodec] def copyToArray(xs: Array[Byte], start: Int): Unit = {
+  final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
     @annotation.tailrec
     def go(rem: Vector[ByteVector]): Unit = rem.headOption match {
