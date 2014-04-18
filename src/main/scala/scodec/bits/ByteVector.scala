@@ -499,9 +499,24 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def toArray: Array[Byte] = {
     val buf = new Array[Byte](size)
-    var i = 0
-    this.foreachS { new F1BU { def apply(b: Byte) = { buf(i) = b; i += 1 } }}
+    copyToArray(buf, 0)
     buf
+  }
+
+  /**
+   * Copies the contents of this vector to array `xs`, beginning at index `start`.
+   */
+  private[scodec] def copyToArray(xs: Array[Byte], start: Int): Unit = {
+    var i = start
+    @annotation.tailrec
+    def go(rem: Vector[ByteVector]): Unit = rem.headOption match {
+      case None => ()
+      case Some(bytes) => bytes match {
+        case Chunk(bs) => bs.copyToArray(xs, i); i += bs.size; go(rem.tail)
+        case Append(l,r) => go(l +: r +: rem.tail)
+      }
+    }
+    go(Vector(this))
   }
 
   /**
@@ -769,7 +784,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 object ByteVector {
 
   // various specialized function types
-  private[scodec] abstract class At { def apply(i: Int): Byte }
+  private[scodec] abstract class At {
+    def apply(i: Int): Byte
+    def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+      var i = 0
+      while (i < size) {
+        xs(start + i) = apply(offset + i)
+        i += 1
+      }
+    }
+  }
   private[scodec] abstract class F1B { def apply(b: Byte): Byte }
   private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
   private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
@@ -778,10 +802,20 @@ object ByteVector {
     new At { def apply(i: Int) = throw new IllegalArgumentException("empty view") }
 
   private def AtArray(arr: Array[Byte]): At =
-    new At { def apply(i: Int) = arr(i) }
+    new At {
+      def apply(i: Int) = arr(i)
+      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
+        System.arraycopy(arr, offset, xs, start, size)
+    }
 
   private def AtByteBuffer(buf: ByteBuffer): At =
-    new At { def apply(i: Int) = buf.get(i) }
+    new At {
+      def apply(i: Int) = buf.get(i)
+      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+        buf.position(offset)
+        buf.get(xs, start, size)
+      }
+    }
 
   private def AtFnI(f: Int => Int): At = new At {
     def apply(i: Int) = f(i).toByte
@@ -794,6 +828,8 @@ object ByteVector {
       while (i < size) { f(at(offset+i)); i += 1 }
       ()
     }
+    def copyToArray(xs: Array[Byte], start: Int): Unit =
+      at.copyToArray(xs, start, offset, size)
     def take(n: Int): View =
       if (n <= 0) View.empty
       else if (n >= size) this
