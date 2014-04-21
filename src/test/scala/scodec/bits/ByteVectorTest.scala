@@ -3,6 +3,8 @@ package scodec.bits
 import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen, Shrink}
 import Arbitrary.arbitrary
+import java.nio.ByteBuffer
+import java.io.ByteArrayOutputStream
 
 class ByteVectorTest extends BitsSuite {
 
@@ -23,6 +25,11 @@ class ByteVectorTest extends BitsSuite {
     b.take(n) ++ b.drop(n)
   }
 
+  def genByteBufferVectors(maxSize: Int): Gen[ByteVector] = for {
+    size <- Gen.choose(0, maxSize)
+    bytes <- Gen.listOfN(size, Gen.choose(0, 255))
+  } yield ByteVector.view(ByteBuffer.wrap(bytes.map(_.toByte).toArray))
+
   def genConcat(g: Gen[ByteVector]) =
     g.map { b => b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _) }
 
@@ -31,7 +38,8 @@ class ByteVectorTest extends BitsSuite {
     genConcat(standardByteVectors(100)),
     sliceByteVectors,
     genSplit(sliceByteVectors),
-    genSplit(genConcat(standardByteVectors(500))))
+    genSplit(genConcat(standardByteVectors(500))),
+    genByteBufferVectors(100))
 
   val bytesWithIndex = for {
     b <- byteVectors
@@ -207,6 +215,19 @@ class ByteVectorTest extends BitsSuite {
   test("toArray roundtrip") {
     forAll { (b: ByteVector) =>
       val fromArr = ByteVector(b.toArray)
+      b shouldBe fromArr
+      fromArr shouldBe b
+      // Ensure immutable behavior
+      val fromArr2 = ByteVector(b.toArray)
+      fromArr shouldBe fromArr2
+    }
+  }
+
+  test("copyToStream roundtrip") {
+    forAll { (b: ByteVector) =>
+      val os = new ByteArrayOutputStream()
+      b.copyToStream(os)
+      val fromArr = ByteVector(os.toByteArray)
       b shouldBe fromArr
       fromArr shouldBe b
     }
