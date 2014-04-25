@@ -1022,7 +1022,7 @@ object BitVector {
    * 1-bit vector with only bit set high.
    * @group constants
    */
-  val one: BitVector = toBytes(ByteVector(1), 1)
+  val one: BitVector = toBytes(ByteVector(0xff), 1)
 
   /**
    * 8-bit vector with all bits set low.
@@ -1040,7 +1040,7 @@ object BitVector {
    * 1-bit vector with only bit set to specified value.
    * @group constructors
    */
-  def bit(high: Boolean): BitVector = if(high) zero else one
+  def bit(high: Boolean): BitVector = if (high) one else zero
 
   /**
    * n-bit vector with bit at index `i` set to value of boolean at index `i` in specified iterable.

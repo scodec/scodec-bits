@@ -57,6 +57,13 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
+  test("1-bit vectors") {
+    BitVector.zero.head shouldBe false
+    BitVector.one.head shouldBe true
+    BitVector.bit(false).head shouldBe false
+    BitVector.bit(true).head shouldBe true
+  }
+
   test("construction via high") {
     BitVector.high(1).toByteVector shouldBe ByteVector(0x80)
     BitVector.high(2).toByteVector shouldBe ByteVector(0xc0)
