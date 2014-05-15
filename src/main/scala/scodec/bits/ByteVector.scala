@@ -172,13 +172,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     else if (n1 == 0) this
     else {
       @annotation.tailrec
-      def go(cur: ByteVector, n1: Int, accR: Vector[ByteVector]): ByteVector =
+      def go(cur: ByteVector, n1: Int, accR: List[ByteVector]): ByteVector =
         cur match {
           case Chunk(bs) => accR.foldLeft(Chunk(bs.drop(n1)): ByteVector)(_ ++ _)
           case Append(l,r) => if (n1 > l.size) go(r, n1-l.size, accR)
-                              else go(l, n1, r +: accR)
+                              else go(l, n1, r :: accR)
         }
-      go(this, n1, Vector())
+      go(this, n1, Nil)
     }
   }
 
@@ -558,14 +558,17 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def bits: BitVector = toBitVector
 
   /**
-   * Converts the contents of this vector to a `java.nio.ByteBuffer`.
+   * Represents the contents of this vector as a read-only `java.nio.ByteBuffer`.
    *
-   * The returned buffer is freshly allocated with limit set to the minimum number of bytes needed
-   * to represent the contents of this vector, position set to zero, and remaining set to the limit.
+   * The returned buffer is read-only with limit set to the minimum number of bytes needed to
+   * represent the contents of this vector, position set to zero, and remaining set to the limit.
    *
    * @group conversions
    */
-  final def toByteBuffer: ByteBuffer = ByteBuffer.wrap(toArray)
+  final def toByteBuffer: ByteBuffer = this match {
+    case Chunk(v) => v.asByteBuffer
+    case _        => ByteBuffer.wrap(toArray).asReadOnlyBuffer()
+  }
 
   /**
    * Converts the contents of this byte vector to a binary string of `size * 8` digits.
@@ -699,7 +702,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 
   /**
    * Computes a digest of this byte vector.
-   * @param algoritm digest algorithm to use
+   * @param algorithm digest algorithm to use
    * @group conversions
    */
   final def digest(algorithm: String): ByteVector = digest(MessageDigest.getInstance(algorithm))
@@ -788,6 +791,11 @@ object ByteVector {
   // various specialized function types
   private[scodec] abstract class At {
     def apply(i: Int): Byte
+    def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
+      val arr = new Array[Byte](size)
+      copyToArray(arr, 0, offset, size)
+      ByteBuffer.wrap(arr).asReadOnlyBuffer()
+    }
     def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
       var i = 0
       while (i < size) {
@@ -808,11 +816,21 @@ object ByteVector {
   private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
 
   private val AtEmpty: At =
-    new At { def apply(i: Int) = throw new IllegalArgumentException("empty view") }
+    new At {
+      def apply(i: Int) = throw new IllegalArgumentException("empty view")
+      override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+    }
 
   private def AtArray(arr: Array[Byte]): At =
     new At {
       def apply(i: Int) = arr(i)
+
+      override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
+        val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
+        if (start == 0 && size == arr.length) b
+        else b.slice()
+      }
+
       override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
         System.arraycopy(arr, offset, xs, start, size)
 
@@ -829,6 +847,16 @@ object ByteVector {
         n.position(offset)
         n.get(xs, start, size)
       }
+
+      override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
+        val b = buf.asReadOnlyBuffer()
+        if (offset == 0 && b.position() == 0 && size == b.remaining()) b
+        else {
+          b.position(offset)
+          b.limit(offset + size)
+          b.slice()
+        }
+      }
     }
 
   private def AtFnI(f: Int => Int): At = new At {
@@ -842,6 +870,7 @@ object ByteVector {
       while (i < size) { f(at(offset+i)); i += 1 }
       ()
     }
+    def asByteBuffer: ByteBuffer = at.asByteBuffer(offset, size)
     def copyToStream(s: OutputStream): Unit =
       at.copyToStream(s, offset, size)
     def copyToArray(xs: Array[Byte], start: Int): Unit =
@@ -943,7 +972,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: ByteBuffer): ByteVector =
-    Chunk(View(AtByteBuffer(bytes.duplicate()), 0, bytes.limit))
+    Chunk(View(AtByteBuffer(bytes.slice()), 0, bytes.limit))
 
   /**
    * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
@@ -999,7 +1028,7 @@ object ByteVector {
 
   /**
    * Constructs a bit vector with the 2's complement encoding of the specified value.
-   * @param i value to encode
+   * @param l value to encode
    * @param size size of vector (<= 8)
    * @param ordering byte ordering of vector
    */

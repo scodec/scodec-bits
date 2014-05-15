@@ -233,6 +233,14 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("toByteBuffer roundtrip") {
+    forAll { (b: ByteVector) =>
+      val fromBuffer = ByteVector(b.toByteBuffer)
+      b shouldBe fromBuffer
+      fromBuffer shouldBe b
+    }
+  }
+
   test("dropping from a view is consistent with dropping from a strict vector") {
     forAll { (b: ByteVector, n0: Int) =>
       val view = ByteVector.view(b.toArray)
