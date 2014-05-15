@@ -2,7 +2,7 @@
 =====
  - Added toInt/toLong/fromInt/fromLong to BitVector and ByteVector
  - Changed toString of empty BitVector/ByteVector
- - More performant version of ByteVector#toArray
+ - More performant versions of ByteVector#toArray and ByteVector#toByteBuffer
  - Added ByteVector#copyToArray and copyToStream
 
 1.0.0
