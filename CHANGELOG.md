@@ -1,3 +1,7 @@
+1.0.2
+=====
+ - Published ScalaDoc links in POM so that other projects can link to ScalaDoc
+
 1.0.1
 =====
  - Added toInt/toLong/fromInt/fromLong to BitVector and ByteVector

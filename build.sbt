@@ -34,6 +34,10 @@ scalacOptions in (Compile, doc) ++= {
   )
 }
 
+autoAPIMappings := true
+
+apiURL := Some(url(s"http://docs.typelevel.org/api/scodec/bits/stable/${version.value}/"))
+
 testOptions in Test += Tests.Argument("-oD")
 
 licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec-bits/blob/master/LICENSE"))
