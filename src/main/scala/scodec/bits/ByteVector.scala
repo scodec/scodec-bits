@@ -963,9 +963,15 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: Array[Byte]): ByteVector =
-    Chunk(View(AtArray(bytes), 0, bytes.length))
+    viewRange(bytes, 0, bytes.length)
 
   /**
+   * @see view(Array[Byte])
+   */
+  def viewRange(bytes: Array[Byte], offset: Int, size: Int): ByteVector =
+    Chunk(View(AtArray(bytes), offset, size))
+
+   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
