@@ -44,13 +44,13 @@ This library works with Scala 2.10 and 2.11.
 
 ### Releases
 
-The latest released version is 1.0.1.
+The latest released version is 1.0.2.
 
- - [ScalaDoc](http://docs.typelevel.org/api/scodec/bits/stable/1.0.1/)
+ - [ScalaDoc](http://docs.typelevel.org/api/scodec/bits/stable/1.0.2/)
 
 For SBT users:
 
-    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.1"
+    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.2"
 
 
 For Maven users:
@@ -58,8 +58,8 @@ For Maven users:
     <dependencies>
       <dependency>
         <groupId>org.typelevel</groupId>
-        <artifactId>scodec-bits_2.10</artifactId>
-        <version>1.0.1</version>
+        <artifactId>scodec-bits_2.11</artifactId>
+        <version>1.0.2</version>
       </dependency>
     </dependencies>
 
