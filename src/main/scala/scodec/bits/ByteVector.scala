@@ -1341,7 +1341,7 @@ object ByteVector {
     }
 
     def drop(id: AtomicLong, stamp: Long, n: Int): ByteVector =
-      if (n > lastChunk.length * 3) toByteVector.drop(n)
+      if (n > lastChunk.length * 3) toByteVector.drop(n).bufferBy(lastChunk.length)
       else { // if dropping just a few chunks' worth, just dequeue necessary elements from `chunks`
         var remaining = n
         var q = chunks
