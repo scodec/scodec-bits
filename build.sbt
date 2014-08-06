@@ -2,8 +2,9 @@ import sbtrelease._
 import ReleaseStateTransformations._
 import ReleasePlugin._
 import ReleaseKeys._
+import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
-import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
+import com.typesafe.tools.mima.plugin.MimaKeys._
 
 organization := "org.typelevel"
 
@@ -142,3 +143,8 @@ previousArtifact := previousVersion(version.value) map { pv =>
   organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
 }
 
+binaryIssueFilters ++= Seq(
+  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.buffer"),
+  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.bufferBy"),
+  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.unbuffer")
+)
