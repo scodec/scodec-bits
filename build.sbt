@@ -2,6 +2,8 @@ import sbtrelease._
 import ReleaseStateTransformations._
 import ReleasePlugin._
 import ReleaseKeys._
+import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
+import com.typesafe.tools.mima.plugin.MimaKeys.previousArtifact
 
 organization := "org.typelevel"
 
@@ -132,3 +134,7 @@ site.includeScaladoc()
 ghpages.settings
 
 git.remoteRepo := "git@github.com:scodec/scodec-bits.git"
+
+mimaDefaultSettings
+
+previousArtifact := Some("org.typelevel" % ("scodec-bits_" + scalaBinaryVersion.value) % "1.0.2")
