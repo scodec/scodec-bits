@@ -137,4 +137,4 @@ git.remoteRepo := "git@github.com:scodec/scodec-bits.git"
 
 mimaDefaultSettings
 
-previousArtifact := Some("org.typelevel" % ("scodec-bits_" + scalaBinaryVersion.value) % "1.0.2")
+previousArtifact := None // Some("org.typelevel" % ("scodec-bits_" + scalaBinaryVersion.value) % "1.0.2")
