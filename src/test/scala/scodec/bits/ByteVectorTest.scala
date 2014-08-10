@@ -20,7 +20,7 @@ class ByteVectorTest extends BitsSuite {
 
   def genSplit(g: Gen[ByteVector]) = for {
     b <- g
-    n <- Gen.choose(0, b.size+1)
+    n <- Gen.choose(0L, b.size+1)
   } yield {
     b.take(n) ++ b.drop(n)
   }
@@ -43,7 +43,7 @@ class ByteVectorTest extends BitsSuite {
 
   val bytesWithIndex = for {
     b <- byteVectors
-    i <- Gen.choose(0, b.size+1)
+    i <- Gen.choose(0L, b.size+1)
   } yield (b, i)
 
   implicit val arbitraryByteVectors: Arbitrary[ByteVector] = Arbitrary(byteVectors)
@@ -92,12 +92,13 @@ class ByteVectorTest extends BitsSuite {
 
   test("consistent with Array[Byte] implementations") {
     forAll (bytesWithIndex) { case (b, ind) =>
+      val indI = ind.toInt
       val ba = b.toArray
-      b.take(ind).toArray shouldBe ba.take(ind)
-      b.drop(ind).toArray shouldBe ba.drop(ind)
-      b.lift(ind) shouldBe ba.lift(ind)
-      b.takeRight(ind).toArray shouldBe ba.takeRight(ind)
-      b.dropRight(ind).toArray shouldBe ba.dropRight(ind)
+      b.take(ind).toArray shouldBe ba.take(indI)
+      b.drop(ind).toArray shouldBe ba.drop(indI)
+      b.lift(ind) shouldBe ba.lift(indI)
+      b.takeRight(ind).toArray shouldBe ba.takeRight(indI)
+      b.dropRight(ind).toArray shouldBe ba.dropRight(indI)
       b.reverse.toArray shouldBe ba.reverse
       b.partialCompact(ind).toArray shouldBe ba
       b.lastOption shouldBe ba.lastOption
@@ -108,7 +109,7 @@ class ByteVectorTest extends BitsSuite {
       }
       if (ind < b.size) {
         val actual = b.update(ind,9).toArray
-        val correct = Vector(b.toArray: _*).updated(ind,9).toArray
+        val correct = Vector(b.toArray: _*).updated(indI,9).toArray
         actual shouldBe correct
       }
 
@@ -181,7 +182,7 @@ class ByteVectorTest extends BitsSuite {
         a.foldLeft(acc)(_ :+ _)
       )
       unbuf shouldBe buf
-      (0 until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
+      (0L until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
     }}
   }
 
@@ -190,7 +191,7 @@ class ByteVectorTest extends BitsSuite {
       val unbuf = bs.foldLeft(b)(_ ++ _)
       val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))(_ ++ _)
       unbuf shouldBe buf
-      (0 until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
+      (0L until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
       val ind = (n % (unbuf.size+1)).max(0) + 1
       buf.take(ind) shouldBe unbuf.take(ind)
       buf.drop(ind) shouldBe unbuf.drop(ind)
@@ -304,9 +305,9 @@ class ByteVectorTest extends BitsSuite {
       if (bv.isEmpty) {
         bv.grouped(1) shouldBe Stream.empty
       } else if (bv.size < 3) {
-        bv.grouped(bv.size) shouldBe Stream(bv)
+        bv.grouped(bv.size.toInt) shouldBe Stream(bv)
       } else {
-        bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+        bv.grouped(bv.size.toInt / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
       }
     }
   }

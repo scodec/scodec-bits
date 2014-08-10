@@ -889,7 +889,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Computes a digest of this bit vector.
    * The last byte is zero padded if the size is not evenly divisible by 8.
-   * @param algoritm digest algorithm to use
+   * @param algorithm digest algorithm to use
    * @group conversions
    */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
@@ -1116,7 +1116,7 @@ object BitVector {
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
     require(bytesNeededForBits(sizeInBits) <= Int.MaxValue,
       "Cannot have BitVector chunk larger than Int.MaxValue bytes: " + sizeInBits)
-    toBytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
+    toBytes(ByteVector.view(ind => buffer.get(ind.toInt), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
   }
 
   /**
@@ -1166,7 +1166,7 @@ object BitVector {
 
   /**
    * Constructs a bit vector with the 2's complement encoding of the specified value.
-   * @param i value to encode
+   * @param l value to encode
    * @param size size of vector (<= 64)
    * @param ordering byte ordering of vector
    */
@@ -1292,7 +1292,7 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 4MB).
-   * This simply calls [[scodec.BitVector.unfold]] with a function to extract a series
+   * This simply calls [[scodec.bits.BitVector.unfold]] with a function to extract a series
    * of flat byte arrays from the `InputStream`.
    *
    * This function does not handle closing the `InputStream` and has all the usual
@@ -1317,7 +1317,7 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 8k). This function
-   * does lazy I/O, see [[scodec.BitVector.fromInputStream]] for caveats. The `direct`
+   * does lazy I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct`
    * parameter, if `true`, allows for (but does not enforce) using a 'direct' [[java.nio.ByteBuffer]]
    * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
    * 'view' rather than an in-memory array. This may be more efficient for some workloads. See
@@ -1341,7 +1341,7 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 16MB). Unlike
-   * [[scodec.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
+   * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
    * them explicitly.
    *
    * Behavior is unspecified if this function is used concurrently with the underlying

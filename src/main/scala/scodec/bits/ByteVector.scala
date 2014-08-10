@@ -30,15 +30,15 @@ import java.util.concurrent.atomic.AtomicLong
  * @groupprio conversions 2
  *
  * @define bitwiseOperationsReprDescription bit vector
- * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
+ * @define returnsView This method returns a view and hence, is O(1). Call [[scodec.bits.ByteVector.compact]] to generate a new strict vector.
  */
-sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializable {
+sealed trait ByteVector extends BitwiseOperations[ByteVector,Long] with Serializable {
 
   /**
    * Returns the number of bytes in this vector.
    * @group collection
    */
-  def size: Int
+  def size: Long
 
   /**
    * Alias for [[size]].
@@ -63,13 +63,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
    * @group collection
    */
-  final def get(index: Int): Byte = {
+  final def get(index: Long): Byte = {
     checkIndex(index)
     @annotation.tailrec
-    def go(cur: ByteVector, n: Int): Byte = cur match {
+    def go(cur: ByteVector, n: Long): Byte = cur match {
       case Append(l,r) => if (n < l.size) go(l, n)
                           else go(r, n-l.size)
-      case Chunk(arr) => arr(n)
+      case Chunk(arr) => arr(n.toInt)
       case Buffer(_, _, tl) => tl.get(n)
     }
     go(this, index)
@@ -80,13 +80,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
    * @group collection
    */
-  final def apply(index: Int): Byte = get(index)
+  final def apply(index: Long): Byte = get(index)
 
   /**
    * Returns the byte at the specified index, or `None` if the index is out of range.
    * @group collection
    */
-  final def lift(index: Int): Option[Byte] = {
+  final def lift(index: Long): Option[Byte] = {
     if (index >= 0 && index < size) Some(apply(index))
     else None
   }
@@ -95,7 +95,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * Returns a vector with the byte at the specified index replaced with the specified byte.
    * @group collection
    */
-  final def update(idx: Int, b: Byte): ByteVector = {
+  final def update(idx: Long, b: Byte): ByteVector = {
     checkIndex(idx)
     (take(idx) :+ b) ++ drop(idx+1)
   }
@@ -104,21 +104,21 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * Returns a vector with the specified byte inserted at the specified index.
    * @group collection
    */
-  final def insert(idx: Int, b: Byte): ByteVector =
+  final def insert(idx: Long, b: Byte): ByteVector =
     (take(idx) :+ b) ++ drop(idx)
 
   /**
    * Returns a vector with the specified byte vector inserted at the specified index.
    * @group collection
    */
-  final def splice(idx: Int, b: ByteVector): ByteVector =
+  final def splice(idx: Long, b: ByteVector): ByteVector =
     take(idx) ++ b ++ drop(idx)
 
   /**
    * Returns a vector with the specified byte vector replacing bytes `[idx, idx + b.size]`.
    * @group collection
    */
-  final def patch(idx: Int, b: ByteVector): ByteVector =
+  final def patch(idx: Long, b: ByteVector): ByteVector =
     take(idx) ++ b ++ drop(idx + b.size)
 
   /**
@@ -174,13 +174,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * @group collection
    */
-  final def drop(n: Int): ByteVector = {
+  final def drop(n: Long): ByteVector = {
     val n1 = n min size max 0
     if (n1 == size) ByteVector.empty
     else if (n1 == 0) this
     else {
       @annotation.tailrec
-      def go(cur: ByteVector, n1: Int, accR: List[ByteVector]): ByteVector =
+      def go(cur: ByteVector, n1: Long, accR: List[ByteVector]): ByteVector =
         cur match {
           case Chunk(bs) => accR.foldLeft(Chunk(bs.drop(n1)): ByteVector)(_ ++ _)
           case Append(l,r) => if (n1 > l.size) go(r, n1-l.size, accR)
@@ -198,7 +198,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * @group collection
    */
-  final def dropRight(n: Int): ByteVector =
+  final def dropRight(n: Long): ByteVector =
     take(size - n.max(0))
 
   /**
@@ -211,12 +211,12 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @see acquire
    * @group collection
    */
-  final def take(n: Int): ByteVector = {
+  final def take(n: Long): ByteVector = {
     val n1 = n min size max 0
     if (n1 == size) this
     else if (n1 == 0) ByteVector.empty
     else {
-      def go(accL: List[ByteVector], cur: ByteVector, n1: Int): ByteVector = cur match {
+      def go(accL: List[ByteVector], cur: ByteVector, n1: Long): ByteVector = cur match {
         case Chunk(bs) => accL.foldLeft(Chunk(bs.take(n1)): ByteVector)((r,l) => l ++ r)
         case Append(l,r) => if (n1 > l.size) go(l :: accL, r, n1-l.size)
                             else go(accL, l, n1)
@@ -233,20 +233,20 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * @group collection
    */
-  final def takeRight(n: Int): ByteVector =
+  final def takeRight(n: Long): ByteVector =
     drop(size - n)
 
   /**
    * Returns a pair of vectors that is equal to `(take(n), drop(n))`.
    * @group collection
    */
-  final def splitAt(n: Int): (ByteVector, ByteVector) = (take(n), drop(n))
+  final def splitAt(n: Long): (ByteVector, ByteVector) = (take(n), drop(n))
 
   /**
    * Returns a vector made up of the bytes starting at index `from` up to index `until`.
    * @group collection
    */
-  final def slice(from: Int, until: Int): ByteVector =
+  final def slice(from: Long, until: Long): ByteVector =
     drop(from).take(until - from)
 
   /**
@@ -257,7 +257,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @see take
    * @group collection
    */
-  def acquire(n: Int): Either[String, ByteVector] =
+  def acquire(n: Long): Either[String, ByteVector] =
     if (n <= size) Right(take(n))
     else Left(s"cannot acquire $n bytes from a vector that contains $size bytes")
 
@@ -268,7 +268,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * @group collection
    */
-  final def consume[A](n: Int)(decode: ByteVector => Either[String, A]): Either[String, (ByteVector, A)] =
+  final def consume[A](n: Long)(decode: ByteVector => Either[String, A]): Either[String, (ByteVector, A)] =
     for {
       toDecode <- acquire(n).right
       decoded <- decode(toDecode).right
@@ -406,7 +406,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padTo(n: Int): ByteVector = padRight(n)
+  final def padTo(n: Long): ByteVector = padRight(n)
 
   /**
    * Returns an `n`-byte vector whose contents are this vector's contents followed by 0 or more zero bytes.
@@ -414,7 +414,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padRight(n: Int): ByteVector =
+  final def padRight(n: Long): ByteVector =
     if (n < size) throw new IllegalArgumentException(s"ByteVector.padRight($n)")
     else this ++ ByteVector.fill(n - size)(0)
 
@@ -424,7 +424,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @throws IllegalArgumentException if `n < size`
    * @group collection
    */
-  final def padLeft(n: Int): ByteVector =
+  final def padLeft(n: Long): ByteVector =
     if (n < size) throw new IllegalArgumentException(s"ByteVector.padLeft($n)")
     else ByteVector.fill(n - size)(0) ++ this
 
@@ -434,7 +434,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   final def map(f: Byte => Byte): ByteVector =
-    ByteVector.view((i: Int) => f(apply(i)), size)
+    ByteVector.view((i: Long) => f(apply(i)), size)
 
   /**
    * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
@@ -442,11 +442,11 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * $returnsView
    * @group collection
    */
-  final def mapI(f: Byte => Int): ByteVector =
+  final def mapI(f: Byte => Long): ByteVector =
     map(f andThen { _.toByte })
 
   private[scodec] final def mapS(f: F1B): ByteVector =
-    ByteVector.view(new At { def apply(i: Int) = f(ByteVector.this(i)) }, size)
+    ByteVector.view(new At { def apply(i: Long) = f(ByteVector.this(i)) }, size)
 
   /**
    * Returns a vector with the bytes of this vector in reverse order.
@@ -456,16 +456,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def reverse: ByteVector =
     ByteVector.view(i => apply(size - i - 1), size)
 
-  final def shiftLeft(n: Int): ByteVector =
+  final def shiftLeft(n: Long): ByteVector =
     BitVector(this).shiftLeft(n).toByteVector
 
-  final def shiftRight(n: Int, signExtension: Boolean): ByteVector =
+  final def shiftRight(n: Long, signExtension: Boolean): ByteVector =
     BitVector(this).shiftRight(n, signExtension).toByteVector
 
-  final def rotateLeft(n: Int): ByteVector =
+  final def rotateLeft(n: Long): ByteVector =
     BitVector(this).rotateLeft(n).toByteVector
 
-  final def rotateRight(n: Int): ByteVector =
+  final def rotateRight(n: Long): ByteVector =
     BitVector(this).rotateRight(n).toByteVector
 
   /**
@@ -487,7 +487,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * Invokes `compact` on any subtrees whose size is `<= chunkSize`.
    * @group collection
    */
-  final def partialCompact(chunkSize: Int): ByteVector = this match {
+  final def partialCompact(chunkSize: Long): ByteVector = this match {
     case small if small.size <= chunkSize => small.compact
     case Append(l,r) => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
     case _ => this
@@ -499,7 +499,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   final def copy: ByteVector = {
-    val arr = this.toArray
+    val arr = this.toArray //TODO:IND branch on size
     Chunk(View(AtArray(arr), 0, size))
   }
 
@@ -509,7 +509,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group conversions
    */
   final def toArray: Array[Byte] = {
-    val buf = new Array[Byte](size)
+    val buf = new Array[Byte](checkInt(size)) //TODO:IND Break if too big
     copyToArray(buf, 0)
     buf
   }
@@ -519,8 +519,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * @group conversions
    */
-  final def copyToArray(xs: Array[Byte], start: Int): Unit = {
-    var i = start
+  final def copyToArray(xs: Array[Byte], start: Long): Unit = {
+    var i = start //TODO:IND Break if too big
     foreachV{ v => v.copyToArray(xs, i); i += v.size }
   }
 
@@ -538,7 +538,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group conversions
    */
   final def toIndexedSeq: IndexedSeq[Byte] = new IndexedSeq[Byte] {
-    def length = ByteVector.this.size
+    def length = checkInt(ByteVector.this.size)
     def apply(i: Int) = ByteVector.this.apply(i)
   }
 
@@ -677,7 +677,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
         val idx = group.padTo(8).shiftRight(2, false).toByteVector.head
         bldr.append(alphabet.toChar(idx))
       }
-      if (paddingBytes > 0) bldr.append(alphabet.pad.toString * paddingBytes)
+      if (paddingBytes > 0) bldr.append(alphabet.pad.toString * checkInt(paddingBytes))
     }
     bldr.toString
   }
@@ -726,7 +726,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b,b2) })
 
   private[scodec] final def zipWithS(other: ByteVector)(f: F2B): ByteVector = {
-    val at = new At { def apply(i: Int) = f(ByteVector.this(i), other(i)) }
+    val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i)) }
     Chunk(View(at, 0, size min other.size))
   }
 
@@ -772,7 +772,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     val chunkSize = 1024 * 64
     @annotation.tailrec
     def go(bytes: ByteVector, h: Int): Int = {
-      if (bytes.isEmpty) finalizeHash(h, size)
+      if (bytes.isEmpty) finalizeHash(h, checkInt(size)  ) // TODO should we be putting the high bits of the length in the hash somehow
       else go(bytes.drop(chunkSize), mix(h, bytesHash(bytes.take(chunkSize).toArray)))
     }
     go(this, stringHash("ByteVector"))
@@ -784,7 +784,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   override def equals(other: Any) = other match {
     case that: ByteVector => this.size == that.size &&
-                             (0 until this.size).forall(i => this(i) == that(i))
+                             (0L until this.size).forall(i => this(i) == that(i))
     case other => false
   }
 
@@ -809,7 +809,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     case _ => prefix + (if (size < 16) "0x"+toHex else "#"+hashCode)
   }
 
-  private def checkIndex(n: Int): Unit =
+  private def checkIndex(n: Long): Unit =
     if (n < 0 || n >= size)
       throw new IndexOutOfBoundsException(s"invalid index: $n for size $size")
 
@@ -830,25 +830,32 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
  */
 object ByteVector {
 
+  private final def checkInt(l:Long) : Int = {
+    assert( Integer.MIN_VALUE < l && l <= Integer.MAX_VALUE   )
+    l.toInt
+  }
+
+  private final def idx(offset:Long, n: Long) : Int = checkInt(offset + n)
+
   // various specialized function types
   private[scodec] abstract class At {
-    def apply(i: Int): Byte
-    def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
-      val arr = new Array[Byte](size)
+    def apply(i: Long): Byte
+    def asByteBuffer(offset: Long, size: Long): ByteBuffer = {
+      val arr = new Array[Byte](size.toInt)
       copyToArray(arr, 0, offset, size)
       ByteBuffer.wrap(arr).asReadOnlyBuffer()
     }
-    def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+    def copyToArray(xs: Array[Byte], start: Long, offset: Long, size: Long): Unit = {
       var i = 0
       while (i < size) {
-        xs(start + i) = apply(offset + i)
+        xs( checkInt(start + i) ) = apply(idx(offset, i))
         i += 1
       }
     }
-    def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
+    def copyToStream(s: OutputStream, offset: Long, size: Long): Unit = {
       var i = 0
       while (i < size) {
-        s.write(apply(offset + i))
+        s.write(apply(idx(offset, i)))
         i += 1
       }
     }
@@ -859,69 +866,71 @@ object ByteVector {
 
   private val AtEmpty: At =
     new At {
-      def apply(i: Int) = throw new IllegalArgumentException("empty view")
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+      def apply(i: Long) = throw new IllegalArgumentException("empty view")
+      override def asByteBuffer(offset: Long, size: Long): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
     }
 
   private def AtArray(arr: Array[Byte]): At =
     new At {
-      def apply(i: Int) = arr(i)
+      def apply(i: Long) = arr(checkInt(i))
 
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
-        val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
+      override def asByteBuffer(start: Long, size: Long): ByteBuffer = {
+        val b = ByteBuffer.wrap(arr, checkInt(start), checkInt(size)).asReadOnlyBuffer()
         if (start == 0 && size == arr.length) b
         else b.slice()
       }
 
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
-        System.arraycopy(arr, offset, xs, start, size)
+      override def copyToArray(xs: Array[Byte], start: Long, offset: Long, size: Long): Unit = {
+        System.arraycopy(arr, checkInt(offset), xs, checkInt(start), checkInt(size))
+      }
 
-      override def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
-        s.write(arr, offset, size)
+      override def copyToStream(s: OutputStream, offset: Long, size: Long): Unit = {
+        s.write(arr, checkInt(offset), checkInt(size))
       }
     }
 
   private def AtByteBuffer(buf: ByteBuffer): At =
     new At {
-      def apply(i: Int) = buf.get(i)
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+      def apply(i: Long) = buf.get(checkInt(i))
+      override def copyToArray(xs: Array[Byte], start: Long, offset: Long, size: Long): Unit = {
         val n = buf.duplicate()
-        n.position(offset)
-        n.get(xs, start, size)
+        n.position(checkInt(offset))
+        n.get(xs, checkInt(start), checkInt(size))
       }
 
-      override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
+      override def asByteBuffer(offset: Long, size: Long): ByteBuffer = {
         val b = buf.asReadOnlyBuffer()
         if (offset == 0 && b.position() == 0 && size == b.remaining()) b
         else {
-          b.position(offset)
-          b.limit(offset + size)
+          b.position(checkInt(offset))
+          b.limit(checkInt(offset + size) )
           b.slice()
         }
       }
     }
 
-  private def AtFnI(f: Int => Int): At = new At {
-    def apply(i: Int) = f(i).toByte
+  private def AtFnI(f: Long => Int): At = new At {
+    def apply(i: Long) = f(i).toByte
   }
 
-  private[bits] case class View(at: At, offset: Int, size: Int) {
-    def apply(n: Int) = at(offset + n)
+  private[bits] case class View(at: At, offset: Long, size: Long) {
+
+    def apply(n: Long) = at(offset + n)
     def foreach(f: F1BU): Unit = {
       var i = 0
-      while (i < size) { f(at(offset+i)); i += 1 }
+      while (i < size) { f(at(offset + i)); i += 1 }
       ()
     }
     def asByteBuffer: ByteBuffer = at.asByteBuffer(offset, size)
     def copyToStream(s: OutputStream): Unit =
       at.copyToStream(s, offset, size)
-    def copyToArray(xs: Array[Byte], start: Int): Unit =
+    def copyToArray(xs: Array[Byte], start: Long): Unit =
       at.copyToArray(xs, start, offset, size)
-    def take(n: Int): View =
+    def take(n: Long): View =
       if (n <= 0) View.empty
       else if (n >= size) this
       else View(at, offset, n)
-    def drop(n: Int): View =
+    def drop(n: Long): View =
       if (n <= 0) this
       else if (n >= size) View.empty
       else View(at, offset+n, size-n)
@@ -965,7 +974,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a collection of bytes.
    * @group constructors
    */
-  def apply(bytes: Vector[Byte]): ByteVector = view(bytes, bytes.size)
+  def apply(bytes: Vector[Byte]): ByteVector = view((l)=>bytes(checkInt(l)), bytes.size)
 
   /**
    * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
@@ -1017,34 +1026,34 @@ object ByteVector {
     Chunk(View(AtByteBuffer(bytes.slice()), 0, bytes.limit))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Long => Byte` and a size.
    * @group constructors
    */
-  def view(at: Int => Byte, size: Int): ByteVector =
-    Chunk(View(new At { def apply(i: Int) = at(i) }, 0, size))
+  def view(at: Long => Byte, size: Long): ByteVector =
+    Chunk(View(new At { def apply(i: Long) = at(i) }, 0, size))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Long => Byte` and a size.
    */
-  private[scodec] def view(at: At, size: Int): ByteVector =
+  private[scodec] def view(at: At, size: Long): ByteVector =
     Chunk(View(at, 0, size))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Int` and a size,
+   * Constructs a `ByteVector` from a function from `Long => Int` and a size,
    * where the `Int` returned by `at` must fit in a `Byte`.
    * @group constructors
    */
-  def viewI(at: Int => Int, size: Int): ByteVector =
-    Chunk(View(new At { def apply(i: Int) = at(i).toByte }, 0, size))
+  def viewI(at: Long => Int, size: Long): ByteVector =
+    Chunk(View(new At { def apply(i: Long) = at(i).toByte }, 0, size))
 
   /**
    * Constructs a `ByteVector` of the given size, where all bytes have the value `b`.
    * @group constructors
    */
-  def fill[A: Integral](size: Int)(b: A): ByteVector = {
+  def fill[A: Integral](size: Long)(b: A): ByteVector = {
     val integral = implicitly[Integral[A]]
     val v = integral.toInt(b).toByte
-    view(Array.fill(size)(v))
+    view(Array.fill(checkInt(size))(v)) // TODO - either implement with function or splitting
   }
 
   /**
@@ -1317,14 +1326,14 @@ object ByteVector {
     def rebuffer(chunkSize: Int): ByteVector =
       Buffer(new AtomicLong(0), 0, tl.rebuffer(chunkSize))
 
-    def drop(n: Int, accR: List[ByteVector]): ByteVector =
+    def drop(n: Long, accR: List[ByteVector]): ByteVector =
       accR.foldLeft(tl.drop(id, stamp, n))(_ ++ _)
 
-    def take(accL: List[ByteVector], n: Int): ByteVector =
+    def take(accL: List[ByteVector], n: Long): ByteVector =
       accL.foldLeft(tl.take(id, stamp, n))((r,l) => l ++ r)
   }
 
-  private case class Tail(chunks: Queue[ByteVector], lastChunk: Array[Byte], lastSize: Int, size: Int) {
+  private case class Tail(chunks: Queue[ByteVector], lastChunk: Array[Byte], lastSize: Long, size: Long) {
 
     // make a copy of the last chunk
     def freshen: Tail = {
@@ -1340,7 +1349,7 @@ object ByteVector {
       Tail(chunks, lastChunk2, lastSize, size)
     }
 
-    def drop(id: AtomicLong, stamp: Long, n: Int): ByteVector =
+    def drop(id: AtomicLong, stamp: Long, n: Long): ByteVector =
       if (n > lastChunk.length * 3) toByteVector.drop(n).bufferBy(lastChunk.length)
       else { // if dropping just a few chunks' worth, just dequeue necessary elements from `chunks`
         var remaining = n
@@ -1363,7 +1372,7 @@ object ByteVector {
           Buffer(id, stamp, Tail(q, lastChunk, lastSize, size - n))
       }
 
-    def take(id: AtomicLong, stamp: Long, n: Int): ByteVector =
+    def take(id: AtomicLong, stamp: Long, n: Long): ByteVector =
       if (n < lastChunk.length * 3) { // if taking just a few chunks' worth, dequeue necessary elements from `chunks`
         var remaining = n
         var q = chunks enqueue ByteVector.view(lastChunk).take(lastSize)
@@ -1417,11 +1426,11 @@ object ByteVector {
         Tail(chunks.enqueue(ByteVector.view(lastChunk)), lastChunk2, 1, size+1)
       }
       else { // last chunk not full, set the byte and increment lastSize
-        lastChunk(lastSize) = b
+        lastChunk(checkInt(lastSize)) = b  // TODO Needs to change in some way or other..
         Tail(chunks, lastChunk, lastSize + 1, size + 1)
       }
 
-    def get(i: Int): Byte =
+    def get(i: Long): Byte =
       toByteVector.get(i)
 
     def prependChunks(tl: List[ByteVector]): List[ByteVector] =
