@@ -106,6 +106,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
         case s@Suspend(_) => go(s.underlying, n)
         case d: Drop => d.size < n
         case b: Bytes => b.size < n
+        case b: Chunks => go(b.chunks, n)
       }
     }
     val result = go(this, n)
@@ -156,6 +157,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     if (sizeGreaterThan(n)) Some(get(n))
     else None
 
+  private[bits] def unchunk = this
+
   /**
    * Returns a new bit vector with the `n`th bit high if `high` is true or low if `high` is false.
    *
@@ -203,34 +206,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    *
    * @group collection
    */
-  def ++(b2: BitVector): BitVector = {
-    def go(x: BitVector, y: BitVector, force: Boolean = false): BitVector =
-      if ((((x.size+y.size) % 8 == 0) && x.size <= 256 && y.size <= 256) ||
-          ((x.size >= 256 && x.size <= 512 && y.size >= 256 && y.size <= 512)))
-        // coalesce small bit vectors, preferring to obtain a byte-aligned result
-        x.compact.combine(y.compact)
-      else if (x.size >= y.size) x match {
-        case Append(l,r) if (x.size - y.size) >
-                            (r.size - y.size).abs =>
-          val r2 = r ++ y
-          // if the branches are not of roughly equal size,
-          // reinsert the left branch from the top
-          if (force || l.size*2 > r2.size) Append(l, r2)
-          else go(l, r2, force = true)
-        case _ => Append(x, y)
-      }
-      else y match {
-        case Append(l,r) if (y.size - x.size) >
-                            (r.size - x.size).abs =>
-          val l2 = x ++ l
-          if (force || r.size*2 > l2.size) Append(l2, r)
-          else go(l2, r, force = true)
-        case _ => Append(x, y)
-      }
-    if (b2.isEmpty) this
-    else if (this.isEmpty) b2
-    else go(this, b2)
-  }
+  def ++(b2: BitVector): BitVector =
+    if (this.isEmpty) b2
+    else Chunks(Append(this, BitVector.empty)) ++ b2
 
   /**
    * Returns a new vector with the specified bit prepended.
@@ -245,19 +223,12 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def :+(b: Boolean): BitVector = this ++ BitVector.bit(b)
 
   /**
-   * Returns `true` if the depth of this tree is `> d`. The result
-   * of `compact` has depth 0.
+   * Returns the depth of this tree. The result of `compact` has depth 0.
    */
-  private[scodec] def depthExceeds(d: Int): Boolean = {
-    def go(node: BitVector, cur: Int): Boolean =
-      (cur > d) ||
-      (node match {
-        case Append(l,r) => go(l, cur+1) || go(r, cur+1)
-        case Drop(u,n) => go(u, cur+1)
-        case Bytes(b,n) => false
-        case s@Suspend(_) => go(s.underlying, cur+1)
-      })
-    go(this, 0)
+  def depth: Int = this match {
+    case Append(l,r) => 1 + (l.depth max r.depth)
+    case c: Chunks => 1 + c.chunks.depth
+    case _ => 0
   }
 
   /**
@@ -267,7 +238,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    *
    * @group collection
    */
-  final def drop(n: Long): BitVector = {
+  def drop(n: Long): BitVector = {
     @annotation.tailrec
     def go(cur: BitVector, n: Long): BitVector = {
       val npos = n max 0
@@ -282,6 +253,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
           else Append(l.drop(npos), r) // not stack safe for left-recursion, but we disallow that
         case Drop(bytes, m) => go(bytes, m + npos)
         case s@Suspend(_) => go(s.underlying, npos)
+        case b: Chunks => go(b.chunks, n)
       }
     }
     go(this, n)
@@ -309,7 +281,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @see acquire
    * @group collection
    */
-  final def take(n: Long): BitVector = {
+  def take(n: Long): BitVector = {
 
     // we have a final value, create a balanced tree from the vectors
     // accumulated to our left, then append that to the final segment
@@ -336,6 +308,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
         case Append(l, r) =>
           if (l.sizeGreaterThanOrEqual(npos)) go(accL, l, npos)
           else go(accL :+ l, r, npos - l.size)
+        case b: Chunks => go(accL, b.chunks, n)
       }
     }
     go(Vector(), this, n)
@@ -612,33 +585,13 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
 
     // we collect up all the chunks, then merge them in O(n * log n)
     @annotation.tailrec
-    def go(b: BitVector, acc: Vector[Bytes]): Vector[Bytes] = b match {
-      case s@Suspend(_) => go(s.underlying, acc)
-      case b@Bytes(_,_) => acc :+ b
-      case Append(l,r) => go(r, acc :+ l.compact) // not stack safe for left-recursion
-      case Drop(b, from) => acc :+ interpretDrop(b,from)
-    }
-
-    def interpretDrop(b: Bytes, from: Long): Bytes = {
-      val low = from max 0
-      val newSize = b.size - low
-      if (newSize == 0) BitVector.empty.compact
-      else {
-        val lowByte = (low / 8).toInt
-        val shiftedByWholeBytes = b.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
-        val bitsToShiftEachByte = (low % 8).toInt
-        val newBytes = {
-          if (bitsToShiftEachByte == 0) shiftedByWholeBytes
-          else {
-            (shiftedByWholeBytes zipWithI (shiftedByWholeBytes.drop(1) :+ (0: Byte))) { case (a, b) =>
-              val hi = (a << bitsToShiftEachByte)
-              val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
-              hi | low
-            }
-          }
-        }
-        toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
-      }
+    def go(b: List[BitVector], acc: Vector[Bytes]): Vector[Bytes] = b match {
+      case (s@Suspend(_)) :: rem => go(s.underlying :: rem, acc)
+      case (b@Bytes(_,_)) :: rem => go(rem, acc :+ b)
+      case Append(l,r)    :: rem => go(l :: r :: rem, acc)
+      case (d: Drop)      :: rem => go(rem, acc :+ d.interpretDrop)
+      case (c: Chunks)    :: rem => go(c.chunks.left :: c.chunks.right :: rem, acc)
+      case _ => acc
     }
 
     this match {
@@ -648,17 +601,25 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
         if (b2 eq b) bs
         else Bytes(b2,n)
       // other common case is a drop of a single flat `Bytes`
-      case Drop(b,from) =>
-        val bs = interpretDrop(b,from)
+      case d: Drop =>
+        val bs = d.interpretDrop
         val b2 = bs.underlying.compact
         if (b2 eq bs.underlying) bs
         else Bytes(b2, bs.size)
       // otherwise we fall back to general purpose algorithm
-      case _ => reduceBalanced(go(this, Vector()))(_.size)(_ combine _) match {
+      case _ => reduceBalanced(go(List(this), Vector()))(_.size)(_ combine _) match {
         case Bytes(b,n) => Bytes(b.compact,n) // we compact the underlying ByteVector as well
       }
     }
   }
+
+  /**
+   * Produce a single flat `Bytes` by interpreting
+   * any non-byte-aligned appends or drops. Unlike
+   * `compact`, the underlying `ByteVector` is not
+   * necessarily copied.
+   */
+  def align: Bytes
 
   /**
    * Return a `BitVector` with the same contents as `this`, but
@@ -681,14 +642,19 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def force: BitVector = {
     @annotation.tailrec
-    def go(accL: Vector[BitVector], cur: BitVector): BitVector =
-      cur match {
-        case b@Bytes(_,_) => (accL :+ b).reduce(_ ++ _)
-        case Append(l,r) => go(accL :+ l.force, r)
-        case d@Drop(_, _) => (accL :+ d).reduce(_ ++ _)
-        case s@Suspend(_) => go(accL, s.underlying)
-      }
-    go(Vector(), this)
+    def go(cont: Vector[BitVector]): BitVector = {
+      if (cont.nonEmpty) { (cont.head, cont.tail) match { case (cur, cont) =>
+        cur match {
+          case b@Bytes(_,_) => cont.foldLeft[BitVector](b)(_ ++ _)
+          case Append(l,r) => go(l +: r +: cont)
+          case d@Drop(_, _) => cont.foldLeft[BitVector](d)(_ ++ _)
+          case s@Suspend(_) => go(s.underlying +: cont)
+          case b: Chunks => go(b.chunks +: cont)
+        }
+      }}
+      else cont.foldLeft(BitVector.empty)(_ ++ _)
+    }
+    go(Vector(this))
   }
 
   /**
@@ -966,21 +932,23 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     case Append(l,r) => Append(l.mapBytes(f), r.mapBytes(f))
     case Drop(b,n) => Drop(b.mapBytes(f).compact, n)
     case s@Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
+    case c: Chunks => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
   }
 
   /**
    * Pretty print this `BitVector`.
    */
-  private[scodec] def internalPretty(prefix: String): String = this match {
+  private[bits] def internalPretty(prefix: String): String = this match {
     case Append(l,r) => prefix + "append\n" +
                         l.internalPretty(prefix + "  ") + "\n" +
                         r.internalPretty(prefix + "  ")
-    case Bytes(b, n) =>
-      if (n > 16) prefix + s"bits $n #:${b.hashCode}"
-      else        prefix + s"bits $n 0x${b.toHex}"
+    case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
     case Drop(u, n) => prefix + s"drop ${n}\n" +
                        u.internalPretty(prefix + "  ")
-    case s@Suspend(_) => s.underlying.internalPretty(prefix)
+    case s@Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
+    case c: Chunks => prefix + "chunks\n" +
+                      c.chunks.left.internalPretty("  ") + "\n" +
+                      c.chunks.right.internalPretty("  ")
   }
 
   private def zipBytesWith(other: BitVector)(op: (Byte, Byte) => Int): BitVector = {
@@ -1047,7 +1015,7 @@ object BitVector {
    * @group constructors
    */
   def bits(b: Iterable[Boolean]): BitVector =
-    b.zipWithIndex.foldLeft(low(b.size))((acc,b) =>
+    b.iterator.zipWithIndex.foldLeft(low(b.size))((acc,b) =>
       acc.update(b._2, b._1)
     )
 
@@ -1372,6 +1340,7 @@ object BitVector {
 
   private[scodec] case class Bytes(val underlying: ByteVector, val size: Long) extends BitVector {
     private val invalidBits = 8 - validBitsInLastByte(size)
+    def align = this
     def get(n: Long): Boolean = {
       checkBounds(n)
       getBit(underlying((n / 8).toInt), (n % 8).toInt)
@@ -1407,31 +1376,119 @@ object BitVector {
 
   private[scodec] case class Drop(underlying: Bytes, m: Long) extends BitVector {
     val size = (underlying.size - m) max 0
+    def align = interpretDrop
     def get(n: Long): Boolean =
       underlying.get(m + n)
     def update(n: Long, high: Boolean): BitVector =
       Drop(underlying.update(m + n, high).compact, m)
-  }
-  private[scodec] case class Append(left: BitVector, right: BitVector) extends BitVector {
-    lazy val size = {
-      val sz = left.size + right.size
-      sizeLowerBound.set(sz)
-      sizeUpperBound.set(sz)
-      sz
+
+    def interpretDrop: Bytes = {
+      val low = m max 0
+      val newSize = size
+      if (newSize == 0) BitVector.empty.align
+      else {
+        val lowByte = (low / 8).toInt
+        val shiftedByWholeBytes: ByteVector =
+          underlying.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
+        val bitsToShiftEachByte = (low % 8).toInt
+        val newBytes = {
+          if (bitsToShiftEachByte == 0) shiftedByWholeBytes
+          else {
+            (shiftedByWholeBytes zipWithI (shiftedByWholeBytes.drop(1) :+ (0: Byte))) { case (a, b) =>
+              val hi = (a << bitsToShiftEachByte)
+              val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
+              hi | low
+            }
+          }
+        }
+        toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+      }
     }
+  }
+  private[scodec] case class Append(left: BitVector,
+                                    right: BitVector) extends BitVector {
+
     def get(n: Long): Boolean =
       if (n < left.size) left.get(n)
       else right.get(n - left.size)
     def update(n: Long, high: Boolean): BitVector =
       if (n < left.size) Append(left.update(n, high), right)
       else Append(left, right.update(n - left.size, high))
+    def align = left.align combine right.align
+
+    var knownSize: Long = right match {
+      case s: Suspend => -1L
+      case _ => { // eagerly compute the size if we're strict
+        val sz = left.size + right.size
+        sizeLowerBound.set(sz)
+        sizeUpperBound.set(sz)
+        sz
+      }
+    }
+
+    def size =
+      if (knownSize != -1L) knownSize
+      else { // faster to just allow recomputation if there's contention
+        val sz = left.size + right.size
+        sizeLowerBound.set(sz)
+        sizeUpperBound.set(sz)
+        knownSize = sz
+        sz
+      }
   }
   private[scodec] case class Suspend(thunk: () => BitVector) extends BitVector {
     lazy val underlying = thunk()
     def get(n: Long): Boolean = underlying.get(n)
     def update(n: Long, high: Boolean): BitVector = underlying.update(n, high)
     def size = underlying.size
+    def align = underlying.align
   }
+
+  /**
+   * A vector of chunks of exponentially decreasing size. Supports
+   * amortized constant time `++` and logarithmic time for all other
+   * operations.
+   */
+  private[scodec] case class Chunks(chunks: Append) extends BitVector {
+
+    override def unchunk = Append(chunks.left, chunks.right.unchunk)
+    def align = chunks.align
+
+    override def ++(b: BitVector): BitVector =
+      if (b.isEmpty) this
+      else if (this.isEmpty) b
+      else {
+        @annotation.tailrec
+        def go(chunks: Append, last: BitVector): BitVector = {
+          val lastN = last.size
+          if (lastN >= chunks.size || lastN*2 <= chunks.right.size)
+            Chunks(Append(chunks, last))
+          else chunks.left match {
+            case left: Append =>
+              val rN = chunks.right.size
+              val aligned = (lastN % 8) + (rN % 8) == 0
+              if (rN <= 256 && aligned)
+                go(left, chunks.right.align combine last.align)
+              else
+                go(left, Append(chunks.right, last))
+            case _ => Chunks(Append(chunks, last))
+          }
+        }
+        go(chunks, b.unchunk)
+      }
+
+    def size = chunks.size
+
+    def update(n: Long, high: Boolean): BitVector =
+      chunks.update(n, high)
+
+    def get(n: Long): Boolean = chunks.get(n)
+  }
+
+  /** Concatenate `vs` to produce a single `BitVector`. */
+  def concat(vs: Vector[BitVector]): BitVector =
+    // quite snappy with new algorithm!
+    vs.foldLeft(BitVector.empty)(_ ++ _)
 
   // bit twiddling operations
 
@@ -1485,8 +1542,8 @@ object BitVector {
    * stack using `f` if the top element is more than half the size of the
    * element below it.
    */
-  private def reduceBalanced[A](v: TraversableOnce[A])(size: A => Long)(
-                                f: (A,A) => A): A = {
+  private[bits] def reduceBalanced[A](v: TraversableOnce[A])(size: A => Long)(
+                                      f: (A,A) => A): A = {
     @annotation.tailrec
     def fixup(stack: List[(A,Long)]): List[(A,Long)] = stack match {
       // h actually appeared first in `v`, followed by `h2`, preserve this order
