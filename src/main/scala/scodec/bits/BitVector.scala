@@ -225,7 +225,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Returns the depth of this tree. The result of `compact` has depth 0.
    */
-  def depth: Int = this match {
+  private[bits] def depth: Int = this match {
     case Append(l,r) => 1 + (l.depth max r.depth)
     case c: Chunks => 1 + c.chunks.depth
     case _ => 0
@@ -238,7 +238,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    *
    * @group collection
    */
-  def drop(n: Long): BitVector = {
+  final def drop(n: Long): BitVector = {
     @annotation.tailrec
     def go(cur: BitVector, n: Long): BitVector = {
       val npos = n max 0
@@ -281,7 +281,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @see acquire
    * @group collection
    */
-  def take(n: Long): BitVector = {
+  final def take(n: Long): BitVector = {
 
     // we have a final value, create a balanced tree from the vectors
     // accumulated to our left, then append that to the final segment
