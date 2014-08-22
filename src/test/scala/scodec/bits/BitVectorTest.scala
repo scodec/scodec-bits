@@ -134,11 +134,13 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).take(9) shouldBe BitVector.high(9)
     BitVector.high(4).take(100).toByteVector shouldBe ByteVector(0xf0)
     forAll { (x: BitVector, n0: Long, m0: Long) =>
+      (x.depth < 18) shouldBe true
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       (x.take(m) ++ x.drop(m)).compact shouldBe x
       x.take(m+n).compact.take(n) shouldBe x.take(n)
       x.drop(m+n).compact shouldBe x.drop(m).compact.drop(n)
+      x.drop(n).take(m) shouldBe x.drop(n).take(m)
       x.drop(n).take(m).toIndexedSeq shouldBe BitVector.bits(x.drop(n).toIndexedSeq).take(m).toIndexedSeq
     }
   }
@@ -166,7 +168,7 @@ class BitVectorTest extends BitsSuite {
   test("compact") {
     forAll { (x: BitVector) =>
       x.compact shouldBe x
-      x.force.depthExceeds(16) shouldBe false
+      (x.force.depth < 18) shouldBe true
     }
   }
 
@@ -450,5 +452,40 @@ class BitVectorTest extends BitsSuite {
 
   test("serialization") {
     forAll { (x: BitVector) => serializationShouldRoundtrip(x) }
+  }
+
+  test("buffering") {
+    implicit val longs = Arbitrary(Gen.choose(-1L,50L))
+
+    def check(h: BitVector, xs: List[BitVector], delta: Long): Unit = {
+      val unbuffered =
+        BitVector.reduceBalanced(h :: xs)(_.size)(BitVector.Append(_,_))
+      val buffered = xs.foldLeft(h)(_ ++ _)
+      // sanity check for buffered
+      (buffered.take(delta) ++ buffered.drop(delta)) shouldBe buffered
+      // checks for consistency:
+      buffered shouldBe unbuffered
+      // get
+      (0L until unbuffered.size).foreach { i =>
+        buffered(i) shouldBe unbuffered(i)
+      }
+      // update
+      val i = delta min (unbuffered.size - 1) max 0
+      if (buffered.nonEmpty)
+        buffered.update(i, i%2 == 0)(i) shouldBe unbuffered.update(i, i%2 == 0)(i)
+      // size
+      buffered.size shouldBe unbuffered.size
+      // take
+      buffered.take(delta) shouldBe unbuffered.take(delta)
+      // drop
+      buffered.drop(delta) shouldBe unbuffered.drop(delta)
+    }
+
+    forAll { (h: BitVector, xs: List[BitVector], delta: Long) =>
+      check(h, xs, delta)
+      // "evil" case for buffering - chunks of increasing sizes
+      val evil = (h :: xs).sortBy(_.size)
+      check(evil.head, evil.tail, delta)
+    }
   }
 }
