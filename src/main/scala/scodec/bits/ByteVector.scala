@@ -68,7 +68,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     getImpl(index)
   }
 
-  def getImpl(index: Int): Byte
+  protected def getImpl(index: Int): Byte
 
   /**
    * Alias for [[get]].
@@ -782,14 +782,14 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       prefix + "bytes:append\n" +
       l.pretty(prefix + "  ") + "\n" +
       r.pretty(prefix + "  ")
-    case Chunks(Append(l,r)) =>
+    case Chunks(c) =>
       prefix + "bytes:chunks " + size + "\n" +
-      l.pretty(prefix + "  ") + "\n" +
-      r.pretty(prefix + "  ")
+      c.left.pretty(prefix + "  ") + "\n" +
+      c.right.pretty(prefix + "  ")
     case b: Buffer => prefix + "bytes:buffer " + size + "\n" +
-                      b.hd.pretty(prefix + "  ") + "\n"
+                      b.hd.pretty(prefix + "  ") + "\n" +
                       b.lastBytes.pretty(prefix + "  ")
-    case _ => prefix + (if (size < 16) "0x"+toHex else "#"+hashCode)
+    case Chunk(_) => prefix + (if (size < 16) "0x"+toHex else "#"+hashCode)
   }
 
   private def checkIndex(n: Int): Unit =
@@ -1273,9 +1273,9 @@ object ByteVector {
             case _ => Chunks(Append(chunks, last))
           }
         }
-        go(chunks, b)
+        go(chunks, b.unbuffer) // unbuffering `b` avoids proliferation of unused scratch space
+                               // if `b` happens to have been built up using a buffer
       }
-
   }
 
   /*
@@ -1345,7 +1345,10 @@ object ByteVector {
 
     def lastBytes = ByteVector.view(lastChunk).take(lastSize)
 
-    override def unbuffer: ByteVector = hd ++ (if (lastSize < 32) lastBytes.copy else lastBytes)
+    override def unbuffer: ByteVector =
+      // if last chunk more than half unused, copy to a fresh
+      // bytevector, to avoid proliferation of scratch space
+      hd ++ (if (lastSize*2 < lastChunk.length) lastBytes.copy else lastBytes)
 
     def rebuffer(chunkSize: Int): ByteVector = {
       require (chunkSize > lastChunk.length)

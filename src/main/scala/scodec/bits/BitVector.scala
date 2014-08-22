@@ -618,6 +618,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * any non-byte-aligned appends or drops. Unlike
    * `compact`, the underlying `ByteVector` is not
    * necessarily copied.
+   *
+   * @group collection
    */
   def align: Bytes
 
@@ -1416,7 +1418,7 @@ object BitVector {
       else Append(left, right.update(n - left.size, high))
     def align = left.align combine right.align
 
-    var knownSize: Long = right match {
+    @volatile var knownSize: Long = right match {
       case s: Suspend => -1L
       case _ => { // eagerly compute the size if we're strict
         val sz = left.size + right.size
