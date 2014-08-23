@@ -144,7 +144,17 @@ previousArtifact := previousVersion(version.value) map { pv =>
 }
 
 binaryIssueFilters ++= Seq(
-  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.buffer"),
-  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.bufferBy"),
-  ProblemFilters.exclude[MissingMethodProblem]("scodec.bits.ByteVector.unbuffer")
-)
+  "scodec.bits.ByteVector.buffer",
+  "scodec.bits.ByteVector.bufferBy",
+  "scodec.bits.ByteVector.unbuffer",
+  "scodec.bits.ByteVector.getImpl",
+  "scodec.bits.BitVector#Bytes.depthExceeds",
+  "scodec.bits.BitVector#Append.depthExceeds",
+  "scodec.bits.BitVector#Suspend.depthExceeds",
+  "scodec.bits.BitVector#Drop.depthExceeds",
+  "scodec.bits.BitVector.depthExceeds",
+  "scodec.bits.BitVector.depth",
+  "scodec.bits.BitVector.unchunk",
+  "scodec.bits.BitVector.align",
+  "scodec.bits.BitVector.scodec$bits$BitVector$$reduceBalanced"
+).map { method => ProblemFilters.exclude[MissingMethodProblem](method) }
