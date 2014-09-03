@@ -29,6 +29,9 @@ import java.util.concurrent.atomic.AtomicLong
  * @groupname conversions Conversions
  * @groupprio conversions 2
  *
+ * @groupname buffer Buffering
+ * @groupprio buffer 3
+ *
  * @define bitwiseOperationsReprDescription bit vector
  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
  */
@@ -552,6 +555,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    *
    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer`
    * are guaranteed to return another buffered `ByteVector`.
+   *
+   * @group buffer
    */
   final def buffer: ByteVector = bufferBy(1024)
 
@@ -563,6 +568,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer`
    * are guaranteed to return another buffered `ByteVector`, with the
    * same size scratch space.
+   *
+   * @group buffer
    */
   final def bufferBy(chunkSize: Int): ByteVector =
     this match {
@@ -574,6 +581,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   /**
    * Collapse any buffered chunks at the end of this `ByteVector`,
    * resulting in an unbuffered `ByteVector`.
+   *
+   * @group buffer
    */
   def unbuffer: ByteVector = this
 
