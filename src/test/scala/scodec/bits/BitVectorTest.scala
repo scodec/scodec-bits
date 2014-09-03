@@ -134,7 +134,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).take(9) shouldBe BitVector.high(9)
     BitVector.high(4).take(100).toByteVector shouldBe ByteVector(0xf0)
     forAll { (x: BitVector, n0: Long, m0: Long) =>
-      (x.depth < 18) shouldBe true
+      x.depth should be < 18
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       (x.take(m) ++ x.drop(m)).compact shouldBe x
@@ -168,7 +168,7 @@ class BitVectorTest extends BitsSuite {
   test("compact") {
     forAll { (x: BitVector) =>
       x.compact shouldBe x
-      (x.force.depth < 18) shouldBe true
+      x.force.depth should be < 18
     }
   }
 
