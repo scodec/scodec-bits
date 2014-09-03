@@ -168,8 +168,15 @@ class BitVectorTest extends BitsSuite {
   test("compact") {
     forAll { (x: BitVector) =>
       x.compact shouldBe x
-      (x.force.depth < 18) shouldBe true
+      x.force.depth should be < 36
     }
+  }
+
+  test("depth") {
+    // check that building a million byte vector via repeated snocs leads to balanced tree
+    val N = 1000000
+    val bits = (0 until N).map(n => BitVector(n)).foldLeft(BitVector.empty)(_ ++ _)
+    bits.depth should be < 36
   }
 
   test("++") {
