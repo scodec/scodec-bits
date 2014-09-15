@@ -125,7 +125,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   def ++(other: ByteVector): ByteVector =
     if (this.isEmpty) other
-    else Chunks(Append(this, ByteVector.empty)).bufferBy(64) ++ other
+    else Chunks(Append(this, other)).bufferBy(64)
 
   /**
    * Returns a new vector with the specified byte prepended.
