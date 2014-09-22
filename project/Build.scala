@@ -21,5 +21,9 @@ object ScodecBuild extends Build {
     if (z == "0") None
     else Some(s"$x.$y.${z.toInt - 1}")
   }
+
+  lazy val core: Project = project.in(file("core"))
+
+  lazy val benchmark: Project = project.in(file("benchmark")) dependsOn (core)
 }
 
