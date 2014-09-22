@@ -23,7 +23,7 @@ class BitVectorTest extends BitsSuite {
     val b = BitVector(0x80,0x90)
     (b.compact.underlying eq b.compact.underlying) shouldBe true
     (b.toByteVector eq b.toByteVector) shouldBe true
-    val b2 = b.drop(8) // also make sure this works if we're talking about a byte-aligned slice
+    val b2 = b.drop(8).align // also make sure this works if we're talking about a byte-aligned slice
     (b2.compact.underlying eq b2.compact.underlying) shouldBe true
     (b2.toByteVector eq b2.toByteVector) shouldBe true
   }
@@ -45,11 +45,15 @@ class BitVectorTest extends BitsSuite {
   }
 
   test("acquire/take consistency") {
-    def check(bits: BitVector, n: Long): Unit =
-      bits.acquire(n) match {
-        case Left(_) => bits.size < n
+    def check(bits: BitVector, n: Long): Unit = {
+      val b = bits.acquire(n)
+      b match {
+        case Left(_) => bits.size should be < n
         case Right(hd) => hd shouldBe bits.take(n)
       }
+      bits.acquireThen(n)(Left(_),Right(_)) shouldBe b
+      bits.consumeThen(n)(Left(_),(a,b) => Right((b,a))) shouldBe bits.consume(n)(Right(_))
+    }
 
     forAll (bitVectorWithTakeIndex) { case (bits, ind) =>
       check(bits, ind)
@@ -99,6 +103,17 @@ class BitVectorTest extends BitsSuite {
     vec(13) should be (true)
     vec(14) should be (true)
     vec(15) should be (true)
+  }
+
+  test("getByte") {
+    forAll { (x: BitVector) =>
+      val bytes = x.bytes
+      val aligned = x.align
+      (0L until ((x.size + 7) / 8)).foreach { i =>
+        bytes(i.toInt) shouldBe x.getByte(i)
+        aligned.getByte(i) shouldBe x.getByte(i)
+      }
+    }
   }
 
   test("updated") {
@@ -440,13 +455,20 @@ class BitVectorTest extends BitsSuite {
     forAll { (n: Int) =>
       BitVector.fromInt(n).toInt() shouldBe n
       BitVector.fromInt(n, ordering = ByteOrdering.LittleEndian).toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector.fromInt(n).sliceToInt(0, 32) shouldBe n
+      BitVector.fromInt(n).sliceToInt(10,22) shouldBe BitVector.fromInt(n).drop(10).toInt()
+      BitVector.fromInt(n).sliceToInt(10,22, ordering = ByteOrdering.LittleEndian) shouldBe
+      BitVector.fromInt(n).drop(10).toInt(ordering = ByteOrdering.LittleEndian)
     }
   }
 
   test("long conversions") {
-    forAll { (n: Int) =>
+    forAll { (n: Long) =>
       BitVector.fromLong(n).toLong() shouldBe n
       BitVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector.fromLong(n).sliceToLong(10,54) shouldBe BitVector.fromLong(n).drop(10).toLong()
+      BitVector.fromLong(n).sliceToLong(10,54, ordering = ByteOrdering.LittleEndian) shouldBe
+      BitVector.fromLong(n).drop(10).toLong(ordering = ByteOrdering.LittleEndian)
     }
   }
 

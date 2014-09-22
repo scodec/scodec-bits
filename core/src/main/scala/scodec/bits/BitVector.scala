@@ -51,25 +51,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def nonEmpty: Boolean = !isEmpty
 
-  final protected val sizeLowerBound: AtomicLong = new AtomicLong(0L)
-  final protected val sizeUpperBound: AtomicLong = new AtomicLong(Long.MaxValue)
-
-  @annotation.tailrec
-  final protected def sizeIsAtLeast(n: Long): Unit = {
-    val cur = sizeLowerBound.get
-    if (cur >= n) ()
-    else if (sizeLowerBound.compareAndSet(cur, n)) ()
-    else sizeIsAtLeast(n)
-  }
-
-  @annotation.tailrec
-  final protected def sizeIsAtMost(n: Long): Unit = {
-    val cur = sizeUpperBound.get
-    if (cur <= n) ()
-    else if (sizeUpperBound.compareAndSet(cur, n)) ()
-    else sizeIsAtMost(n)
-  }
-
   /**
    * Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
@@ -89,30 +70,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
-   *
-   * @group collection
    */
-  final def sizeLessThan(n: Long): Boolean = {
-    @annotation.tailrec
-    def go(b: BitVector, n: Long): Boolean = {
-      if (n < b.sizeLowerBound.get) false
-      else if (n > b.sizeUpperBound.get) true
-      else b match {
-        case Append(l, r) =>
-          if (n - l.sizeLowerBound.get < r.sizeLowerBound.get) false
-          else if (n - l.sizeUpperBound.get > r.sizeUpperBound.get) true
-          else if (l.size >= n) false
-          else go(r, n - l.size)
-        case s@Suspend(_) => go(s.underlying, n)
-        case d: Drop => d.size < n
-        case b: Bytes => b.size < n
-        case b: Chunks => go(b.chunks, n)
-      }
-    }
-    val result = go(this, n)
-    if (result) sizeIsAtMost(n - 1) else sizeIsAtLeast(n)
-    result
-  }
+  def sizeLessThan(n: Long): Boolean
 
   /**
    * Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`, this
@@ -139,6 +98,15 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @group collection
    */
   def get(n: Long): Boolean
+
+  /**
+   * Returns the `n`th byte, 0-indexed.
+   *
+   * @throws NoSuchElementException if `n >= bytes.size`
+   *
+   * @group collection
+   */
+  def getByte(n: Long): Byte
 
   /**
    * Alias for `get`.
@@ -208,7 +176,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   def ++(b2: BitVector): BitVector =
     if (this.isEmpty) b2
-    else Chunks(Append(this, BitVector.empty)) ++ b2
+    else Chunks(Append(this, b2))
 
   /**
    * Returns a new vector with the specified bit prepended.
@@ -238,26 +206,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    *
    * @group collection
    */
-  final def drop(n: Long): BitVector = {
-    @annotation.tailrec
-    def go(cur: BitVector, n: Long): BitVector = {
-      val npos = n max 0
-      if (npos <= 0) cur
-      else if (cur.sizeLessThanOrEqual(npos)) BitVector.empty
-      else cur match {
-        case Bytes(bs, m) =>
-          if (npos % 8 == 0) toBytes(bs.drop((npos / 8).toInt), m - npos)
-          else Drop(cur.asInstanceOf[Bytes], npos)
-        case Append(l, r) =>
-          if (l.sizeLessThanOrEqual(npos)) go(r, npos - l.size)
-          else Append(l.drop(npos), r) // not stack safe for left-recursion, but we disallow that
-        case Drop(bytes, m) => go(bytes, m + npos)
-        case s@Suspend(_) => go(s.underlying, npos)
-        case b: Chunks => go(b.chunks, n)
-      }
-    }
-    go(this, n)
-  }
+  def drop(n: Long): BitVector
 
   /**
    * Returns a vector of all bits in this vector except the last `n` bits.
@@ -281,38 +230,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @see acquire
    * @group collection
    */
-  final def take(n: Long): BitVector = {
-
-    // we have a final value, create a balanced tree from the vectors
-    // accumulated to our left, then append that to the final segment
-    def finish(accL: Vector[BitVector], lastSegment: BitVector): BitVector =
-      if (accL.isEmpty) lastSegment
-      else if (lastSegment.isEmpty) reduceBalanced(accL)(_.size)(Append(_,_))
-      else Append(reduceBalanced(accL)(_.size)(Append(_,_)), lastSegment)
-
-    // In order to make this function tail recursive, we accumulate a list
-    // of bit vectors that we need to concatenate on the left of our final value.
-    @annotation.tailrec
-    def go(accL: Vector[BitVector], cur: BitVector, n: Long): BitVector = {
-      val npos = n max 0
-      if (npos == 0) finish(accL, BitVector.empty)
-      else if (cur.sizeLessThanOrEqual(npos)) finish(accL, cur)
-      else cur match {
-        case s@Suspend(_) => go(accL, s.underlying, npos)
-        case Bytes(underlying, m) =>
-          // eagerly trim from underlying here
-          val m2 = npos min m
-          val underlyingN = bytesNeededForBits(m2).toInt
-          finish(accL, toBytes(underlying.take(underlyingN), m2)) // call to take stack safe here, since that is a Bytes
-        case Drop(underlying, m) => finish(accL, underlying.take(m + npos).drop(m))
-        case Append(l, r) =>
-          if (l.sizeGreaterThanOrEqual(npos)) go(accL, l, npos)
-          else go(accL :+ l, r, npos - l.size)
-        case b: Chunks => go(accL, b.chunks, n)
-      }
-    }
-    go(Vector(), this, n)
-  }
+  def take(n: Long): BitVector
 
   /**
    * Returns a vector of the last `n` bits of this vector.
@@ -334,7 +252,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def splitAt(n: Long): (BitVector, BitVector) = (take(n), drop(n))
 
   /**
-   * Returns a vector made up of the bits starting at index `from` up to index `until`.
+   * Returns a vector made up of the bits starting at index `from` up to index `until`,
+   * not including the index `until`.
+   *
    * @group collection
    */
   final def slice(from: Long, until: Long): BitVector =
@@ -353,6 +273,16 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     else Left(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
+   * Like `aquire`, but immediately consumes the `Either` via the pair of functions `err` and `f`.
+   *
+   * @see acquire
+   * @group collection
+   */
+  final def acquireThen[R](n: Long)(err: String => R, f: BitVector => R): R =
+    if (sizeGreaterThanOrEqual(n)) f(take(n))
+    else err(s"cannot acquire $n bits from a vector that contains $size bits")
+
+  /**
    * Consumes the first `n` bits of this vector and decodes them with the specified function,
    * resulting in a vector of the remaining bits and the decoded value. If this vector
    * does not have `n` bits or an error occurs while decoding, an error is returned instead.
@@ -364,6 +294,19 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       toDecode <- acquire(n).right
       decoded <- decode(toDecode).right
     } yield (drop(n), decoded)
+
+  /**
+   * If this vector has at least `n` bits, returns `f(take(n),drop(n))`,
+   * otherwise calls `err` with a meaningful error message. This function can be used
+   * to avoid intermediate allocations of `Either` objects when using `acquire` or `consume`
+   * directly.
+   *
+   * @see acquireThen
+   * @group collection
+   */
+  final def consumeThen[R](n: Long)(err: String => R, f: (BitVector,BitVector) => R): R =
+    if (sizeGreaterThanOrEqual(n)) f(take(n), drop(n)) // todo unsafeTake, unsafeDrop
+    else err(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
    * Returns true if this bit vector starts with the specified vector.
@@ -775,6 +718,51 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
+   * Convert a slice of bits from this vector (`start` until `start+bits`) to an `Int`.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if the slice refers to indices that are out of range
+   * @group conversions
+   */
+  final def sliceToInt(start: Long, bits: Int,
+                       signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
+    if (start % 8 != 0) drop(start).sliceToInt(0, bits, signed, ordering)
+    else { // start % 8 == 0
+      require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 32)
+      val mod = bits % 8
+      var result = 0
+      val bytesNeeded = bytesNeededForBits(bits)
+      val base = start / 8
+      ordering match {
+        case ByteOrdering.BigEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = (result << 8) | (0x0ff & this.getByte(base + i))
+              go(i + 1)
+            }
+          go(0)
+        case ByteOrdering.LittleEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = result | ((0x0ff & this.getByte(base + i)) << (8 * i))
+              go(i + 1)
+            }
+          go(0)
+      }
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 32 - bits
+        result = (result << toShift) >> toShift
+      }
+      result
+    }
+  }
+
+  /**
    * Converts the contents of this vector to an int.
    *
    * @param signed whether sign extension should be performed
@@ -787,23 +775,24 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     val bits = intSize.get
     val mod = bits % 8
     var result = 0
+    val bytesNeeded = bytesNeededForBits(bits)
     ordering match {
       case ByteOrdering.BigEndian =>
         @annotation.tailrec
-        def go(bv: ByteVector): Unit =
-          if (bv.nonEmpty) {
-            result = (result << 8) | (0x0ff & bv.head)
-            go(bv.tail)
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = (result << 8) | (0x0ff & this.getByte(i))
+            go(i + 1)
           }
-        go(this.bytes)
+        go(0)
       case ByteOrdering.LittleEndian =>
         @annotation.tailrec
-        def go(bv: ByteVector, i: Int): Unit =
-          if (bv.nonEmpty) {
-            result = result | ((0x0ff & bv.head) << (8 * i))
-            go(bv.tail, i + 1)
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = result | ((0x0ff & this.getByte(i)) << (8 * i))
+            go(i + 1)
           }
-        go(this.bytes, 0)
+        go(0)
     }
     if (mod != 0) result = result >>> (8 - mod)
     // Sign extend if necessary
@@ -812,6 +801,51 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       result = (result << toShift) >> toShift
     }
     result
+  }
+
+  /**
+   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Long`.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if the slice refers to indices that are out of range
+   * @group conversions
+   */
+  final def sliceToLong(start: Long, bits: Int,
+                        signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
+    if (start % 8 != 0) drop(start).sliceToLong(0, bits, signed, ordering)
+    else { // start % 8 == 0
+      require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 64)
+      val mod = bits % 8
+      var result = 0L
+      val bytesNeeded = bytesNeededForBits(bits)
+      val base = start / 8
+      ordering match {
+        case ByteOrdering.BigEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = (result << 8) | (0x0ffL & this.getByte(base + i))
+              go(i + 1)
+            }
+          go(0)
+        case ByteOrdering.LittleEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = result | ((0x0ffL & this.getByte(base + i)) << (8 * i))
+              go(i + 1)
+            }
+          go(0)
+      }
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 64 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 64 - bits
+        result = (result << toShift) >> toShift
+      }
+      result
+    }
   }
 
   /**
@@ -827,23 +861,24 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     val bits = intSize.get
     val mod = bits % 8
     var result = 0L
+    val bytesNeeded = bytesNeededForBits(bits)
     ordering match {
       case ByteOrdering.BigEndian =>
         @annotation.tailrec
-        def go(bv: ByteVector): Unit =
-          if (bv.nonEmpty) {
-            result = (result << 8) | (0x0ffL & bv.head)
-            go(bv.tail)
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = (result << 8) | (0x0ffL & this.getByte(i))
+            go(i + 1)
           }
-        go(this.bytes)
+        go(0)
       case ByteOrdering.LittleEndian =>
         @annotation.tailrec
-        def go(bv: ByteVector, i: Int): Unit =
-          if (bv.nonEmpty) {
-            result = result | ((0x0ffL & bv.head) << (8 * i))
-            go(bv.tail, i + 1)
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = result | ((0x0ffL & this.getByte(i)) << (8 * i))
+            go(i + 1)
           }
-        go(this.bytes, 0)
+        go(0)
     }
     if (mod != 0) result = result >>> (8 - mod)
     // Sign extend if necessary
@@ -1341,12 +1376,29 @@ object BitVector {
   }
 
   private[scodec] case class Bytes(val underlying: ByteVector, val size: Long) extends BitVector {
-    private val invalidBits = 8 - validBitsInLastByte(size)
+    private def invalidBits = 8 - validBitsInLastByte(size)
     def align = this
+    def sizeLessThan(n: Long) = size < n
+    def take(n: Long): Bytes = toBytes(underlying, math.max(0L, math.min(size,n)))
+    def drop(n: Long): BitVector = {
+      if (n >= size) BitVector.empty
+      else if (n <= 0) this
+      else if (n % 8 == 0) Bytes(underlying.drop((n/8).toInt), size - n)
+      else Drop(this, n)
+    }
     def get(n: Long): Boolean = {
       checkBounds(n)
       getBit(underlying((n / 8).toInt), (n % 8).toInt)
     }
+    def getByte(n: Long): Byte = {
+      if (n < underlying.size-1)
+        underlying(n.toInt)
+      else { // last byte may have some garbage bits, clear these out
+        val valid = 8 - invalidBits
+        (underlying(n.toInt) & topNBits(valid.toInt)).toByte
+      }
+    }
+
     def update(n: Long, high: Boolean): BitVector = {
       checkBounds(n)
       val b2 = underlying.update(
@@ -1358,6 +1410,7 @@ object BitVector {
       Bytes(b2, size)
     }
     def combine(other: Bytes): Bytes = {
+      val invalidBits = this.invalidBits
       val otherBytes = other.underlying
       if (isEmpty) {
         other
@@ -1377,10 +1430,27 @@ object BitVector {
   }
 
   private[scodec] case class Drop(underlying: Bytes, m: Long) extends BitVector {
-    val size = (underlying.size - m) max 0
+    def size = math.max(0, underlying.size - m)
+    def sizeLessThan(n: Long) = size < n
     def align = interpretDrop
+
+    def drop(n: Long): BitVector =
+      if (n >= size) BitVector.empty
+      else if (n <= 0) this
+      else { val nm = n+m
+             val d = Drop(underlying, nm)
+             if (nm > 32768 && nm % 8 == 0) d.interpretDrop // occasionally
+             else d
+           }
+    def take(n: Long): BitVector =
+      if (n >= size) this
+      else if (n <= 0) BitVector.empty
+      else underlying.take(m + n).drop(m)
+
     def get(n: Long): Boolean =
       underlying.get(m + n)
+    def getByte(n: Long): Byte =
+      this.drop(n*8).take(8).align.getByte(0)
     def update(n: Long, high: Boolean): BitVector =
       Drop(underlying.update(m + n, high).compact, m)
 
@@ -1413,6 +1483,10 @@ object BitVector {
     def get(n: Long): Boolean =
       if (n < left.size) left.get(n)
       else right.get(n - left.size)
+    def getByte(n: Long): Byte =
+      if (n < left.size/8) left.getByte(n)
+      else if (left.size%8 == 0 && n > left.size/8) right.getByte(n - left.size/8)
+      else drop(n*8).take(8).align.getByte(0) // fall back to inefficient impl (todo: improve this)
     def update(n: Long, high: Boolean): BitVector =
       if (n < left.size) Append(left.update(n, high), right)
       else Append(left, right.update(n - left.size, high))
@@ -1422,25 +1496,79 @@ object BitVector {
       case s: Suspend => -1L
       case _ => { // eagerly compute the size if we're strict
         val sz = left.size + right.size
-        sizeLowerBound.set(sz)
-        sizeUpperBound.set(sz)
         sz
       }
     }
+    var sizeLowerBound = left.size
 
     def size =
       if (knownSize != -1L) knownSize
       else { // faster to just allow recomputation if there's contention
         val sz = left.size + right.size
-        sizeLowerBound.set(sz)
-        sizeUpperBound.set(sz)
         knownSize = sz
         sz
       }
+
+    def take(n: Long) = {
+      // NB: not worth early termination in event that sizeLessThanOrEqual(n) is true -
+      // this case is rare, and requires traversing same BitVector twice, once to compute
+      // sizeLessThan, then again to implement the `take`
+      val npos = math.max(0L, n)
+      if (npos == 0) BitVector.empty
+      else if (npos <= left.size) left.take(npos)
+      else {
+        @annotation.tailrec
+        def go(accL: BitVector, cur: BitVector, n: Long): BitVector = cur match {
+          case Append(left, right) => if (n <= left.size) accL ++ left.take(n)
+                                      else go(accL ++ left, right, n - left.size)
+          case s: Suspend => go(accL, s.underlying, n)
+          case _ => accL ++ cur.take(n)
+        }
+        go(left, right, npos - left.size)
+      }
+    }
+
+    def drop(n: Long) = {
+      val npos = math.max(0L, n)
+      if (npos == 0) this
+      else {
+        @annotation.tailrec
+        def go(cur: BitVector, n: Long): BitVector = cur match {
+          case Append(left, right) => if (n >= left.size) go(right, n - left.size)
+                                      else Append(left.drop(n), right)
+          case s: Suspend => go(s.underlying, n)
+          case _ => cur.drop(n)
+        }
+        if (npos >= left.size) go(right, npos - left.size)
+        else Append(left.drop(npos), right)
+      }
+    }
+
+    def sizeLessThan(n: Long) = {
+      if (knownSize != -1L) knownSize < n
+      else if (sizeLowerBound >= n) false
+      else {
+        @annotation.tailrec
+        def go(cur: BitVector, n: Long, seen: Long): Boolean = cur match {
+          case Append(l,r) => if (l.size >= n) { sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false }
+                              else go(r, n - l.size, seen + l.size)
+          case s: Suspend => go(s.underlying, n, seen)
+          case _ => {
+            sizeLowerBound = math.max(seen, sizeLowerBound)
+            cur.size < n
+          }
+        }
+        go(this, n, 0)
+      }
+    }
   }
   private[scodec] case class Suspend(thunk: () => BitVector) extends BitVector {
     lazy val underlying = thunk()
+    def sizeLessThan(n: Long) = underlying.sizeLessThan(n)
     def get(n: Long): Boolean = underlying.get(n)
+    def take(n: Long) = underlying.take(n)
+    def drop(n: Long) = underlying.drop(n)
+    def getByte(n: Long): Byte = underlying.getByte(n)
     def update(n: Long, high: Boolean): BitVector = underlying.update(n, high)
     def size = underlying.size
     def align = underlying.align
@@ -1455,6 +1583,9 @@ object BitVector {
 
     override def unchunk = Append(chunks.left, chunks.right.unchunk)
     def align = chunks.align
+
+    def take(n: Long) = chunks.take(n)
+    def drop(n: Long) = chunks.drop(n)
 
     override def ++(b: BitVector): BitVector =
       if (b.isEmpty) this
@@ -1480,11 +1611,13 @@ object BitVector {
       }
 
     def size = chunks.size
+    def sizeLessThan(n: Long) = chunks.sizeLessThan(n)
 
     def update(n: Long, high: Boolean): BitVector =
       chunks.update(n, high)
 
     def get(n: Long): Boolean = chunks.get(n)
+    def getByte(n: Long): Byte = chunks.getByte(n)
   }
 
   /** Concatenate `vs` to produce a single `BitVector`. */

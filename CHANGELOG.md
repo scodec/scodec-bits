@@ -1,3 +1,8 @@
+1.0.3
+=====
+ - Significant performance improvements in `:+` and `++` for `ByteVector` and `BitVector`.
+   See [https://github.com/scodec/scodec-bits/pull/16] and [https://github.com/scodec/scodec-bits/pull/19] for details.
+
 1.0.2
 =====
  - Published ScalaDoc links in POM so that other projects can link to ScalaDoc
