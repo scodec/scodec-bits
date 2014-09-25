@@ -451,6 +451,17 @@ class BitVectorTest extends BitsSuite {
     ok.get shouldBe true
   }}
 
+  test("short conversions"){
+    forAll { (n: Short) =>
+      BitVector.fromShort(n).toShort() shouldBe n
+      BitVector.fromShort(n, ordering = ByteOrdering.LittleEndian).toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector.fromShort(n).sliceToShort(0, 16) shouldBe n
+      BitVector.fromShort(n).sliceToShort(10,6) shouldBe BitVector.fromShort(n).drop(10).toShort()
+      BitVector.fromShort(n).sliceToShort(10,6, ordering = ByteOrdering.LittleEndian) shouldBe
+        BitVector.fromShort(n).drop(10).toShort(ordering = ByteOrdering.LittleEndian)
+    }
+  }
+
   test("int conversions") {
     forAll { (n: Int) =>
       BitVector.fromInt(n).toInt() shouldBe n

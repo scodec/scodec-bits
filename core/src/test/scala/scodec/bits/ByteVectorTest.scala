@@ -348,6 +348,13 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("short conversions") {
+    forAll { (n: Short) =>
+      ByteVector.fromShort(n).toShort() shouldBe n
+      ByteVector.fromShort(n, ordering = ByteOrdering.LittleEndian).toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
+    }
+  }
+
   test("int conversions") {
     forAll { (n: Int) =>
       ByteVector.fromInt(n).toInt() shouldBe n
