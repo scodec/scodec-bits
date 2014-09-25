@@ -670,6 +670,17 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   }
 
   /**
+   * Converts the contents of this vector to a short.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 16
+   * @group conversions
+   */
+  final def toShort(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short =
+    bits.toShort(signed, ordering)
+
+  /**
    * Converts the contents of this vector to an int.
    *
    * @param signed whether sign extension should be performed
@@ -1055,6 +1066,15 @@ object ByteVector {
    * @group constructors
    */
   def high(size: Int): ByteVector = fill(size)(0xff)
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param s value to encode
+   * @param size size of vector (<= 2)
+   * @param ordering byte ordering of vector
+   */
+  def fromShort(s: Short, size: Int = 2, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
+    BitVector.fromShort(s, size * 8, ordering).bytes
 
   /**
    * Constructs a bit vector with the 2's complement encoding of the specified value.
