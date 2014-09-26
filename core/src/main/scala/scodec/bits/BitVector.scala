@@ -1241,6 +1241,12 @@ object BitVector {
     }
   }
 
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param s value to encode
+   * @param size size of vector (<= 16)
+   * @param ordering byte ordering of vector
+   */
   def fromShort(s: Short, size: Int = 16, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
     require(size <= 16)
     val buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN).putShort(s)
