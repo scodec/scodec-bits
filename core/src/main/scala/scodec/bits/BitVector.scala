@@ -718,6 +718,92 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
+   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Short`.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if the slice refers to indices that are out of range
+   * @group conversions
+   */
+  final def sliceToShort(start: Long, bits: Int,
+                       signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
+    if (start % 8 != 0) drop(start).sliceToShort(0, bits, signed, ordering)
+    else { // start % 8 == 0
+      require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 16)
+      val mod = bits % 8
+      var result = 0
+      val bytesNeeded = bytesNeededForBits(bits)
+      val base = start / 8
+      ordering match {
+        case ByteOrdering.BigEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = (result << 8) | (0x0ff & this.getByte(base + i))
+              go(i + 1)
+            }
+          go(0)
+        case ByteOrdering.LittleEndian =>
+          @annotation.tailrec
+          def go(i: Int): Unit =
+            if (i < bytesNeeded) {
+              result = result | ((0x0ff & this.getByte(base + i)) << (8 * i))
+              go(i + 1)
+            }
+          go(0)
+      }
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 16 - bits
+        result = (result << toShift) >> toShift
+      }
+      result.toShort
+    }
+  }
+
+  /**
+   * Converts the contents of this vector to a short.
+   *
+   * @param signed whether sign extension should be performed
+   * @param ordering order bytes should be processed in
+   * @throws IllegalArgumentException if size is greater than 16
+   * @group conversions
+   */
+  final def toShort(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
+    require(sizeLessThanOrEqual(16))
+    val bits = intSize.get
+    val mod = bits % 8
+    var result = 0
+    val bytesNeeded = bytesNeededForBits(bits)
+    ordering match {
+      case ByteOrdering.BigEndian =>
+        @annotation.tailrec
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = (result << 8) | (0x0ff & this.getByte(i))
+            go(i + 1)
+          }
+        go(0)
+      case ByteOrdering.LittleEndian =>
+        @annotation.tailrec
+        def go(i: Int): Unit =
+          if (i < bytesNeeded) {
+            result = result | ((0x0ff & this.getByte(i)) << (8 * i))
+            go(i + 1)
+          }
+        go(0)
+    }
+    if (mod != 0) result = result >>> (8 - mod)
+    // Sign extend if necessary
+    if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
+      val toShift = 16 - bits
+      result = (result << toShift) >> toShift
+    }
+    result.toShort
+  }
+
+  /**
    * Convert a slice of bits from this vector (`start` until `start+bits`) to an `Int`.
    *
    * @param signed whether sign extension should be performed
@@ -1153,6 +1239,20 @@ object BitVector {
     else {
       fill(n / 2)(high) ++ fill(n - (n/2))(high)
     }
+  }
+
+  /**
+   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * @param s value to encode
+   * @param size size of vector (<= 16)
+   * @param ordering byte ordering of vector
+   */
+  def fromShort(s: Short, size: Int = 16, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    require(size <= 16)
+    val buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN).putShort(s)
+    buffer.flip()
+    val relevantBits = (BitVector.view(buffer) << (16 - size)).take(size)
+    if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
   /**
