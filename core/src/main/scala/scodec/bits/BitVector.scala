@@ -70,6 +70,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+   *
+   * @group collection
    */
   def sizeLessThan(n: Long): Boolean
 
@@ -1092,8 +1094,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
  * @groupname constructors Constructors
  * @groupprio constructors 1
  *
+ * @groupname numeric Numeric Conversions
+ * @groupprio numeric 2
+ *
  * @groupname base Base Conversions
- * @groupprio base 2
+ * @groupprio base 3
  */
 object BitVector {
 
@@ -1246,6 +1251,7 @@ object BitVector {
    * @param s value to encode
    * @param size size of vector (<= 16)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromShort(s: Short, size: Int = 16, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
     require(size <= 16)
@@ -1260,6 +1266,7 @@ object BitVector {
    * @param i value to encode
    * @param size size of vector (<= 32)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromInt(i: Int, size: Int = 32, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
     require(size <= 32)
@@ -1274,6 +1281,7 @@ object BitVector {
    * @param i value to encode
    * @param size size of vector (<= 64)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromLong(l: Long, size: Int = 64, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
     require(size <= 64)
