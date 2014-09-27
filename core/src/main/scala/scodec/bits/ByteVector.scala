@@ -828,8 +828,11 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
  * @groupname constructors Constructors
  * @groupprio constructors 1
  *
+ * @groupname numeric Numeric Conversions
+ * @groupprio numeric 2
+ *
  * @groupname base Base Conversions
- * @groupprio base 2
+ * @groupprio base 3
  */
 object ByteVector {
 
@@ -1072,6 +1075,7 @@ object ByteVector {
    * @param s value to encode
    * @param size size of vector (<= 2)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromShort(s: Short, size: Int = 2, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromShort(s, size * 8, ordering).bytes
@@ -1081,6 +1085,7 @@ object ByteVector {
    * @param i value to encode
    * @param size size of vector (<= 4)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromInt(i: Int, size: Int = 4, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromInt(i, size * 8, ordering).bytes
@@ -1090,6 +1095,7 @@ object ByteVector {
    * @param l value to encode
    * @param size size of vector (<= 8)
    * @param ordering byte ordering of vector
+   * @group numeric
    */
   def fromLong(l: Long, size: Int = 8, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromLong(l, size * 8, ordering).bytes
