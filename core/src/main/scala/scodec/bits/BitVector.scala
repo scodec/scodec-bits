@@ -737,6 +737,52 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
+   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.
+   *
+   * @param signed whether sign extension should be performed
+   * @throws IllegalArgumentException if the slice refers to indices that are out of range
+   * @group conversions
+   */
+  final def sliceToByte(start: Long, bits: Int, signed: Boolean = true): Byte = {
+    if (start % 8 != 0) drop(start).sliceToByte(0, bits, signed)
+    else if (isEmpty) 0.toByte
+    else { // start % 8 == 0
+      require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 8)
+      var result = 0x0ff & getByte(0)
+      if (bits != 0) result = result >>> (8 - bits)
+      // Sign extend if necessary
+      if (signed && bits != 8 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 32 - bits
+        result = (result << toShift) >> toShift
+      }
+      result.toByte
+    }
+  }
+
+  /**
+   * Converts the contents of this vector to a byte.
+   *
+   * @param signed whether sign extension should be performed
+   * @throws IllegalArgumentException if size is greater than 8
+   * @group conversions
+   */
+  final def toByte(signed: Boolean = true): Byte = {
+    require(sizeLessThanOrEqual(8))
+    if (isEmpty) 0.toByte
+    else {
+      val bits = intSize.get
+      var result = 0x0ff & getByte(0)
+      if (bits != 0) result = result >>> (8 - bits)
+      // Sign extend if necessary
+      if (signed && bits != 8 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 32 - bits
+        result = (result << toShift) >> toShift
+      }
+      result.toByte
+    }
+  }
+
+  /**
    * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Short`.
    *
    * @param signed whether sign extension should be performed
@@ -764,7 +810,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       if (mod != 0) result = result >>> (8 - mod)
       // Sign extend if necessary
       if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
-        val toShift = 16 - bits
+        val toShift = 32 - bits
         result = (result << toShift) >> toShift
       }
       result.toShort
@@ -797,7 +843,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       if (mod != 0) result = result >>> (8 - mod)
       // Sign extend if necessary
       if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
-        val toShift = 16 - bits
+        val toShift = 32 - bits
         result = (result << toShift) >> toShift
       }
       result.toShort
