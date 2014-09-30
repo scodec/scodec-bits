@@ -670,6 +670,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   }
 
   /**
+   * Converts the contents of this vector to a byte.
+   *
+   * @param signed whether sign extension should be performed
+   * @throws IllegalArgumentException if size is greater than 8
+   * @group conversions
+   */
+  final def toByte(signed: Boolean = true): Byte =
+    bits.toByte(signed)
+
+  /**
    * Converts the contents of this vector to a short.
    *
    * @param signed whether sign extension should be performed
