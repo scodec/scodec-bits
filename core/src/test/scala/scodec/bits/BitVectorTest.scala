@@ -456,12 +456,13 @@ class BitVectorTest extends BitsSuite {
 
   test("byte conversions"){
     forAll { (n: Byte) =>
-      BitVector(n).toByte() shouldBe n
-      BitVector(n).sliceToShort(0, 8) shouldBe n
-      BitVector(n).sliceToShort(4, 4) shouldBe BitVector(n).drop(4).toByte()
+      BitVector.fromByte(n).toByte() shouldBe n
+      BitVector.fromByte(n).sliceToShort(0, 8) shouldBe n
+      BitVector.fromByte(n).sliceToShort(4, 4) shouldBe BitVector.fromByte(n).drop(4).toByte()
     }
     bin"11".toByte() shouldBe -1
     bin"11".toByte(signed = false) shouldBe 3
+    BitVector.fromByte(3, 3) shouldBe bin"011"
   }
 
   test("short conversions"){

@@ -1081,6 +1081,14 @@ object ByteVector {
   def high(size: Int): ByteVector = fill(size)(0xff)
 
   /**
+   * Constructs a bit vector with the 2's complement encoding of the specified byte.
+   * @param b value to encode
+   * @group numeric
+   */
+  def fromByte(b: Byte): ByteVector =
+    BitVector.fromByte(b, 8).bytes
+
+  /**
    * Constructs a bit vector with the 2's complement encoding of the specified value.
    * @param s value to encode
    * @param size size of vector (<= 2)

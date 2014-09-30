@@ -1267,6 +1267,17 @@ object BitVector {
   }
 
   /**
+   * Constructs a bit vector with the 2's complement encoding of the specified byte.
+   * @param s value to encode
+   * @param size size of vector (<= 8)
+   * @group numeric
+   */
+  def fromByte(b: Byte, size: Int = 8): BitVector = {
+    require(size <= 8)
+    (BitVector(b) << (8 - size)).take(size)
+  }
+
+  /**
    * Constructs a bit vector with the 2's complement encoding of the specified value.
    * @param s value to encode
    * @param size size of vector (<= 16)
