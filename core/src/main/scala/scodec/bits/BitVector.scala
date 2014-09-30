@@ -436,6 +436,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Returns a new vector of the same size with the byte order reversed.
    *
+   * Note that `reverseByteOrder.reverseByteOrder == identity` only when `size` is evenly divisble by 8.
+   * To invert `reverseByteOrder` for an arbitrary size, use `invertReverseByteOrder`.
+   *
    * @group collection
    */
   final def reverseByteOrder: BitVector = {
@@ -446,6 +449,20 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       val b = drop(validFinalBits).toByteVector.reverse
       val init = toBytes(b, size-last.size)
       init ++ last
+    }
+  }
+
+  /**
+   * Inverse of `reverseByteOrder`.
+   *
+   * @group collection
+   */
+  final def invertReverseByteOrder: BitVector = {
+    if (size % 8 == 0) reverseByteOrder
+    else {
+      val validFinalBits = validBitsInLastByte(size)
+      val (init, last) = splitAt(size - validFinalBits)
+      last ++ init.bytes.reverse.bits
     }
   }
 
@@ -730,30 +747,20 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def sliceToShort(start: Long, bits: Int,
                        signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
     if (start % 8 != 0) drop(start).sliceToShort(0, bits, signed, ordering)
+    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToShort(0, bits, signed, ByteOrdering.BigEndian)
     else { // start % 8 == 0
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 16)
       val mod = bits % 8
       var result = 0
       val bytesNeeded = bytesNeededForBits(bits)
       val base = start / 8
-      ordering match {
-        case ByteOrdering.BigEndian =>
-          @annotation.tailrec
-          def go(i: Int): Unit =
-            if (i < bytesNeeded) {
-              result = (result << 8) | (0x0ff & this.getByte(base + i))
-              go(i + 1)
-            }
-          go(0)
-        case ByteOrdering.LittleEndian =>
-          @annotation.tailrec
-          def go(i: Int): Unit =
-            if (i < bytesNeeded) {
-              result = result | ((0x0ff & this.getByte(base + i)) << (8 * i))
-              go(i + 1)
-            }
-          go(0)
-      }
+      @annotation.tailrec
+      def go(i: Int): Unit =
+        if (i < bytesNeeded) {
+          result = (result << 8) | (0x0ff & this.getByte(base + i))
+          go(i + 1)
+        }
+      go(0)
       if (mod != 0) result = result >>> (8 - mod)
       // Sign extend if necessary
       if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
@@ -774,35 +781,27 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def toShort(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
     require(sizeLessThanOrEqual(16))
-    val bits = intSize.get
-    val mod = bits % 8
-    var result = 0
-    val bytesNeeded = bytesNeededForBits(bits)
-    ordering match {
-      case ByteOrdering.BigEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = (result << 8) | (0x0ff & this.getByte(i))
-            go(i + 1)
-          }
-        go(0)
-      case ByteOrdering.LittleEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = result | ((0x0ff & this.getByte(i)) << (8 * i))
-            go(i + 1)
-          }
-        go(0)
+    if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toShort(signed, ByteOrdering.BigEndian)
+    else {
+      val bits = intSize.get
+      val mod = bits % 8
+      var result = 0
+      val bytesNeeded = bytesNeededForBits(bits)
+      @annotation.tailrec
+      def go(i: Int): Unit =
+        if (i < bytesNeeded) {
+          result = (result << 8) | (0x0ff & this.getByte(i))
+          go(i + 1)
+        }
+      go(0)
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 16 - bits
+        result = (result << toShift) >> toShift
+      }
+      result.toShort
     }
-    if (mod != 0) result = result >>> (8 - mod)
-    // Sign extend if necessary
-    if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
-      val toShift = 16 - bits
-      result = (result << toShift) >> toShift
-    }
-    result.toShort
   }
 
   /**
@@ -816,30 +815,20 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def sliceToInt(start: Long, bits: Int,
                        signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
     if (start % 8 != 0) drop(start).sliceToInt(0, bits, signed, ordering)
+    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToInt(0, bits, signed, ByteOrdering.BigEndian)
     else { // start % 8 == 0
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 32)
       val mod = bits % 8
       var result = 0
       val bytesNeeded = bytesNeededForBits(bits)
       val base = start / 8
-      ordering match {
-        case ByteOrdering.BigEndian =>
-          @annotation.tailrec
-          def go(i: Int): Unit =
-            if (i < bytesNeeded) {
-              result = (result << 8) | (0x0ff & this.getByte(base + i))
-              go(i + 1)
-            }
-          go(0)
-        case ByteOrdering.LittleEndian =>
-          @annotation.tailrec
-          def go(i: Int): Unit =
-            if (i < bytesNeeded) {
-              result = result | ((0x0ff & this.getByte(base + i)) << (8 * i))
-              go(i + 1)
-            }
-          go(0)
-      }
+      @annotation.tailrec
+      def go(i: Int): Unit =
+        if (i < bytesNeeded) {
+          result = (result << 8) | (0x0ff & this.getByte(base + i))
+          go(i + 1)
+        }
+      go(0)
       if (mod != 0) result = result >>> (8 - mod)
       // Sign extend if necessary
       if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
@@ -860,35 +849,27 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
     require(sizeLessThanOrEqual(32))
-    val bits = intSize.get
-    val mod = bits % 8
-    var result = 0
-    val bytesNeeded = bytesNeededForBits(bits)
-    ordering match {
-      case ByteOrdering.BigEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = (result << 8) | (0x0ff & this.getByte(i))
-            go(i + 1)
-          }
-        go(0)
-      case ByteOrdering.LittleEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = result | ((0x0ff & this.getByte(i)) << (8 * i))
-            go(i + 1)
-          }
-        go(0)
+    if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toInt(signed, ByteOrdering.BigEndian)
+    else {
+      val bits = intSize.get
+      val mod = bits % 8
+      var result = 0
+      val bytesNeeded = bytesNeededForBits(bits)
+      @annotation.tailrec
+      def go(i: Int): Unit =
+        if (i < bytesNeeded) {
+          result = (result << 8) | (0x0ff & this.getByte(i))
+          go(i + 1)
+        }
+      go(0)
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 32 - bits
+        result = (result << toShift) >> toShift
+      }
+      result
     }
-    if (mod != 0) result = result >>> (8 - mod)
-    // Sign extend if necessary
-    if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
-      val toShift = 32 - bits
-      result = (result << toShift) >> toShift
-    }
-    result
   }
 
   /**
@@ -902,6 +883,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   final def sliceToLong(start: Long, bits: Int,
                         signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
     if (start % 8 != 0) drop(start).sliceToLong(0, bits, signed, ordering)
+    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToLong(0, bits, signed, ByteOrdering.BigEndian)
     else { // start % 8 == 0
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 64)
       val mod = bits % 8
@@ -946,35 +928,27 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
     require(sizeLessThanOrEqual(64))
-    val bits = intSize.get
-    val mod = bits % 8
-    var result = 0L
-    val bytesNeeded = bytesNeededForBits(bits)
-    ordering match {
-      case ByteOrdering.BigEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = (result << 8) | (0x0ffL & this.getByte(i))
-            go(i + 1)
-          }
-        go(0)
-      case ByteOrdering.LittleEndian =>
-        @annotation.tailrec
-        def go(i: Int): Unit =
-          if (i < bytesNeeded) {
-            result = result | ((0x0ffL & this.getByte(i)) << (8 * i))
-            go(i + 1)
-          }
-        go(0)
+    if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toLong(signed, ByteOrdering.BigEndian)
+    else {
+      val bits = intSize.get
+      val mod = bits % 8
+      var result = 0L
+      val bytesNeeded = bytesNeededForBits(bits)
+      @annotation.tailrec
+      def go(i: Int): Unit =
+        if (i < bytesNeeded) {
+          result = (result << 8) | (0x0ffL & this.getByte(i))
+          go(i + 1)
+        }
+      go(0)
+      if (mod != 0) result = result >>> (8 - mod)
+      // Sign extend if necessary
+      if (signed && bits != 64 && ((1 << (bits - 1)) & result) != 0) {
+        val toShift = 64 - bits
+        result = (result << toShift) >> toShift
+      }
+      result
     }
-    if (mod != 0) result = result >>> (8 - mod)
-    // Sign extend if necessary
-    if (signed && bits != 64 && ((1 << (bits - 1)) & result) != 0) {
-      val toShift = 64 - bits
-      result = (result << toShift) >> toShift
-    }
-    result
   }
 
   /**
