@@ -197,7 +197,14 @@ object ScodecBuild extends Build {
         "scodec.bits.BitVector.sliceToShort$default$4",
         "scodec.bits.ByteVector.toShort",
         "scodec.bits.ByteVector.toShort$default$1",
-        "scodec.bits.ByteVector.toShort$default$2"
+        "scodec.bits.ByteVector.toShort$default$2",
+        "scodec.bits.ByteVector.toByte",
+        "scodec.bits.ByteVector.toByte$default$1",
+        "scodec.bits.BitVector.toByte",
+        "scodec.bits.BitVector.toByte$default$1",
+        "scodec.bits.BitVector.sliceToByte",
+        "scodec.bits.BitVector.sliceToByte$default$3",
+        "scodec.bits.BitVector.invertReverseByteOrder"
       ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
       binaryIssueFilters +=
         // result type changed, but this method was private
