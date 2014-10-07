@@ -85,6 +85,7 @@ object ScodecBuild extends Build {
       new RuleTransformer(stripTestScope).transform(node)(0)
     }
   ) ++ releaseSettings ++ Seq(
+    crossBuild := true,
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
