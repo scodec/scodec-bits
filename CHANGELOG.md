@@ -1,9 +1,14 @@
+1.0.4
+=====
+ - Significant performance improvements in `BitVector`
+   See [https://github.com/scodec/scodec-bits/pull/21] for details.
+ - Added `toByte`/`sliceToByte` and `toShort`/`sliceToShort` to `BitVector` and `ByteVector`
+ - Fixed bug in `toInt`/`toLong` on bit vectors with sizes not evenly divisible by 8
+
 1.0.3
 =====
  - Significant performance improvements in `:+` and `++` for `ByteVector` and `BitVector`.
    See [https://github.com/scodec/scodec-bits/pull/16] and [https://github.com/scodec/scodec-bits/pull/19] for details.
- - Added `toByte`/`sliceToByte` and `toShort`/`sliceToShort` to `BitVector` and `ByteVector`
- - Fixed bug in `toInt`/`toLong` on bit vectors with sizes not evenly divisible by 8
 
 1.0.2
 =====
