@@ -83,7 +83,8 @@ object ScodecBuild extends Build {
       }
       val stripTestScope = stripIf { n => n.label == "dependency" && (n \ "scope").text == "test" }
       new RuleTransformer(stripTestScope).transform(node)(0)
-    },
+    }
+  ) ++ releaseSettings ++ Seq(
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
@@ -96,7 +97,7 @@ object ScodecBuild extends Build {
       commitNextVersion,
       pushChanges
     )
-  ) ++ releaseSettings
+  )
 
   lazy val root: Project = project.in(file(".")).settings(commonSettings: _*).aggregate(core, benchmark).settings(
     publishArtifact := false
