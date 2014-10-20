@@ -1417,6 +1417,13 @@ object BitVector {
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
+   * Concatenates all the given `BitVector`s into a single instance.
+   *
+   * @group constructors
+   */
+  def concat(bvs: GenTraversableOnce[BitVector]): BitVector = bvs.foldLeft(BitVector.empty)(_ ++ _)
+
+  /**
    * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
    * The returned `BitVector` will have the structure of a fully lazy
    * right-associated cons list. Thus, `get`, `take`, and `drop` will

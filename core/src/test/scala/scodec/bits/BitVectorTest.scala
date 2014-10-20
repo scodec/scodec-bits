@@ -556,4 +556,13 @@ class BitVectorTest extends BitsSuite {
       check(evil.head, evil.tail, delta)
     }
   }
+
+  test("concat") {
+    forAll { (bvs: List[BitVector]) =>
+      val c = BitVector.concat(bvs)
+      c.size shouldBe bvs.map(_.size).foldLeft(0L)(_ + _)
+      bvs.headOption.foreach(h => c.startsWith(h))
+      bvs.lastOption.foreach(l => c.endsWith(l))
+    }
+  }
 }
