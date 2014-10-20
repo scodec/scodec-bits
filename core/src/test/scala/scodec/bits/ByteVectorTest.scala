@@ -379,4 +379,13 @@ class ByteVectorTest extends BitsSuite {
   test("serialization") {
     forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
   }
+
+  test("concat") {
+    forAll { (bvs: List[ByteVector]) =>
+      val c = ByteVector.concat(bvs)
+      c.size shouldBe bvs.map(_.size).foldLeft(0)(_ + _)
+      bvs.headOption.foreach(h => c.startsWith(h))
+      bvs.lastOption.foreach(l => c.endsWith(l))
+    }
+  }
 }
