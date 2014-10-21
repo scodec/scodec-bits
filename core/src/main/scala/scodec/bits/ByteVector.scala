@@ -1303,6 +1303,13 @@ object ByteVector {
   def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): ByteVector =
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  /**
+   * Concatenates all the given `ByteVector`s into a single instance.
+   *
+   * @group constructors
+   */
+  def concat(bvs: GenTraversableOnce[ByteVector]): ByteVector = bvs.foldLeft(ByteVector.empty)(_ ++ _)
+
   @SerialVersionUID(1L)
   private class SerializationProxy(private val bytes: Array[Byte]) extends Serializable {
     def readResolve: AnyRef = ByteVector.view(bytes)
