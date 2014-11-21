@@ -112,7 +112,7 @@ object ScodecBuild extends Build {
       apiURL := Some(url(s"http://docs.typelevel.org/api/scodec/bits/stable/${version.value}/")),
       unmanagedResources in Compile <++= baseDirectory map { base => Seq(base / "NOTICE", base / "LICENSE") },
       libraryDependencies ++= Seq(
-        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
         "org.scalatest" %% "scalatest" % "2.1.3" % "test",
         "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
         "com.google.guava" % "guava" % "16.0.1" % "test",
