@@ -7,13 +7,15 @@ import ReleaseKeys._
 import Utilities._
 import com.typesafe.sbt.osgi.SbtOsgi._
 import com.typesafe.sbt.SbtGhPages._
-import com.typesafe.sbt.SbtGit.git
+import com.typesafe.sbt.SbtGit._
+import GitKeys._
 import com.typesafe.sbt.SbtPgp.PgpKeys._
 import com.typesafe.sbt.SbtSite._
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import pl.project13.scala.sbt.SbtJmh._
+import sbtbuildinfo.Plugin._
 
 object ScodecBuild extends Build {
 
@@ -105,7 +107,7 @@ object ScodecBuild extends Build {
   )
 
   lazy val core: Project = project.in(file("core")).
-    settings((commonSettings ++ site.settings ++ site.includeScaladoc() ++ ghpages.settings ++ mimaDefaultSettings ++ osgiSettings): _*).
+    settings((commonSettings ++ site.settings ++ site.includeScaladoc() ++ ghpages.settings ++ mimaDefaultSettings ++ coreBuildInfoSettings ++ osgiSettings): _*).
     settings(
       name := "scodec-bits",
       autoAPIMappings := true,
@@ -211,6 +213,12 @@ object ScodecBuild extends Build {
       binaryIssueFilters +=
         // result type changed, but this method was private
         ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector#Append.sizeLowerBound")
+  )
+
+  lazy val coreBuildInfoSettings: Seq[Setting[_]] = buildInfoSettings ++ Seq(
+    sourceGenerators in Compile <+= buildInfo,
+    buildInfoPackage := "scodec.bits",
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit)
   )
 
   lazy val benchmark: Project = project.in(file("benchmark")).settings(commonSettings: _*).dependsOn(core).settings(jmhSettings: _*).settings(
