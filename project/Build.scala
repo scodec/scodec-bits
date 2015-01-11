@@ -1,118 +1,28 @@
 import sbt._
 import Keys._
-import sbtrelease._
-import ReleaseStateTransformations._
-import ReleasePlugin._
-import ReleaseKeys._
-import Utilities._
 import com.typesafe.sbt.osgi.SbtOsgi._
-import com.typesafe.sbt.SbtGhPages._
-import com.typesafe.sbt.SbtGit._
-import GitKeys._
-import com.typesafe.sbt.SbtPgp.PgpKeys._
-import com.typesafe.sbt.SbtSite._
 import com.typesafe.tools.mima.core._
-import com.typesafe.tools.mima.plugin.MimaPlugin.mimaDefaultSettings
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import pl.project13.scala.sbt.SbtJmh._
-import sbtbuildinfo.Plugin._
+import scodec.build.ScodecBuildSettings.autoImport._
 
 object ScodecBuild extends Build {
 
-  lazy val commonSettings: Seq[Setting[_]] = Seq(
-    organization := "org.typelevel",
-    scalaVersion := "2.10.4",
-    crossScalaVersions := Seq("2.10.4", "2.11.0"),
-    scalacOptions ++= Seq(
-      "-feature",
-      "-deprecation",
-      "-unchecked",
-      "-optimise",
-      "-Xcheckinit",
-      "-Xlint",
-      "-Xverify",
-      "-Yclosure-elim",
-      "-Yinline"),
-    scalacOptions in (Compile, doc) ++= {
-      val tagOrBranch = if (version.value endsWith "SNAPSHOT") "master" else ("v" + version.value)
-      Seq(
-        "-diagrams",
-        "-groups",
-        "-implicits",
-        "-implicits-show-all",
-        "-sourcepath", baseDirectory.value.getAbsolutePath,
-        "-doc-source-url", "https:///github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
-      )
-    },
-    testOptions in Test += Tests.Argument("-oD"),
-    licenses += ("Three-clause BSD-style", url("http://github.com/scodec/scodec-bits/blob/master/LICENSE")),
-    triggeredMessage := (_ => Watched.clearScreen),
-    publishTo <<= version { v: String =>
-      val nexus = "https://oss.sonatype.org/"
-      if (v.trim.endsWith("SNAPSHOT"))
-        Some("snapshots" at nexus + "content/repositories/snapshots")
-      else
-        Some("releases" at nexus + "service/local/staging/deploy/maven2")
-    },
-    publishMavenStyle := true,
-    publishArtifact in Test := false,
-    pomIncludeRepository := { x => false },
-    pomExtra := (
-      <url>http://github.com/scodec/scodec-bits</url>
-      <scm>
-        <url>git@github.com:scodec/scodec-bits.git</url>
-        <connection>scm:git:git@github.com:scodec/scodec-bits.git</connection>
-      </scm>
-      <developers>
-        <developer>
-          <id>mpilquist</id>
-          <name>Michael Pilquist</name>
-          <url>http://github.com/mpilquist</url>
-        </developer>
-        <developer>
-          <id>pchiusano</id>
-          <name>Paul Chiusano</name>
-          <url>http://github.com/pchiusano</url>
-        </developer>
-      </developers>
-    ),
-    pomPostProcess := { (node) =>
-      import scala.xml._
-      import scala.xml.transform._
-      def stripIf(f: Node => Boolean) = new RewriteRule {
-        override def transform(n: Node) =
-          if (f(n)) NodeSeq.Empty else n
-      }
-      val stripTestScope = stripIf { n => n.label == "dependency" && (n \ "scope").text == "test" }
-      new RuleTransformer(stripTestScope).transform(node)(0)
-    }
-  ) ++ releaseSettings ++ Seq(
-    crossBuild := true,
-    releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,
-      inquireVersions,
-      runTest,
-      setReleaseVersion,
-      commitReleaseVersion,
-      tagRelease,
-      publishArtifacts.copy(action = publishSignedAction),
-      setNextVersion,
-      commitNextVersion,
-      pushChanges
-    )
+  lazy val commonSettings = Seq(
+    scodecModule := "scodec-bits",
+    rootPackage := "scodec.bits"
   )
 
-  lazy val root: Project = project.in(file(".")).settings(commonSettings: _*).aggregate(core, benchmark).settings(
+  lazy val root: Project = project.in(file(".")).aggregate(core, benchmark).settings(commonSettings: _*).settings(
     publishArtifact := false
   )
 
   lazy val core: Project = project.in(file("core")).
-    settings((commonSettings ++ site.settings ++ site.includeScaladoc() ++ ghpages.settings ++ mimaDefaultSettings ++ coreBuildInfoSettings ++ osgiSettings): _*).
+    settings(commonSettings: _*).
+    settings(scodecPrimaryModule: _*).
     settings(
-      name := "scodec-bits",
-      autoAPIMappings := true,
-      apiURL := Some(url(s"http://docs.typelevel.org/api/scodec/bits/stable/${version.value}/")),
-      unmanagedResources in Compile <++= baseDirectory map { base => Seq(base / "NOTICE", base / "LICENSE") },
+      scodecModule := "scodec-bits",
+      rootPackage := "scodec.bits",
       libraryDependencies ++= Seq(
         "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
         "org.scalatest" %% "scalatest" % "2.1.3" % "test",
@@ -126,11 +36,6 @@ object ScodecBuild extends Build {
         """scala.*;version="$<range;[==,=+)>"""",
         "*"
       ),
-      OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package"),
-      git.remoteRepo := "git@github.com:scodec/scodec-bits.git",
-      previousArtifact := previousVersion(version.value) map { pv =>
-        organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
-      },
       binaryIssueFilters ++= Seq(
         "scodec.bits.ByteVector.buffer",
         "scodec.bits.ByteVector.bufferBy",
@@ -215,29 +120,11 @@ object ScodecBuild extends Build {
         ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector#Append.sizeLowerBound")
   )
 
-  lazy val coreBuildInfoSettings: Seq[Setting[_]] = buildInfoSettings ++ Seq(
-    sourceGenerators in Compile <+= buildInfo,
-    buildInfoPackage := "scodec.bits",
-    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit)
-  )
-
-  lazy val benchmark: Project = project.in(file("benchmark")).settings(commonSettings: _*).dependsOn(core).settings(jmhSettings: _*).settings(
-    publishArtifact := false,
-    libraryDependencies ++=
-      Seq("com.typesafe.akka" %% "akka-actor" % "2.3.5")
-  )
-
-
-  lazy val publishSignedAction = { st: State =>
-    val extracted = st.extract
-    val ref = extracted.get(thisProjectRef)
-    extracted.runAggregated(publishSigned in Global in ref, st)
-  }
-
-  private def previousVersion(currentVersion: String): Option[String] = {
-    val Version = """(\d+)\.(\d+)\.(\d+).*""".r
-    val Version(x, y, z) = currentVersion
-    if (z == "0") None
-    else Some(s"$x.$y.${z.toInt - 1}")
-  }
+  lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(core).settings(jmhSettings: _*).
+    settings(commonSettings: _*).
+    settings(
+      publishArtifact := false,
+      libraryDependencies ++=
+        Seq("com.typesafe.akka" %% "akka-actor" % "2.3.5")
+    )
 }
