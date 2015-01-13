@@ -1,3 +1,16 @@
+1.0.5
+=====
+ - Added `concat` to the companions of `BitVector` and `ByteVector`.
+ - Removed scala-reflect library from transitive dependencies.
+ - Changed organization (groupId) from `org.typelevel` to `org.scodec`.
+
+1.0.4
+=====
+ - Significant performance improvements in `BitVector`
+   See [https://github.com/scodec/scodec-bits/pull/21] for details.
+ - Added `toByte`/`sliceToByte` and `toShort`/`sliceToShort` to `BitVector` and `ByteVector`
+ - Fixed bug in `toInt`/`toLong` on bit vectors with sizes not evenly divisible by 8
+
 1.0.3
 =====
  - Significant performance improvements in `:+` and `++` for `ByteVector` and `BitVector`.
