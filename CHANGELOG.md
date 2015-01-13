@@ -1,3 +1,9 @@
+1.0.5
+=====
+ - Added `concat` to the companions of `BitVector` and `ByteVector`.
+ - Removed scala-reflect library from transitive dependencies.
+ - Changed organization (groupId) from `org.typelevel` to `org.scodec`.
+
 1.0.4
 =====
  - Significant performance improvements in `BitVector`
