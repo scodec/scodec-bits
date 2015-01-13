@@ -10,7 +10,8 @@ object ScodecBuild extends Build {
 
   lazy val commonSettings = Seq(
     scodecModule := "scodec-bits",
-    rootPackage := "scodec.bits"
+    rootPackage := "scodec.bits",
+    contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
   )
 
   lazy val root: Project = project.in(file(".")).aggregate(core, benchmark).settings(commonSettings: _*).settings(
