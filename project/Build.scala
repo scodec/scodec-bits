@@ -37,8 +37,6 @@ object ScodecBuild extends Build {
         """scala.*;version="$<range;[==,=+)>"""",
         "*"
       ),
-      // Remove this line after 1.0.5 release
-      previousArtifact := Some("org.typelevel" % ("scodec-bits_" + scalaBinaryVersion.value) % "1.0.4"),
       binaryIssueFilters ++= Seq(
         "scodec.bits.ByteVector.buffer",
         "scodec.bits.ByteVector.bufferBy",
