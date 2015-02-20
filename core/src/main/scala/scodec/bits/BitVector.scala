@@ -1,8 +1,10 @@
 package scodec.bits
 
 import java.nio.{ ByteBuffer, ByteOrder }
-import java.security.MessageDigest
+import java.security.{AlgorithmParameters, Key, MessageDigest, SecureRandom}
 import java.util.concurrent.atomic.AtomicLong
+import javax.crypto.Cipher
+
 import scala.collection.GenTraversableOnce
 
 /**
@@ -1013,6 +1015,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
 
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
+    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
+    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
+
   /**
    * Returns true if the specified value is a `BitVector` with the same contents as this vector.
    * @group collection
@@ -1079,6 +1086,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     case s@Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
     case c: Chunks => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
   }
+
+  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
+    BitVector(bytes.cipher(ci, key, opmode, aparams))
 
   /**
    * Pretty print this `BitVector`.
