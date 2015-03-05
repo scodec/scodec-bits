@@ -4,7 +4,7 @@ import ByteVector._
 
 import java.io.OutputStream
 import java.nio.ByteBuffer
-import java.security.{AlgorithmParameters, Key, MessageDigest, SecureRandom}
+import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
 
@@ -34,6 +34,9 @@ import collection.immutable.Queue
  *
  * @groupname buffer Buffering
  * @groupprio buffer 3
+ *
+ * @groupname crypto Cryptography
+ * @groupprio crypto 4
  *
  * @define bitwiseOperationsReprDescription bit vector
  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
@@ -770,8 +773,35 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     ByteVector.view(digest.digest)
   }
 
+  /**
+   * Encrypts this byte vector using the specified cipher and key.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
+   * @param ci cipher to use for encryption
+   * @param key key to encrypt with
+   * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
+   * @param sr secure random
+   * @group crypto
+   */
+  @throws[GeneralSecurityException]
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector =
     cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
+
+  /**
+   * Decrypts this byte vector using the specified cipher and key.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
+   * @param ci cipher to use for decryption
+   * @param key key to decrypt with
+   * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
+   * @param sr secure random
+   * @group crypto
+   */
+  @throws[GeneralSecurityException]
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
 
@@ -815,6 +845,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
 
+  @throws[GeneralSecurityException]
   private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector = {
     aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
     foreachV { view => ci.update(view.asByteBuffer.array) }

@@ -1,7 +1,7 @@
 package scodec.bits
 
 import java.nio.{ ByteBuffer, ByteOrder }
-import java.security.{AlgorithmParameters, Key, MessageDigest, SecureRandom}
+import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
 import javax.crypto.Cipher
 
@@ -20,6 +20,9 @@ import scala.collection.GenTraversableOnce
  *
  * @groupname conversions Conversions
  * @groupprio conversions 2
+ *
+ * @groupname crypto Cryptography
+ * @groupprio crypto 3
  *
  * @define bitwiseOperationsReprDescription bit vector
  */
@@ -1001,24 +1004,63 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
 
   /**
    * Computes a digest of this bit vector.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
    * The last byte is zero padded if the size is not evenly divisible by 8.
-   * @param algoritm digest algorithm to use
-   * @group conversions
+   *
+   * @param algorithm digest algorithm to use
+   * @throws java.security.GeneralSecurityException
+   * @group crypto
    */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
 
   /**
    * Computes a digest of this bit vector.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
    * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
    * @param digest digest to use
-   * @group conversions
+   * @throws java.security.GeneralSecurityException
+   * @group crypto
    */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
 
+  /**
+   * Encrypts this bit vector using the specified cipher and key.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
+   * @param ci cipher to use for encryption
+   * @param key key to encrypt with
+   * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
+   * @param sr secure random
+   * @group crypto
+   */
+  @throws[GeneralSecurityException]
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
-    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
+    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
+
+  /**
+   * Decrypts this bit vector using the specified cipher and key.
+   *
+   * Exceptions thrown from the underlying JCA API are propagated.
+   *
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
+   * @param ci cipher to use for decryption
+   * @param key key to decrypt with
+   * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
+   * @param sr secure random
+   * @group crypto
+   */
+  @throws[GeneralSecurityException]
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
-    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
+    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
   /**
    * Returns true if the specified value is a `BitVector` with the same contents as this vector.
@@ -1087,8 +1129,9 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     case c: Chunks => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
   }
 
+  @throws[GeneralSecurityException]
   private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
-    BitVector(bytes.cipher(ci, key, opmode, aparams))
+    BitVector(bytes.cipher(ci, key, opmode, aparams)(sr))
 
   /**
    * Pretty print this `BitVector`.
