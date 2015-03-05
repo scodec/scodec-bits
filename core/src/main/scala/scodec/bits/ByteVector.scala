@@ -1,12 +1,15 @@
 package scodec.bits
 
 import ByteVector._
-import collection.immutable.Queue
-import java.nio.ByteBuffer
-import java.security.MessageDigest
-import scala.collection.GenTraversableOnce
+
 import java.io.OutputStream
+import java.nio.ByteBuffer
+import java.security.{AlgorithmParameters, Key, MessageDigest, SecureRandom}
 import java.util.concurrent.atomic.AtomicLong
+import javax.crypto.Cipher
+
+import scala.collection.GenTraversableOnce
+import collection.immutable.Queue
 
 /**
  * An immutable vector of bytes, backed by a balanced binary tree of
@@ -767,6 +770,11 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     ByteVector.view(digest.digest)
   }
 
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector =
+    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector =
+    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
+
   // implementation details, Object methods
 
   /**
@@ -806,6 +814,12 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     if (isEmpty) "ByteVector(empty)"
     else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
+
+  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): ByteVector = {
+    aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
+    foreachV { view => ci.update(view.asByteBuffer.array) }
+    ByteVector.view(ci.doFinal())
+  }
 
   private[bits] def pretty(prefix: String): String = this match {
     case Append(l,r) =>
