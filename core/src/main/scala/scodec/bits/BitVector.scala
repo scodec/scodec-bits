@@ -1488,7 +1488,7 @@ object BitVector {
 
   /**
    * Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
-   * to control the number of bytes read in each chunk (defaulting to 4MB).
+   * to control the number of bytes read in each chunk (defaulting to 16MB).
    * This simply calls [[scodec.BitVector.unfold]] with a function to extract a series
    * of flat byte arrays from the `InputStream`.
    *
@@ -1513,7 +1513,7 @@ object BitVector {
 
   /**
    * Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
-   * to control the number of bytes read in each chunk (defaulting to 8k). This function
+   * to control the number of bytes read in each chunk (defaulting to 16MB). This function
    * does lazy I/O, see [[scodec.BitVector.fromInputStream]] for caveats. The `direct`
    * parameter, if `true`, allows for (but does not enforce) using a 'direct' [[java.nio.ByteBuffer]]
    * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
