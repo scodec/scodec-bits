@@ -108,7 +108,7 @@ class ByteVectorTest extends BitsSuite {
       }
       if (ind < b.size) {
         val actual = b.update(ind,9).toArray
-        val correct = Vector(b.toArray: _*).updated(ind,9).toArray
+        val correct = Vector(b.toArray: _*).updated(ind, 9.toByte).toArray
         actual shouldBe correct
       }
 
@@ -386,6 +386,20 @@ class ByteVectorTest extends BitsSuite {
       c.size shouldBe bvs.map(_.size).foldLeft(0)(_ + _)
       bvs.headOption.foreach(h => c.startsWith(h))
       bvs.lastOption.foreach(l => c.endsWith(l))
+    }
+  }
+
+  test("gzip") {
+    forAll { (x: ByteVector) =>
+      x.deflate().inflate() shouldBe Right(x)
+    }
+
+    val deflatableByteVectors = for {
+      b <- arbitrary[Byte]
+      sz <- Gen.chooseNum(1, 8192)
+    } yield ByteVector.fill(sz)(b)
+    forAll(deflatableByteVectors) { (x: ByteVector) =>
+      if (x.size > 10) x.deflate().size shouldBe < (x.size)
     }
   }
 }

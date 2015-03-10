@@ -6,6 +6,7 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
+import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
 
 import scala.collection.GenTraversableOnce
@@ -752,9 +753,78 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * $returnsView
    * @group collection
    */
-
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
+
+  /**
+   * Compresses this vector using ZLIB.
+   *
+   * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
+   * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
+   * @param nowrap if true, ZLIB header and checksum will not be used
+   * @param chunkSize buffer size, in bytes, to use when compressing
+   * @group conversions
+   */
+  final def deflate(level: Int = Deflater.DEFAULT_COMPRESSION, strategy: Int = Deflater.DEFAULT_STRATEGY, nowrap: Boolean = false, chunkSize: Int = 4096): ByteVector = {
+    if (isEmpty) this
+    else {
+      val arr = toArray
+
+      val deflater = new Deflater(level, nowrap)
+      try {
+        deflater.setStrategy(strategy)
+        deflater.setInput(arr)
+        deflater.finish()
+
+        val buffer = new Array[Byte](chunkSize min arr.length)
+        def loop(acc: ByteVector): ByteVector = {
+          if (deflater.finished) acc
+          else {
+            val count = deflater deflate buffer
+            loop(acc ++ ByteVector(buffer, 0, count))
+          }
+        }
+        loop(ByteVector.empty)
+      } finally {
+        deflater.end()
+      }
+    }
+  }
+
+  /**
+   * Decompresses this vector using ZLIB.
+   *
+   * @param chunkSize buffer size, in bytes, to use when compressing
+   * @group conversions
+   */
+  final def inflate(chunkSize: Int = 4096): Either[DataFormatException, ByteVector] = {
+    if (isEmpty) Right(this)
+    else {
+      val arr = toArray
+
+      val inflater = new Inflater
+      try {
+        inflater.setInput(arr)
+        try {
+          val buffer = new Array[Byte](chunkSize min arr.length)
+          def loop(acc: ByteVector): ByteVector = {
+            if (inflater.finished || inflater.needsInput) acc
+            else {
+              val count = inflater inflate buffer
+              loop(acc ++ ByteVector(buffer, 0, count))
+            }
+          }
+          val inflated = loop(ByteVector.empty)
+          if (inflater.finished) Right(inflated)
+          else Left(new DataFormatException("Insufficient data -- inflation reached end of input without completing inflation - " + inflated))
+        } catch {
+          case e: DataFormatException => Left(e)
+        }
+      } finally {
+        inflater.end()
+      }
+    }
+  }
 
   /**
    * Computes a digest of this byte vector.
@@ -1029,7 +1099,7 @@ object ByteVector {
   def apply(bytes: Vector[Byte]): ByteVector = view(bytes, bytes.size)
 
   /**
-   * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is
+   * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]`
    * is copied to ensure the resulting `ByteVector` is immutable.
    * If this is not desired, use `[[ByteVector.view]]`.
    * @group constructors
@@ -1037,6 +1107,18 @@ object ByteVector {
   def apply(bytes: Array[Byte]): ByteVector = {
     val copy: Array[Byte] = bytes.clone()
     view(copy)
+  }
+
+  /**
+   * Constructs a `ByteVector` from an `Array[Byte]`, an offset, and a length.
+   * The given `Array[Byte]` is copied to ensure the resulting `ByteVector` is immutable.
+   * If this is not desired, use `[[ByteVector.view]]`.
+   * @group constructors
+   */
+  def apply(bytes: Array[Byte], offset: Int, length: Int): ByteVector = {
+    val fresh: Array[Byte] = new Array[Byte](length)
+    System.arraycopy(bytes, offset, fresh, 0, length)
+    view(fresh)
   }
 
   /**

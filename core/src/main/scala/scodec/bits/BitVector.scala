@@ -1010,7 +1010,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * The last byte is zero padded if the size is not evenly divisible by 8.
    *
    * @param algorithm digest algorithm to use
-   * @throws java.security.GeneralSecurityException
    * @group crypto
    */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
@@ -1023,7 +1022,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * The last byte is zero padded if the size is not evenly divisible by 8.
    *
    * @param digest digest to use
-   * @throws java.security.GeneralSecurityException
    * @group crypto
    */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
