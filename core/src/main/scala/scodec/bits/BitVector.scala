@@ -1031,8 +1031,6 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   /**
    * Encrypts this bit vector using the specified cipher and key.
    *
-   * Exceptions thrown from the underlying JCA API are propagated.
-   *
    * The last byte is zero padded if the size is not evenly divisible by 8.
    *
    * @param ci cipher to use for encryption
@@ -1041,14 +1039,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @param sr secure random
    * @group crypto
    */
-  @throws[GeneralSecurityException]
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
 
   /**
    * Decrypts this bit vector using the specified cipher and key.
-   *
-   * Exceptions thrown from the underlying JCA API are propagated.
    *
    * The last byte is zero padded if the size is not evenly divisible by 8.
    *
@@ -1058,8 +1053,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @param sr secure random
    * @group crypto
    */
-  @throws[GeneralSecurityException]
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
   /**
@@ -1129,9 +1123,8 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     case c: Chunks => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
   }
 
-  @throws[GeneralSecurityException]
-  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): BitVector =
-    BitVector(bytes.cipher(ci, key, opmode, aparams)(sr))
+  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
+    bytes.cipher(ci, key, opmode, aparams)(sr).right.map { _.bits }
 
   /**
    * Pretty print this `BitVector`.
