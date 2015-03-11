@@ -127,6 +127,7 @@ object ScodecBuild extends Build {
         "scodec.bits.BitVector.encrypt",
         "scodec.bits.BitVector.cipher",
         "scodec.bits.BitVector.encrypt$default$3",
+        "scodec.bits.ByteVector.copyToArray",
         "scodec.bits.ByteVector.deflate",
         "scodec.bits.ByteVector.deflate$default$1",
         "scodec.bits.ByteVector.deflate$default$2",
@@ -134,7 +135,15 @@ object ScodecBuild extends Build {
         "scodec.bits.ByteVector.deflate$default$4",
         "scodec.bits.ByteVector.inflate",
         "scodec.bits.ByteVector.inflate$default$1",
-        "scodec.bits.ByteVector.inflate$default$2"
+        "scodec.bits.ByteVector.inflate$default$2",
+        "scodec.bits.BitVector.deflate",
+        "scodec.bits.BitVector.deflate$default$1",
+        "scodec.bits.BitVector.deflate$default$2",
+        "scodec.bits.BitVector.deflate$default$3",
+        "scodec.bits.BitVector.deflate$default$4",
+        "scodec.bits.BitVector.inflate",
+        "scodec.bits.BitVector.inflate$default$1",
+        "scodec.bits.BitVector.inflate$default$2"
       ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
       binaryIssueFilters +=
         // result type changed, but this method was private
