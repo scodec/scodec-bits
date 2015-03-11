@@ -768,23 +768,29 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def deflate(level: Int = Deflater.DEFAULT_COMPRESSION, strategy: Int = Deflater.DEFAULT_STRATEGY, nowrap: Boolean = false, chunkSize: Int = 4096): ByteVector = {
     if (isEmpty) this
     else {
-      val arr = toArray
-
       val deflater = new Deflater(level, nowrap)
       try {
         deflater.setStrategy(strategy)
-        deflater.setInput(arr)
-        deflater.finish()
 
-        val buffer = new Array[Byte](chunkSize min arr.length)
-        def loop(acc: ByteVector): ByteVector = {
-          if (deflater.finished) acc
+        val buffer = new Array[Byte](chunkSize min size)
+        def loop(acc: ByteVector, fin: Boolean): ByteVector = {
+          if ((fin && deflater.finished) || (!fin && deflater.needsInput)) acc
           else {
             val count = deflater deflate buffer
-            loop(acc ++ ByteVector(buffer, 0, count))
+            loop(acc ++ ByteVector(buffer, 0, count), fin)
           }
         }
-        loop(ByteVector.empty)
+
+        var result = ByteVector.empty
+
+        foreachV { v =>
+          deflater.setInput(v.toArray)
+          result = result ++ loop(ByteVector.empty, false)
+        }
+
+        deflater.setInput(Array.empty)
+        deflater.finish()
+        result ++ loop(ByteVector.empty, true)
       } finally {
         deflater.end()
       }
@@ -839,7 +845,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group conversions
    */
   final def digest(digest: MessageDigest): ByteVector = {
-    foreachS { new F1BU { def apply(b: Byte) = digest.update(b) }}
+    foreachV { v => digest.update(v.toArray) }
     ByteVector.view(digest.digest)
   }
 
@@ -1043,6 +1049,11 @@ object ByteVector {
       at.copyToStream(s, offset, size)
     def copyToArray(xs: Array[Byte], start: Int): Unit =
       at.copyToArray(xs, start, offset, size)
+    def toArray: Array[Byte] = {
+      val arr = new Array[Byte](size)
+      copyToArray(arr, 0)
+      arr
+    }
     def take(n: Int): View =
       if (n <= 0) View.empty
       else if (n >= size) this
