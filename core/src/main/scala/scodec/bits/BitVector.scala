@@ -3,6 +3,7 @@ package scodec.bits
 import java.nio.{ ByteBuffer, ByteOrder }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
+import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
 
 import scala.collection.GenTraversableOnce
@@ -1001,6 +1002,31 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       result
     }
   }
+
+  /**
+   * Compresses this vector using ZLIB.
+   *
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
+   * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
+   * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
+   * @param nowrap if true, ZLIB header and checksum will not be used
+   * @param chunkSize buffer size, in bytes, to use when compressing
+   * @group conversions
+   */
+  final def deflate(level: Int = Deflater.DEFAULT_COMPRESSION, strategy: Int = Deflater.DEFAULT_STRATEGY, nowrap: Boolean = false, chunkSize: Int = 4096): BitVector =
+    bytes.deflate(level, strategy, nowrap, chunkSize).bits
+
+  /**
+   * Decompresses this vector using ZLIB.
+   *
+   * The last byte is zero padded if the size is not evenly divisible by 8.
+   *
+   * @param chunkSize buffer size, in bytes, to use when compressing
+   * @group conversions
+   */
+  final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
+    bytes.inflate(chunkSize).right.map(_.bits)
 
   /**
    * Computes a digest of this bit vector.
