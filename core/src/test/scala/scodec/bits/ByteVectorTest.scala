@@ -413,4 +413,32 @@ class ByteVectorTest extends BitsSuite {
       xs shouldBe (xs.take(start) ++ b.drop(offset).take(size).toArray ++ xs.drop(start + size)).toArray
     }
   }
+
+  test("dropWhile") {
+    forAll { (x: ByteVector) =>
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, dropping), b) =>
+        if (dropping) {
+          if (b == 0) (acc :+ 0, false)
+          else (acc, true)
+        } else {
+          (acc :+ b, false)
+        }
+      }
+      x.dropWhile(_ != 0.toByte) shouldBe expected
+    }
+  }
+
+  test("takeWhile") {
+    forAll { (x: ByteVector) =>
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, taking), b) =>
+        if (taking) {
+          if (b == 0) (acc, false)
+          else (acc :+ b, true)
+        } else {
+          (acc, false)
+        }
+      }
+      x.takeWhile(_ != 0.toByte) shouldBe expected
+    }
+  }
 }
