@@ -184,6 +184,21 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     take(size - n.max(0))
 
   /**
+   * Drops the longest prefix of this vector such that every byte of the prefix satisfies the specific predicate.
+   *
+   * @group collection
+   */
+  final def dropWhile(f: Byte => Boolean): ByteVector = {
+    var toDrop = 0
+    foreachSPartial(new F1BB { def apply(b: Byte) = {
+      val cont = f(b)
+      if (cont) toDrop += 1
+      cont
+    }})
+    drop(toDrop)
+  }
+
+  /**
    * Returns a vector of the first `n` bytes of this vector.
    *
    * The resulting vector's size is `n min size`.
@@ -220,6 +235,21 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def takeRight(n: Int): ByteVector =
     drop(size - n)
+
+  /**
+   * Returns the longest prefix of this vector such that every byte satisfies the specific predicate.
+   *
+   * @group collection
+   */
+  final def takeWhile(f: Byte => Boolean): ByteVector = {
+    var toTake = 0
+    foreachSPartial(new F1BB { def apply(b: Byte) = {
+      val cont = f(b)
+      if (cont) toTake += 1
+      cont
+    }})
+    take(toTake)
+  }
 
   /**
    * Returns a pair of vectors that is equal to `(take(n), drop(n))`.
@@ -288,6 +318,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 
   private[scodec] final def foreachS(f: F1BU): Unit = foreachV(_.foreach(f))
 
+  private[scodec] final def foreachSPartial(f: F1BB): Boolean = foreachVPartial(_.foreachPartial(f))
+
   private[scodec] final def foreachV(f: View => Unit): Unit = {
     @annotation.tailrec
     def go(rem: List[ByteVector]): Unit = rem match {
@@ -296,6 +328,18 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       case Chunks(Append(l,r)) :: rem => go(l :: r :: rem)
       case (b: Buffer) :: rem => go(b.unbuffer :: rem)
       case Nil => ()
+    }
+    go(this::Nil)
+  }
+
+  private[scodec] final def foreachVPartial(f: View => Boolean): Boolean = {
+    @annotation.tailrec
+    def go(rem: List[ByteVector]): Boolean = rem match {
+      case Chunk(bs)   :: rem => if (f(bs)) go(rem) else false
+      case Append(l,r) :: rem => go(l :: r :: rem)
+      case Chunks(Append(l,r)) :: rem => go(l :: r :: rem)
+      case (b: Buffer) :: rem => go(b.unbuffer :: rem)
+      case Nil => true
     }
     go(this::Nil)
   }
@@ -1008,6 +1052,7 @@ object ByteVector {
   }
   private[scodec] abstract class F1B { def apply(b: Byte): Byte }
   private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
+  private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
   private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
 
   private val AtEmpty: At =
@@ -1062,8 +1107,19 @@ object ByteVector {
     def apply(n: Int) = at(offset + n)
     def foreach(f: F1BU): Unit = {
       var i = 0
-      while (i < size) { f(at(offset+i)); i += 1 }
-      ()
+      while (i < size) {
+        f(at(offset + i))
+        i += 1
+      }
+    }
+    def foreachPartial(f: F1BB): Boolean = {
+      var i = 0
+      var cont = true
+      while (i < size && cont) {
+        cont = f(at(offset + i))
+        i += 1
+      }
+      cont
     }
     def asByteBuffer: ByteBuffer = at.asByteBuffer(offset, size)
     def copyToStream(s: OutputStream): Unit =
