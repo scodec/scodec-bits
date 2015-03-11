@@ -512,7 +512,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   }
 
   /**
-   * Copies the `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at index `start`.
+   * Copies `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at index `start`.
    *
    * @group conversions
    */
