@@ -147,7 +147,13 @@ object ScodecBuild extends Build {
         "scodec.bits.ByteVector.takeWhile",
         "scodec.bits.ByteVector.dropWhile",
         "scodec.bits.ByteVector.foreachSPartial",
-        "scodec.bits.ByteVector.foreachVPartial"
+        "scodec.bits.ByteVector.foreachVPartial",
+        "scodec.bits.BitVector.decodeString",
+        "scodec.bits.BitVector.decodeAscii",
+        "scodec.bits.BitVector.decodeUtf8",
+        "scodec.bits.ByteVector.decodeString",
+        "scodec.bits.ByteVector.decodeAscii",
+        "scodec.bits.ByteVector.decodeUtf8"
       ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
       binaryIssueFilters +=
         // result type changed, but this method was private

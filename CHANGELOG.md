@@ -4,6 +4,7 @@
  - Added `encrypt` and `decrypt` to both `BitVector` and `ByteVector`.
  - Added `takeWhile` and `dropWhile` to `ByteVector`.
  - Added 4-argument overload of `copyToArray` to `ByteVector`.
+ - Added ability to encode/decode stings to/from `BitVector`s and `ByteVector`s.
 
 1.0.5
 =====
