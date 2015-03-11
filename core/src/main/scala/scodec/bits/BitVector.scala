@@ -1,6 +1,7 @@
 package scodec.bits
 
-import java.nio.{ ByteBuffer, ByteOrder }
+import java.nio.{ ByteBuffer, ByteOrder, CharBuffer }
+import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.{ DataFormatException, Deflater, Inflater }
@@ -1004,6 +1005,27 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
   }
 
   /**
+   * Decodes this vector as a string using the implicitly available charset.
+   * @group conversions
+   */
+  final def decodeString(implicit charset: Charset): Either[CharacterCodingException, String] =
+    bytes.decodeString(charset)
+
+  /**
+   * Decodes this vector as a string using the UTF-8 charset.
+   * @group conversions
+   */
+  final def decodeUtf8: Either[CharacterCodingException, String] =
+    bytes.decodeUtf8
+
+  /**
+   * Decodes this vector as a string using the US-ASCII charset.
+   * @group conversions
+   */
+  final def decodeAscii: Either[CharacterCodingException, String] =
+    bytes.decodeAscii
+
+  /**
    * Compresses this vector using ZLIB.
    *
    * The last byte is zero padded if the size is not evenly divisible by 8.
@@ -1259,7 +1281,7 @@ object BitVector {
   /**
    * Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
    * is copied to ensure the resulting `BitVector` is immutable.
-   * If this is not desired, use `[[BitVector.view]]`.
+   * If this is not desired, use `BitVector.view`.
    * @group constructors
    */
   def apply(buffer: ByteBuffer): BitVector = apply(ByteVector(buffer))
@@ -1267,7 +1289,7 @@ object BitVector {
   /**
    * Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is
    * is copied to ensure the resulting `BitVector` is immutable.
-   * If this is not desired, use `[[BitVector.view]]`.
+   * If this is not desired, use `BitVector.view`.
    * @group constructors
    */
   def apply(bs: Array[Byte]): BitVector = toBytes(ByteVector(bs), bs.size.toLong * 8)
@@ -1487,6 +1509,30 @@ object BitVector {
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
+   * Encodes the specified string to a `BitVector` using the implicitly available `Charset`.
+   *
+   * @group constructors
+   */
+  def encodeString(str: String)(implicit charset: Charset): Either[CharacterCodingException, BitVector] =
+    ByteVector.encodeString(str)(charset).right.map { _.bits }
+
+  /**
+   * Encodes the specified string to a `BitVector` using the UTF-8 charset.
+   *
+   * @group constructors
+   */
+  def encodeUtf8(str: String): Either[CharacterCodingException, BitVector] =
+    ByteVector.encodeUtf8(str).right.map { _.bits }
+
+  /**
+   * Encodes the specified string to a `BitVector` using the US-ASCII charset.
+   *
+   * @group constructors
+   */
+  def encodeAscii(str: String): Either[CharacterCodingException, BitVector] =
+    ByteVector.encodeAscii(str).right.map { _.bits }
+
+  /**
    * Concatenates all the given `BitVector`s into a single instance.
    *
    * @group constructors
@@ -1513,7 +1559,7 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 16MB).
-   * This simply calls [[scodec.BitVector.unfold]] with a function to extract a series
+   * This simply calls [[scodec.bits.BitVector.unfold]] with a function to extract a series
    * of flat byte arrays from the `InputStream`.
    *
    * This function does not handle closing the `InputStream` and has all the usual
@@ -1538,14 +1584,14 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 16MB). This function
-   * does lazy I/O, see [[scodec.BitVector.fromInputStream]] for caveats. The `direct`
-   * parameter, if `true`, allows for (but does not enforce) using a 'direct' [[java.nio.ByteBuffer]]
+   * does lazy I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct`
+   * parameter, if `true`, allows for (but does not enforce) using a 'direct' `java.nio.ByteBuffer`
    * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
    * 'view' rather than an in-memory array. This may be more efficient for some workloads. See
-   * [[java.nio.ByteBuffer]] for more information.
+   * `java.nio.ByteBuffer` for more information.
    *
    * @param chunkSizeInBytes the number of bytes to read in each chunk
-   * @param direct true if we should attempt to use a 'direct' [[java.nio.ByteBuffer]] for reads
+   * @param direct true if we should attempt to use a 'direct' `java.nio.ByteBuffer` for reads
    * @group constructors
    */
   def fromChannel(in: java.nio.channels.ReadableByteChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16,
@@ -1562,7 +1608,7 @@ object BitVector {
   /**
    * Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes`
    * to control the number of bytes read in each chunk (defaulting to 16MB). Unlike
-   * [[scodec.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
+   * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
    * them explicitly.
    *
    * Behavior is unspecified if this function is used concurrently with the underlying

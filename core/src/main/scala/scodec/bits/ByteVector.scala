@@ -3,7 +3,8 @@ package scodec.bits
 import ByteVector._
 
 import java.io.OutputStream
-import java.nio.ByteBuffer
+import java.nio.{ ByteBuffer, CharBuffer }
+import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.{ DataFormatException, Deflater, Inflater }
@@ -784,6 +785,33 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long =
     bits.toLong(signed, ordering)
 
+  /**
+   * Decodes this vector as a string using the implicitly available charset.
+   * @group conversions
+   */
+  final def decodeString(implicit charset: Charset): Either[CharacterCodingException, String] = {
+    val decoder = charset.newDecoder
+    try {
+      Right(decoder.decode(toByteBuffer).toString)
+    } catch {
+      case e: CharacterCodingException => Left(e)
+    }
+  }
+
+  /**
+   * Decodes this vector as a string using the UTF-8 charset.
+   * @group conversions
+   */
+  final def decodeUtf8: Either[CharacterCodingException, String] =
+    decodeString(Charset.forName("UTF-8"))
+
+  /**
+   * Decodes this vector as a string using the US-ASCII charset.
+   * @group conversions
+   */
+  final def decodeAscii: Either[CharacterCodingException, String] =
+    decodeString(Charset.forName("US-ASCII"))
+
   final def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
 
   final def or(other: ByteVector): ByteVector =
@@ -1191,7 +1219,7 @@ object ByteVector {
   /**
    * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]`
    * is copied to ensure the resulting `ByteVector` is immutable.
-   * If this is not desired, use `[[ByteVector.view]]`.
+   * If this is not desired, use `ByteVector.view`.
    * @group constructors
    */
   def apply(bytes: Array[Byte]): ByteVector = {
@@ -1202,7 +1230,7 @@ object ByteVector {
   /**
    * Constructs a `ByteVector` from an `Array[Byte]`, an offset, and a length.
    * The given `Array[Byte]` is copied to ensure the resulting `ByteVector` is immutable.
-   * If this is not desired, use `[[ByteVector.view]]`.
+   * If this is not desired, use `ByteVector.view`.
    * @group constructors
    */
   def apply(bytes: Array[Byte], offset: Int, length: Int): ByteVector = {
@@ -1214,7 +1242,7 @@ object ByteVector {
   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
    * is copied to ensure the resulting `ByteVector` is immutable.
-   * If this is not desired, use `[[ByteVector.view]]`.
+   * If this is not desired, use `ByteVector.view`.
    * @group constructors
    */
   def apply(buffer: ByteBuffer): ByteVector = {
@@ -1514,6 +1542,36 @@ object ByteVector {
    */
   def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): ByteVector =
     fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+   * Encodes the specified string to a `ByteVector` using the implicitly available `Charset`.
+   *
+   * @group constructors
+   */
+  def encodeString(str: String)(implicit charset: Charset): Either[CharacterCodingException, ByteVector] = {
+    val encoder = charset.newEncoder
+    val buffer = CharBuffer.wrap(str)
+    try Right(ByteVector(encoder.encode(buffer)))
+    catch {
+      case e: CharacterCodingException => Left(e)
+    }
+  }
+
+  /**
+   * Encodes the specified string to a `ByteVector` using the UTF-8 charset.
+   *
+   * @group constructors
+   */
+  def encodeUtf8(str: String): Either[CharacterCodingException, ByteVector] =
+    encodeString(str)(Charset.forName("UTF-8"))
+
+  /**
+   * Encodes the specified string to a `ByteVector` using the US-ASCII charset.
+   *
+   * @group constructors
+   */
+  def encodeAscii(str: String): Either[CharacterCodingException, ByteVector] =
+    encodeString(str)(Charset.forName("US-ASCII"))
 
   /**
    * Concatenates all the given `ByteVector`s into a single instance.
