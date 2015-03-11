@@ -1,3 +1,10 @@
+1.0.6
+=====
+ - Added `deflate` and `inflate` to both `BitVector` and `ByteVector`, which compresses the vector with ZLIB.
+ - Added `encrypt` and `decrypt` to both `BitVector` and `ByteVector`.
+ - Added `takeWhile` and `dropWhile` to `ByteVector`.
+ - Added 4-argument overload of `copyToArray` to `ByteVector`.
+
 1.0.5
 =====
  - Added `concat` to the companions of `BitVector` and `ByteVector`.
