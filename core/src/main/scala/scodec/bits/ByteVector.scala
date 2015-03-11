@@ -508,7 +508,28 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
-    foreachV{ v => v.copyToArray(xs, i); i += v.size }
+    foreachV { v => v.copyToArray(xs, i); i += v.size }
+  }
+
+  /**
+   * Copies the `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at index `start`.
+   *
+   * @group conversions
+   */
+  final def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+    var i = 0
+    var voffset = 0
+    foreachV { v =>
+      if (i < size) {
+        val reloff = (offset - voffset) max 0
+        if (voffset >= offset || reloff < v.size) {
+          val sz = (size - i) min (v.size - reloff)
+          v.copyToArray(xs, start + i, reloff, sz)
+          i += sz
+        }
+        voffset += v.size
+      }
+    }
   }
 
   /**
@@ -1049,6 +1070,8 @@ object ByteVector {
       at.copyToStream(s, offset, size)
     def copyToArray(xs: Array[Byte], start: Int): Unit =
       at.copyToArray(xs, start, offset, size)
+    def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
+      at.copyToArray(xs, start, this.offset + offset, this.size min size)
     def toArray: Array[Byte] = {
       val arr = new Array[Byte](size)
       copyToArray(arr, 0)

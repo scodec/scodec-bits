@@ -402,4 +402,15 @@ class ByteVectorTest extends BitsSuite {
       if (x.size > 10) x.deflate().size shouldBe < (x.size)
     }
   }
+
+  test("copyToArray with offset/size") {
+    forAll { (b: ByteVector) =>
+      val size = b.size / 3
+      val start = b.size / 4
+      val offset = b.size / 5
+      val xs = new Array[Byte](b.size)
+      b.copyToArray(xs, start, offset, size)
+      xs.drop(start).take(size) shouldBe b.drop(offset).take(size).toArray
+    }
+  }
 }
