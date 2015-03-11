@@ -410,7 +410,7 @@ class ByteVectorTest extends BitsSuite {
       val offset = b.size / 5
       val xs = new Array[Byte](b.size)
       b.copyToArray(xs, start, offset, size)
-      xs.drop(start).take(size) shouldBe b.drop(offset).take(size).toArray
+      xs shouldBe (xs.take(start) ++ b.drop(offset).take(size).toArray ++ xs.drop(start + size)).toArray
     }
   }
 }
