@@ -1467,7 +1467,7 @@ object BitVector {
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str).right.toOption
+  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str, alphabet).right.toOption
 
   /**
    * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
@@ -1478,7 +1478,7 @@ object BitVector {
    * @group base
    */
   def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
-    fromHexDescriptive(str).fold(msg => throw new IllegalArgumentException(msg), identity)
+    fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
    * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
