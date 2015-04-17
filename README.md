@@ -54,29 +54,7 @@ For a combinator based approach to encoding values to/from binary, see the compa
 Getting Binaries
 ----------------
 
-This library works with Scala 2.10 and 2.11.
-
-### Releases
-
-The latest released version is 1.0.4.
-
- - [ScalaDoc](http://docs.typelevel.org/api/scodec/bits/stable/1.0.4/)
-
-For SBT users:
-
-    libraryDependencies += "org.typelevel" %% "scodec-bits" % "1.0.4"
-
-
-For Maven users:
-
-    <dependencies>
-      <dependency>
-        <groupId>org.typelevel</groupId>
-        <artifactId>scodec-bits_2.11</artifactId>
-        <version>1.0.4</version>
-      </dependency>
-    </dependencies>
-
+See the [releases page on the website](https://scodec.org/releases/).
 
 ### Snapshots
 
