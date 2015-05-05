@@ -35,7 +35,7 @@ object Arbitraries {
     additionalBits <- Gen.choose(0, maxAdditionalBits)
     size = byteSize * 8 + additionalBits
     bytes <- Gen.listOfN((size + 7) / 8, Gen.choose(0, 255))
-  } yield BitVector(ByteVector(bytes: _*)).take(size)
+  } yield BitVector(ByteVector(bytes: _*)).take(size.toLong)
 
   def genSplit(maxSize: Long) = for {
     n <- Gen.choose(0L, maxSize)

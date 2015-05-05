@@ -20,7 +20,7 @@ object crc {
 
     var table = Array.ofDim[BitVector](256)
     val zeroed = BitVector.fill(poly.size - 8)(false)
-    val m = 8
+    val m = 8L
     @annotation.tailrec
     def calculateTableIndex(idx: Int): Unit = {
       if (idx < table.size) {

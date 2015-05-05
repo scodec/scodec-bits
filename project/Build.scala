@@ -155,9 +155,12 @@ object ScodecBuild extends Build {
         "scodec.bits.ByteVector.decodeAscii",
         "scodec.bits.ByteVector.decodeUtf8"
       ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
-      binaryIssueFilters +=
-        // result type changed, but this method was private
-        ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector#Append.sizeLowerBound")
+      binaryIssueFilters ++= Seq(
+        // result type changed, but this method is private
+        ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector#Append.sizeLowerBound"),
+        // param type changed, but this method is private
+        ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.crc.scodec$bits$crc$$calculate$1")
+      )
   )
 
   lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(core).settings(jmhSettings: _*).

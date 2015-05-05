@@ -157,7 +157,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromValidBin") {
     ByteVector.fromValidBin(deadbeef.toBin) shouldBe deadbeef
-    an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000") }
+    an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000"); () }
   }
 
   test("toBase64") {
@@ -363,7 +363,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("long conversions") {
-    forAll { (n: Int) =>
+    forAll { (n: Long) =>
       ByteVector.fromLong(n).toLong() shouldBe n
       ByteVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
     }

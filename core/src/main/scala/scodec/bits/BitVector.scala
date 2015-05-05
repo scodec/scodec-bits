@@ -805,7 +805,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 16)
       val mod = bits % 8
       var result = 0
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       val base = start / 8
       @annotation.tailrec
       def go(i: Int): Unit =
@@ -839,11 +839,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       val bits = intSize.get
       val mod = bits % 8
       var result = 0
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       @annotation.tailrec
       def go(i: Int): Unit =
         if (i < bytesNeeded) {
-          result = (result << 8) | (0x0ff & this.getByte(i))
+          result = (result << 8) | (0x0ff & this.getByte(i.toLong))
           go(i + 1)
         }
       go(0)
@@ -873,7 +873,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 32)
       val mod = bits % 8
       var result = 0
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       val base = start / 8
       @annotation.tailrec
       def go(i: Int): Unit =
@@ -907,11 +907,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       val bits = intSize.get
       val mod = bits % 8
       var result = 0
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       @annotation.tailrec
       def go(i: Int): Unit =
         if (i < bytesNeeded) {
-          result = (result << 8) | (0x0ff & this.getByte(i))
+          result = (result << 8) | (0x0ff & this.getByte(i.toLong))
           go(i + 1)
         }
       go(0)
@@ -941,7 +941,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 64)
       val mod = bits % 8
       var result = 0L
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       val base = start / 8
       ordering match {
         case ByteOrdering.BigEndian =>
@@ -986,11 +986,11 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
       val bits = intSize.get
       val mod = bits % 8
       var result = 0L
-      val bytesNeeded = bytesNeededForBits(bits)
+      val bytesNeeded = bytesNeededForBits(bits.toLong)
       @annotation.tailrec
       def go(i: Int): Unit =
         if (i < bytesNeeded) {
-          result = (result << 8) | (0x0ffL & this.getByte(i))
+          result = (result << 8) | (0x0ffL & this.getByte(i.toLong))
           go(i + 1)
         }
       go(0)
@@ -1108,7 +1108,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    */
   override final def equals(other: Any): Boolean = other match {
     case o: BitVector => {
-      val chunkSize = 8 * 1024 * 64
+      val chunkSize = 8L * 1024 * 64
       @annotation.tailrec
       def go(x: BitVector, y: BitVector): Boolean = {
         if (x.isEmpty) y.isEmpty
@@ -1133,7 +1133,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     // todo: this could be recomputed more efficiently using the tree structure
     // given an associative hash function
     import util.hashing.MurmurHash3._
-    val chunkSize = 8 * 1024 * 64
+    val chunkSize = 8L * 1024 * 64
     @annotation.tailrec
     def go(bits: BitVector, h: Int): Int = {
       if (bits.isEmpty) finalizeHash(h, (size % Int.MaxValue.toLong).toInt + 1)
@@ -1255,8 +1255,8 @@ object BitVector {
    * @group constructors
    */
   def bits(b: Iterable[Boolean]): BitVector =
-    b.iterator.zipWithIndex.foldLeft(low(b.size))((acc,b) =>
-      acc.update(b._2, b._1)
+    b.iterator.zipWithIndex.foldLeft(low(b.size.toLong))((acc,b) =>
+      acc.update(b._2.toLong, b._1)
     )
 
   /**
@@ -1366,7 +1366,7 @@ object BitVector {
    */
   def fromByte(b: Byte, size: Int = 8): BitVector = {
     require(size <= 8)
-    (BitVector(b) << (8 - size)).take(size)
+    (BitVector(b) << (8L - size)).take(size.toLong)
   }
 
   /**
@@ -1380,7 +1380,7 @@ object BitVector {
     require(size <= 16)
     val buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN).putShort(s)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (16 - size)).take(size)
+    val relevantBits = (BitVector.view(buffer) << (16L - size)).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1395,7 +1395,7 @@ object BitVector {
     require(size <= 32)
     val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(i)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (32 - size)).take(size)
+    val relevantBits = (BitVector.view(buffer) << (32L - size)).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1410,7 +1410,7 @@ object BitVector {
     require(size <= 64)
     val buffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(l)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (64 - size)).take(size)
+    val relevantBits = (BitVector.view(buffer) << (64L - size)).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1427,7 +1427,7 @@ object BitVector {
         case n if n % 8 == 0 => 0
         case n => 8 - (n % 8)
       }
-      bytes.toBitVector.drop(toDrop)
+      bytes.toBitVector.drop(toDrop.toLong)
     }
 
   /**
@@ -1458,7 +1458,7 @@ object BitVector {
   def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
     ByteVector.fromHexInternal(str, alphabet).right.map { case (bytes, count) =>
       val toDrop = if (count % 2 == 0) 0 else 4
-      bytes.toBitVector.drop(toDrop)
+      bytes.toBitVector.drop(toDrop.toLong)
     }
 
   /**

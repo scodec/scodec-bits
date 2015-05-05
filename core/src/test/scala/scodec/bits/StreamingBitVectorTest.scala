@@ -31,7 +31,7 @@ object StreamingBitVectorTest extends App {
     println(s"Free memory:  ${R.freeMemory.toDouble / 1e6} MB")
   }
 
-  val Stride = 4096 * 8 // 4kb
+  val Stride = 4096L * 8 // 4kb
   @annotation.tailrec
   def countBits(b: BitVector, acc: Long, touchBytes: Boolean): Long = {
     if (b.isEmpty) acc
@@ -45,7 +45,7 @@ object StreamingBitVectorTest extends App {
           i += 1
         }
       }
-      countBits(t, acc + (if (touchBytes) i else h.size / 8), touchBytes)
+      countBits(t, acc + (if (touchBytes) i.toLong else h.size / 8), touchBytes)
     }
   }
   import java.io._
