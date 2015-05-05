@@ -71,9 +71,9 @@ class ScodecBitsBenchmark {
     (0L until (N/512)).foldLeft(byteString_N)((b,_) => b.drop(512)).size
   @Benchmark def bitVectorTake_N(): Long =
     (N until 0L by -512L).foldLeft(bitVector_N)((b,n) => b.take(n)).size
-  @Benchmark def byteVectorTake_N(): Long =
+  @Benchmark def byteVectorTake_N(): Int =
     (N.toInt until 0 by -512).foldLeft(byteVector_N)((b,n) => b.take(n)).size
-  @Benchmark def byteStringTake_N(): Long =
+  @Benchmark def byteStringTake_N(): Int =
     (N.toInt until 0 by -512).foldLeft(byteString_N)((b,n) => b.take(n)).size
 
   // M
@@ -113,8 +113,8 @@ class ScodecBitsBenchmark {
     (0L until (M/512)).foldLeft(byteString_M)((b,_) => b.drop(512)).size
   @Benchmark def bitVectorTake_M(): Long =
     (M until 0L by -512L).foldLeft(bitVector_M)((b,n) => b.take(n)).size
-  @Benchmark def byteVectorTake_M(): Long =
+  @Benchmark def byteVectorTake_M(): Int =
     (M.toInt until 0 by -512).foldLeft(byteVector_M)((b,n) => b.take(n)).size
-  @Benchmark def byteStringTake_M(): Long =
+  @Benchmark def byteStringTake_M(): Int =
     (M.toInt until 0 by -512).foldLeft(byteString_M)((b,n) => b.take(n)).size
 }

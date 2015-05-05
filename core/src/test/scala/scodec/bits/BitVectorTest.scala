@@ -199,7 +199,7 @@ class BitVectorTest extends BitsSuite {
     (BitVector.high(8) ++ BitVector.high(8)).toByteVector shouldBe ByteVector(-1: Byte, -1: Byte)
     (BitVector.high(4) ++ BitVector.low(4)).toByteVector shouldBe ByteVector(0xf0)
     (BitVector.high(4) ++ BitVector.high(4)).toByteVector shouldBe ByteVector(-1: Byte)
-    (BitVector.high(4) ++ BitVector.high(5)).toByteVector shouldBe ByteVector(-1: Byte, 0x80)
+    (BitVector.high(4) ++ BitVector.high(5)).toByteVector shouldBe ByteVector(-1.toByte.toInt, 0x80)
     (BitVector.low(2) ++ BitVector.high(4)).toByteVector shouldBe ByteVector(0x3c)
     (BitVector.low(2) ++ BitVector.high(4) ++ BitVector.low(2)).toByteVector shouldBe ByteVector(0x3c)
     forAll { (x: BitVector, y: BitVector) =>
@@ -335,7 +335,7 @@ class BitVectorTest extends BitsSuite {
 
   test("fromValidHex") {
     BitVector.fromValidHex("0x012") shouldBe BitVector(0x01, 0x20).take(12)
-    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidHex("0x01gg") }
+    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidHex("0x01gg"); () }
   }
 
   test("toBin") {
@@ -358,7 +358,7 @@ class BitVectorTest extends BitsSuite {
     forAll { (bv: BitVector) =>
       BitVector.fromValidBin(bv.toBin) shouldBe bv
     }
-    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidBin("0x0102") }
+    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidBin("0x0102"); () }
   }
 
   test("bin string interpolator") {
@@ -430,7 +430,7 @@ class BitVectorTest extends BitsSuite {
   }}
 
   test("sizeGreaterThan") { forAll { (x: BitVector) =>
-    (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i)) shouldBe true
+    (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i.toLong)) shouldBe true
     x.sizeLessThan(x.size+1) shouldBe true
   }}
 
@@ -439,7 +439,7 @@ class BitVectorTest extends BitsSuite {
     def t = new Thread {
       override def start = {
         (0 until x.size.toInt).foreach { i =>
-          ok.compareAndSet(true, x.sizeGreaterThan(i))
+          ok.compareAndSet(true, x.sizeGreaterThan(i.toLong))
           ()
         }
       }

@@ -489,16 +489,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     ByteVector.view(i => apply(size - i - 1), size)
 
   final def shiftLeft(n: Int): ByteVector =
-    BitVector(this).shiftLeft(n).toByteVector
+    BitVector(this).shiftLeft(n.toLong).toByteVector
 
   final def shiftRight(n: Int, signExtension: Boolean): ByteVector =
-    BitVector(this).shiftRight(n, signExtension).toByteVector
+    BitVector(this).shiftRight(n.toLong, signExtension).toByteVector
 
   final def rotateLeft(n: Int): ByteVector =
-    BitVector(this).rotateLeft(n).toByteVector
+    BitVector(this).rotateLeft(n.toLong).toByteVector
 
   final def rotateRight(n: Int): ByteVector =
-    BitVector(this).rotateRight(n).toByteVector
+    BitVector(this).rotateRight(n.toLong).toByteVector
 
   /**
    * Returns a vector with the same contents but represented as a single tree node internally.
@@ -711,9 +711,10 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def toHex(alphabet: Bases.HexAlphabet): String = {
     val bldr = new StringBuilder
-    foreachS { new F1BU { def apply(b: Byte) =
-      bldr.append(alphabet.toChar((b >> 4 & 0x0f).toByte)).append(alphabet.toChar((b & 0x0f).toByte))
-    }}
+    foreachS { new F1BU { def apply(b: Byte) = {
+      bldr.append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt)).append(alphabet.toChar((b & 0x0f).toByte.toInt))
+      ()
+    }}}
     bldr.toString
   }
 
@@ -735,7 +736,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       val paddingBytes = 3 - triple.size
       triple.toBitVector.grouped(6) foreach { group =>
         val idx = group.padTo(8).shiftRight(2, false).toByteVector.head
-        bldr.append(alphabet.toChar(idx))
+        bldr.append(alphabet.toChar(idx.toInt))
       }
       if (paddingBytes > 0) bldr.append(alphabet.pad.toString * paddingBytes)
     }
@@ -1009,7 +1010,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] = {
     try {
       aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view => ci.update(view.asByteBuffer.array) }
+      foreachV { view => ci.update(view.asByteBuffer.array); () }
       Right(ByteVector.view(ci.doFinal()))
     } catch {
       case e: GeneralSecurityException => Left(e)
@@ -1073,7 +1074,7 @@ object ByteVector {
     def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
       var i = 0
       while (i < size) {
-        s.write(apply(offset + i))
+        s.write(apply(offset + i).toInt)
         i += 1
       }
     }
@@ -1114,6 +1115,7 @@ object ByteVector {
         val n = buf.duplicate()
         n.position(offset)
         n.get(xs, start, size)
+        ()
       }
 
       override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
@@ -1383,7 +1385,7 @@ object ByteVector {
             bldr += (hi | nibble).toByte
             midByte = false
           } else {
-            hi = (nibble << 4).toByte
+            hi = (nibble << 4).toByte.toInt
             midByte = true
           }
           count += 1
