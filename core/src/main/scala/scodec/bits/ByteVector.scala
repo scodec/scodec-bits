@@ -1375,14 +1375,14 @@ object ByteVector {
     var idx, hi, count = 0
     var midByte = false
     var err: String = null
-    val bldr = Vector.newBuilder[Byte]
+    val bldr = ByteBuffer.allocate((str.size + 1) / 2)
     while (idx < withoutPrefix.length && (err eq null)) {
       val c = withoutPrefix(idx)
       if (!alphabet.ignore(c)) {
         try {
           val nibble = alphabet.toIndex(c)
           if (midByte) {
-            bldr += (hi | nibble).toByte
+            bldr.put((hi | nibble).toByte)
             midByte = false
           } else {
             hi = (nibble << 4).toByte.toInt
@@ -1399,10 +1399,13 @@ object ByteVector {
     if (err eq null) {
       Right(
         (if (midByte) {
-          bldr += hi.toByte
-          val result = bldr.result
-          ByteVector(result).shiftRight(4, false)
-        } else ByteVector(bldr.result), count)
+          bldr.put(hi.toByte)
+          bldr.flip()
+          ByteVector(bldr).shiftRight(4, false)
+        } else {
+          bldr.flip()
+          ByteVector(bldr)
+        }, count)
       )
     } else Left(err)
   }
@@ -1440,7 +1443,7 @@ object ByteVector {
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, byte, bits, count = 0
     var err: String = null
-    val bldr = Vector.newBuilder[Byte]
+    val bldr = ByteBuffer.allocate((str.size + 7) / 8)
     while (idx < withoutPrefix.length && (err eq null)) {
       val c = withoutPrefix(idx)
       if (!alphabet.ignore(c)) {
@@ -1454,7 +1457,7 @@ object ByteVector {
         }
       }
       if (bits == 8) {
-        bldr += byte.toByte
+        bldr.put(byte.toByte)
         byte = 0
         bits = 0
       }
@@ -1462,10 +1465,12 @@ object ByteVector {
     }
     if (err eq null) {
       Right((if (bits > 0) {
-        bldr += (byte << (8 - bits)).toByte
-        ByteVector(bldr.result).shiftRight(8 - bits, false)
+        bldr.put((byte << (8 - bits)).toByte)
+        bldr.flip()
+        ByteVector(bldr).shiftRight(8 - bits, false)
       } else {
-        ByteVector(bldr.result)
+        bldr.flip()
+        ByteVector(bldr)
       }, count))
     } else Left(err)
   }

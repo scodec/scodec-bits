@@ -1,3 +1,7 @@
+1.0.7
+=====
+ - Improved performance of creating vectors from hex/bin.
+
 1.0.6
 =====
  - Added `deflate` and `inflate` to both `BitVector` and `ByteVector`, which compresses the vector with ZLIB.
