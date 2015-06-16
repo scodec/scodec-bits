@@ -1,5 +1,7 @@
 package scodec.bits
 
+import org.scalacheck.{ Arbitrary, Gen }
+import Arbitrary.arbitrary
 import org.scalatest.Matchers._
 import Arbitraries._
 
@@ -39,7 +41,7 @@ class ByteVectorJvmTest extends BitsSuite {
 
   test("digest") {
     forAll { (x: ByteVector) =>
-      val sha256 = MessageDigest.getInstance("SHA-256")
+      val sha256 = java.security.MessageDigest.getInstance("SHA-256")
       x.digest("SHA-256") shouldBe ByteVector.view(sha256.digest(x.toArray))
     }
   }
