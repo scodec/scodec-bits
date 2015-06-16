@@ -63,22 +63,4 @@ class ByteVectorJvmTest extends BitsSuite {
   test("serialization") {
     forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
   }
-
-  test("buffer concurrency") {
-    import java.util.concurrent.Callable
-    val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
-
-    // Concurrently append b1.buffer ++ b2 and b1.buffer ++ b3
-    // making sure this gives same results as unbuffered appends
-    forAll { (b1: ByteVector, b2: ByteVector, b3: ByteVector, n: Int) =>
-      val b1b = b1.bufferBy((n % 50).max(0) + 1)
-      val b1b2 = new Callable[ByteVector] { def call = b1b ++ b2 }
-      val b1b3 = new Callable[ByteVector] { def call = b1b ++ b3 }
-      val rb1b2 = pool.submit(b1b2)
-      val rb1b3 = pool.submit(b1b3)
-      rb1b2.get shouldBe (b1 ++ b2)
-      rb1b3.get shouldBe (b1 ++ b3)
-    }
-    pool.shutdown
-  }
 }
