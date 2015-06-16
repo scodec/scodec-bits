@@ -7,11 +7,11 @@ lazy val commonSettings = Seq(
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
 )
 
-lazy val root = project.in(file(".")).aggregate(core, benchmark).settings(commonSettings: _*).settings(
+lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).settings(commonSettings: _*).settings(
   publishArtifact := false
 )
 
-lazy val core = project.in(file("core")).
+lazy val core = crossProject.in(file("core")).
   enablePlugins(BuildInfoPlugin).
   settings(commonSettings: _*).
   settings(scodecPrimaryModule: _*).
@@ -20,8 +20,12 @@ lazy val core = project.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %% "scalatest" % "2.1.3" % "test",
-      "org.scalacheck" %% "scalacheck" % "1.11.3" % "test",
+      "org.scalatest" %%% "scalatest" % "3.0.0-M1" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.12.3" % "test")
+  ).
+  jsSettings(commonJsSettings: _*).
+  jvmSettings(
+    libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "16.0.1" % "test",
       "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
     ),
@@ -157,7 +161,10 @@ lazy val core = project.in(file("core")).
     )
 )
 
-lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(core).enablePlugins(JmhPlugin).
+lazy val coreJVM = core.jvm
+lazy val coreJS = core.js
+
+lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
   settings(
     publishArtifact := false,

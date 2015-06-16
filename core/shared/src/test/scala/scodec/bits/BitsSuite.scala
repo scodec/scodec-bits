@@ -1,9 +1,10 @@
 package scodec.bits
 
-import org.scalatest._
+import org.scalatest.{ FunSuite, Matchers }
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
+import Matchers._
 
-class BitsSuite extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
+abstract class BitsSuite extends FunSuite with GeneratorDrivenPropertyChecks {
 
   protected def serializationShouldRoundtrip[A](x: A): Unit = {
     import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream }
