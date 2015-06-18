@@ -4,28 +4,33 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
-  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
+  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scalaVersion := "2.12.0-M1",
+  crossScalaVersions := Seq(scalaVersion.value)
 )
 
-lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).settings(commonSettings: _*).settings(
+lazy val root = project.in(file(".")).aggregate(core).settings(commonSettings: _*).settings(
   publishArtifact := false
 )
 
-lazy val core = crossProject.in(file("core")).
+lazy val core = project.in(file("core")).
   enablePlugins(BuildInfoPlugin).
   settings(commonSettings: _*).
   settings(scodecPrimaryModule: _*).
-  jvmSettings(scodecPrimaryModuleJvm: _*).
+  settings(scodecPrimaryModuleJvm: _*).
+  settings(
+    unmanagedSourceDirectories in Compile += baseDirectory.value / "shared" / "src" / "main" / "scala",
+    unmanagedSourceDirectories in Test += baseDirectory.value / "shared" / "src" / "test" / "scala"
+  ).
   settings(
     scodecModule := "scodec-bits",
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "3.0.0-M2" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.12.3" % "test")
+      "org.scalatest" %%% "scalatest" % "2.2.5-M1" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.12.4" % "test")
   ).
-  jsSettings(commonJsSettings: _*).
-  jvmSettings(
+  settings(
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "16.0.1" % "test",
       "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
@@ -161,14 +166,3 @@ lazy val core = crossProject.in(file("core")).
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.crc.scodec$bits$crc$$calculate$1")
     )
 )
-
-lazy val coreJVM = core.jvm
-lazy val coreJS = core.js
-
-lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
-  settings(commonSettings: _*).
-  settings(
-    publishArtifact := false,
-    libraryDependencies ++=
-      Seq("com.typesafe.akka" %% "akka-actor" % "2.3.5")
-  )
