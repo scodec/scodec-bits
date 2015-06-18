@@ -96,4 +96,4 @@ For Maven users:
 Building
 --------
 
-This project uses sbt. To build, run `sbt publish-local`.
+This project uses sbt and requires node.js to be installed in order to run Scala.js tests. To build, run `sbt publish-local`.
