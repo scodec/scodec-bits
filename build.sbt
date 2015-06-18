@@ -15,6 +15,7 @@ lazy val core = crossProject.in(file("core")).
   enablePlugins(BuildInfoPlugin).
   settings(commonSettings: _*).
   settings(scodecPrimaryModule: _*).
+  jvmSettings(scodecPrimaryModuleJvm: _*).
   settings(
     scodecModule := "scodec-bits",
     rootPackage := "scodec.bits",
