@@ -1,11 +1,12 @@
 package scodec.bits
 
 import org.scalacheck.Arbitrary
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.FunSuite
+import org.scalatest.Matchers._
 import org.scalatest.prop.GeneratorDrivenPropertyChecks
 import Arbitraries._
 
-class CrcTest extends FunSuite with Matchers with GeneratorDrivenPropertyChecks {
+class CrcTest extends FunSuite with GeneratorDrivenPropertyChecks {
 
   implicit val arbBitVector = Arbitrary(genBitVector())
 

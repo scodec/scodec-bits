@@ -1,59 +1,13 @@
 package scodec.bits
 
-import java.security.MessageDigest
-import org.scalacheck.{Arbitrary, Gen, Shrink}
+import org.scalacheck.{Arbitrary, Gen}
 import Arbitrary.arbitrary
-import java.nio.ByteBuffer
 import java.io.ByteArrayOutputStream
+import org.scalatest.Matchers._
+
+import Arbitraries._
 
 class ByteVectorTest extends BitsSuite {
-
-  def standardByteVectors(maxSize: Int): Gen[ByteVector] = for {
-    size <- Gen.choose(0, maxSize)
-    bytes <- Gen.listOfN(size, Gen.choose(0, 255))
-  } yield ByteVector(bytes: _*)
-
-  val sliceByteVectors: Gen[ByteVector] = for {
-    bytes <- arbitrary[Array[Byte]]
-    toDrop <- Gen.choose(0, bytes.size)
-  } yield ByteVector.view(bytes).drop(toDrop)
-
-  def genSplit(g: Gen[ByteVector]) = for {
-    b <- g
-    n <- Gen.choose(0, b.size+1)
-  } yield {
-    b.take(n) ++ b.drop(n)
-  }
-
-  def genByteBufferVectors(maxSize: Int): Gen[ByteVector] = for {
-    size <- Gen.choose(0, maxSize)
-    bytes <- Gen.listOfN(size, Gen.choose(0, 255))
-  } yield ByteVector.view(ByteBuffer.wrap(bytes.map(_.toByte).toArray))
-
-  def genConcat(g: Gen[ByteVector]) =
-    g.map { b => b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _) }
-
-  val byteVectors: Gen[ByteVector] = Gen.oneOf(
-    standardByteVectors(100),
-    genConcat(standardByteVectors(100)),
-    sliceByteVectors,
-    genSplit(sliceByteVectors),
-    genSplit(genConcat(standardByteVectors(500))),
-    genByteBufferVectors(100))
-
-  val bytesWithIndex = for {
-    b <- byteVectors
-    i <- Gen.choose(0, b.size+1)
-  } yield (b, i)
-
-  implicit val arbitraryByteVectors: Arbitrary[ByteVector] = Arbitrary(byteVectors)
-
-  implicit val shrinkByteVector: Shrink[ByteVector] =
-    Shrink[ByteVector] { b =>
-      if (b.nonEmpty)
-        Stream.iterate(b.take(b.size / 2))(b2 => b2.take(b2.size / 2)).takeWhile(_.nonEmpty) ++ Stream(ByteVector.empty)
-      else Stream.empty
-    }
 
   test("hashCode/equals") {
     forAll (bytesWithIndex) { case (b, m) =>
@@ -160,17 +114,9 @@ class ByteVectorTest extends BitsSuite {
     an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000"); () }
   }
 
-  test("toBase64") {
+  test("base64 roundtrip") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64
-      ByteVector.view(guavaB64.decode(b.toBase64)) shouldBe b
-    }
-  }
-
-  test("fromBase64") {
-    forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64
-      ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) shouldBe b
+      ByteVector.fromValidBase64(b.toBase64) shouldBe b
     }
   }
 
@@ -195,24 +141,6 @@ class ByteVectorTest extends BitsSuite {
       buf.take(ind) shouldBe unbuf.take(ind)
       buf.drop(ind) shouldBe unbuf.drop(ind)
     }
-  }
-
-  test("buffer concurrency") {
-    import java.util.concurrent.Callable
-    val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
-
-    // Concurrently append b1.buffer ++ b2 and b1.buffer ++ b3
-    // making sure this gives same results as unbuffered appends
-    forAll { (b1: ByteVector, b2: ByteVector, b3: ByteVector, n: Int) =>
-      val b1b = b1.bufferBy((n % 50).max(0) + 1)
-      val b1b2 = new Callable[ByteVector] { def call = b1b ++ b2 }
-      val b1b3 = new Callable[ByteVector] { def call = b1b ++ b3 }
-      val rb1b2 = pool.submit(b1b2)
-      val rb1b3 = pool.submit(b1b3)
-      rb1b2.get shouldBe (b1 ++ b2)
-      rb1b3.get shouldBe (b1 ++ b3)
-    }
-    pool.shutdown
   }
 
   test("buffer rebuffering") {
@@ -369,37 +297,12 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("digest") {
-    forAll { (x: ByteVector) =>
-      val sha256 = MessageDigest.getInstance("SHA-256")
-      x.digest("SHA-256") shouldBe ByteVector.view(sha256.digest(x.toArray))
-    }
-  }
-
-  test("serialization") {
-    forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
-  }
-
   test("concat") {
     forAll { (bvs: List[ByteVector]) =>
       val c = ByteVector.concat(bvs)
       c.size shouldBe bvs.map(_.size).foldLeft(0)(_ + _)
       bvs.headOption.foreach(h => c.startsWith(h))
       bvs.lastOption.foreach(l => c.endsWith(l))
-    }
-  }
-
-  test("gzip") {
-    forAll { (x: ByteVector) =>
-      x.deflate().inflate() shouldBe Right(x)
-    }
-
-    val deflatableByteVectors = for {
-      b <- arbitrary[Byte]
-      sz <- Gen.chooseNum(1, 8192)
-    } yield ByteVector.fill(sz)(b)
-    forAll(deflatableByteVectors) { (x: ByteVector) =>
-      if (x.size > 10) x.deflate().size shouldBe < (x.size)
     }
   }
 
