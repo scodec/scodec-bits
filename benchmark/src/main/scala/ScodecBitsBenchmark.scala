@@ -1,9 +1,12 @@
 package scodec.bits
 
-import org.openjdk.jmh.annotations.{Benchmark, Scope, State}
+import java.util.concurrent.TimeUnit
+import org.openjdk.jmh.annotations.{ Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State }
 import akka.util.ByteString
 
 @State(Scope.Benchmark)
+@BenchmarkMode(Array(Mode.AverageTime))
+@OutputTimeUnit(TimeUnit.MICROSECONDS)
 class ScodecBitsBenchmark {
 
   val N = 100000L
@@ -117,4 +120,9 @@ class ScodecBitsBenchmark {
     (M.toInt until 0 by -512).foldLeft(byteVector_M)((b,n) => b.take(n)).size
   @Benchmark def byteStringTake_M(): Int =
     (M.toInt until 0 by -512).foldLeft(byteString_M)((b,n) => b.take(n)).size
+
+  @Benchmark def toBase64(): String =
+    bitVector_M.toBase64
+  @Benchmark def toBase64_JRE(): String =
+    java.util.Base64.getEncoder.encodeToString(bitVector_M.toByteArray)
 }

@@ -732,13 +732,41 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
     val bldr = new StringBuilder
-    grouped(3) foreach { triple =>
-      val paddingBytes = 3 - triple.size
-      triple.toBitVector.grouped(6) foreach { group =>
-        val idx = group.padTo(8).shiftRight(2, false).toByteVector.head
-        bldr.append(alphabet.toChar(idx.toInt))
+    var mod = 0
+    var buffer = 0
+    foreachS(new F1BU {
+      def apply(b: Byte) = mod match {
+        case 0 =>
+          buffer = b & 0x0ff
+          mod = 1
+          val first = buffer >> 2
+          bldr.append(alphabet.toChar(first))
+          ()
+
+        case 1 =>
+          buffer = (buffer << 8) | (b & 0x0ff)
+          mod = 2
+          val second = (buffer >> 4) & 0x3f
+          bldr.append(alphabet.toChar(second))
+          ()
+
+        case 2 =>
+          buffer = (buffer << 8) | (b & 0x0ff)
+          mod = 0
+          val third = (buffer >> 6) & 0x3f
+          val fourth = buffer & 0x3f
+          bldr.append(alphabet.toChar(third)).append(alphabet.toChar(fourth))
+          ()
       }
-      if (paddingBytes > 0) bldr.append(alphabet.pad.toString * paddingBytes)
+    })
+    mod match {
+      case 0 =>
+      case 1 =>
+        val second = (buffer << 4) & 0x3f
+        bldr.append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
+      case 2 =>
+        val third = (buffer << 2) & 0x3f
+        bldr.append(alphabet.toChar(third)).append(alphabet.pad)
     }
     bldr.toString
   }

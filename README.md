@@ -54,7 +54,7 @@ For a combinator based approach to encoding values to/from binary, see the compa
 Getting Binaries
 ----------------
 
-See the [releases page on the website](https://scodec.org/releases/).
+See the [releases page on the website](http://scodec.org/releases/).
 
 Building
 --------
