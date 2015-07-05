@@ -1,3 +1,7 @@
+1.0.8
+=====
+ - *Significant* performance improvement in `toBase64`.
+
 1.0.7
 =====
  - Improved performance of creating vectors from hex/bin.
