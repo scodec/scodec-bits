@@ -1,6 +1,7 @@
 1.0.9
 =====
  - *Significant* performance improvement in `toBase64`.
+ - Fixed source links in ScalaDoc.
 
 1.0.7
 =====
