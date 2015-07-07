@@ -31,6 +31,7 @@ lazy val core = project.in(file("core")).
       "org.scalacheck" %%% "scalacheck" % "1.12.4" % "test")
   ).
   settings(
+    docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "16.0.1" % "test",
       "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava

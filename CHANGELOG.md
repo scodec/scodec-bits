@@ -1,3 +1,8 @@
+1.0.8
+=====
+ - *Significant* performance improvement in `toBase64`.
+ - Fixed source links in ScalaDoc.
+
 1.0.7
 =====
  - Improved performance of creating vectors from hex/bin.
