@@ -1616,7 +1616,7 @@ object BitVector {
     private def invalidBits = 8 - validBitsInLastByte(size)
     def align = this
     def sizeLessThan(n: Long) = size < n
-    def take(n: Long): Bytes = if (n <= 0) this else toBytes(underlying, math.max(0L, math.min(size,n)))
+    def take(n: Long): Bytes = toBytes(underlying, math.max(0L, math.min(size,n)))
     def drop(n: Long): BitVector = {
       if (n >= size) BitVector.empty
       else if (n <= 0) this
