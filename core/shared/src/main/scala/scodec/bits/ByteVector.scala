@@ -733,10 +733,10 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
     val bytes = toArray
     val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
-    var buffer, idx = 0
+    var idx = 0
     val mod = bytes.length % 3
     while (idx < bytes.length - mod) {
-      buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+      var buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
       val fourth = buffer & 0x3f
       buffer = buffer >> 6
       val third = buffer & 0x3f
@@ -748,13 +748,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       idx = idx + 3
     }
     if (mod == 1) {
-      buffer = (bytes(idx) & 0x0ff) << 4
+      var buffer = (bytes(idx) & 0x0ff) << 4
       val second = buffer & 0x3f
       buffer = buffer >> 6
       val first = buffer
       bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
     } else if (mod == 2) {
-      buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+      var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
       val third = buffer & 0x3f
       buffer = buffer >> 6
       val second = buffer & 0x3f
