@@ -731,44 +731,38 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group conversions
    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
-    val bldr = new StringBuilder
-    var mod = 0
-    var buffer = 0
-    foreachS(new F1BU {
-      def apply(b: Byte) = mod match {
-        case 0 =>
-          buffer = b & 0x0ff
-          mod = 1
-          val first = buffer >> 2
-          bldr.append(alphabet.toChar(first))
-          ()
-
-        case 1 =>
-          buffer = (buffer << 8) | (b & 0x0ff)
-          mod = 2
-          val second = (buffer >> 4) & 0x3f
-          bldr.append(alphabet.toChar(second))
-          ()
-
-        case 2 =>
-          buffer = (buffer << 8) | (b & 0x0ff)
-          mod = 0
-          val third = (buffer >> 6) & 0x3f
-          val fourth = buffer & 0x3f
-          bldr.append(alphabet.toChar(third)).append(alphabet.toChar(fourth))
-          ()
-      }
-    })
-    mod match {
-      case 0 =>
-      case 1 =>
-        val second = (buffer << 4) & 0x3f
-        bldr.append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
-      case 2 =>
-        val third = (buffer << 2) & 0x3f
-        bldr.append(alphabet.toChar(third)).append(alphabet.pad)
+    val bytes = toArray
+    val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
+    var buffer, idx = 0
+    val mod = bytes.length % 3
+    while (idx < bytes.length - mod) {
+      buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+      val fourth = buffer & 0x3f
+      buffer = buffer >> 6
+      val third = buffer & 0x3f
+      buffer = buffer >> 6
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.toChar(third)).append(alphabet.toChar(fourth))
+      idx = idx + 3
     }
-    bldr.toString
+    if (mod == 1) {
+      buffer = (bytes(idx) & 0x0ff) << 4
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
+    } else if (mod == 2) {
+      buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+      val third = buffer & 0x3f
+      buffer = buffer >> 6
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.toChar(third)).append(alphabet.pad)
+    }
+    bldr.flip.toString
   }
 
   /**

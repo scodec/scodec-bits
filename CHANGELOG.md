@@ -1,6 +1,7 @@
 1.0.10
 ======
  - Improve performance of `toInt` and `fromInt`, `toLong` and `fromLong`, etc.
+ - Further performance improvements in `toBase64`.
 
 1.0.9
 =====
