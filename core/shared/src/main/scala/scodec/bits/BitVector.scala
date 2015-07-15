@@ -322,14 +322,14 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @group collection
    */
   final def startsWith(b: BitVector): Boolean =
-    take(b.size) == b
+    take(b.size) === b
 
   /**
    * Returns true if this bit vector ends with the specified vector.
    * @group collection
    */
   final def endsWith(b: BitVector): Boolean =
-    takeRight(b.size) == b
+    takeRight(b.size) === b
 
   /**
    * Finds the first index of the specified bit pattern in this vector.
@@ -1078,25 +1078,32 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
   /**
+   * Returns true if the specified `BitVector` has the same contents as this vector.
+   * @group collection
+   */
+  final def ===(other: BitVector): Boolean = {
+    val chunkSize = 8L * 1024 * 64
+    @annotation.tailrec
+    def go(x: BitVector, y: BitVector): Boolean = {
+      if (x.isEmpty) y.isEmpty
+      else {
+        val chunkX = x.take(chunkSize)
+        val chunkY = y.take(chunkSize)
+        chunkX.size == chunkY.size &&
+        chunkX.toByteVector === chunkY.toByteVector &&
+        go(x.drop(chunkSize), y.drop(chunkSize))
+      }
+    }
+    go(this, other)
+  }
+
+  /**
    * Returns true if the specified value is a `BitVector` with the same contents as this vector.
+   * @see [[BitVector.===]]
    * @group collection
    */
   override final def equals(other: Any): Boolean = other match {
-    case o: BitVector => {
-      val chunkSize = 8L * 1024 * 64
-      @annotation.tailrec
-      def go(x: BitVector, y: BitVector): Boolean = {
-        if (x.isEmpty) y.isEmpty
-        else {
-          val chunkX = x.take(chunkSize)
-          val chunkY = y.take(chunkSize)
-          chunkX.size == chunkY.size &&
-          chunkX.toByteVector == chunkY.toByteVector &&
-          go(x.drop(chunkSize), y.drop(chunkSize))
-        }
-      }
-      go(this, o)
-    }
+    case o: BitVector => this === o
     case _ => false
   }
 
