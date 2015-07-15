@@ -532,7 +532,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def copy: ByteVector = {
     val arr = this.toArray
-    Chunk(View(AtArray(arr), 0, size))
+    Chunk(View(new AtArray(arr), 0, size))
   }
 
   /**
@@ -554,6 +554,12 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
     foreachV { v => v.copyToArray(xs, i); i += v.size }
+  }
+
+  /** Like `toArray` but directly returns the underlying array if this vector is a backed by a single array. */
+  private[this] final def toArrayUnsafe: Array[Byte] = this match {
+    case Chunk(view) => view.toArrayUnsafe
+    case other => toArray
   }
 
   /**
@@ -989,6 +995,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
 
+  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] = {
+    try {
+      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
+      foreachV { view => ci.update(view.toArrayUnsafe); () }
+      Right(ByteVector.view(ci.doFinal()))
+    } catch {
+      case e: GeneralSecurityException => Left(e)
+    }
+  }
+
   // implementation details, Object methods
 
   /**
@@ -1028,16 +1044,6 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     if (isEmpty) "ByteVector(empty)"
     else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
-
-  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] = {
-    try {
-      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view => ci.update(view.asByteBuffer.array); () }
-      Right(ByteVector.view(ci.doFinal()))
-    } catch {
-      case e: GeneralSecurityException => Left(e)
-    }
-  }
 
   private[bits] def pretty(prefix: String): String = this match {
     case Append(l,r) =>
@@ -1079,7 +1085,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 object ByteVector {
 
   // various specialized function types
-  private[scodec] abstract class At {
+
+  private[scodec] abstract class F1B { def apply(b: Byte): Byte }
+  private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
+  private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
+  private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
+
+  private[scodec] sealed abstract class At {
     def apply(i: Int): Byte
     def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
       val arr = new Array[Byte](size)
@@ -1101,58 +1113,48 @@ object ByteVector {
       }
     }
   }
-  private[scodec] abstract class F1B { def apply(b: Byte): Byte }
-  private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
-  private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
-  private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
 
-  private val AtEmpty: At =
-    new At {
-      def apply(i: Int) = throw new IllegalArgumentException("empty view")
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+  private object AtEmpty extends At {
+    def apply(i: Int) = throw new IllegalArgumentException("empty view")
+    override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+  }
+
+  private class AtArray(val arr: Array[Byte]) extends At {
+    def apply(i: Int) = arr(i)
+
+    override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
+      val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
+      if (start == 0 && size == arr.length) b
+      else b.slice()
     }
 
-  private def AtArray(arr: Array[Byte]): At =
-    new At {
-      def apply(i: Int) = arr(i)
+    override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
+      System.arraycopy(arr, offset, xs, start, size)
 
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
-        val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
-        if (start == 0 && size == arr.length) b
-        else b.slice()
-      }
+    override def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
+      s.write(arr, offset, size)
+    }
+  }
 
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
-        System.arraycopy(arr, offset, xs, start, size)
+  private class AtByteBuffer(val buf: ByteBuffer) extends At {
+    def apply(i: Int) = buf.get(i)
 
-      override def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
-        s.write(arr, offset, size)
-      }
+    override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+      val n = buf.duplicate()
+      n.position(offset)
+      n.get(xs, start, size)
+      ()
     }
 
-  private def AtByteBuffer(buf: ByteBuffer): At =
-    new At {
-      def apply(i: Int) = buf.get(i)
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
-        val n = buf.duplicate()
-        n.position(offset)
-        n.get(xs, start, size)
-        ()
-      }
-
-      override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
-        val b = buf.asReadOnlyBuffer()
-        if (offset == 0 && b.position() == 0 && size == b.remaining()) b
-        else {
-          b.position(offset)
-          b.limit(offset + size)
-          b.slice()
-        }
+    override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
+      val b = buf.asReadOnlyBuffer()
+      if (offset == 0 && b.position() == 0 && size == b.remaining()) b
+      else {
+        b.position(offset)
+        b.limit(offset + size)
+        b.slice()
       }
     }
-
-  private def AtFnI(f: Int => Int): At = new At {
-    def apply(i: Int) = f(i).toByte
   }
 
   private[bits] case class View(at: At, offset: Int, size: Int) {
@@ -1184,6 +1186,10 @@ object ByteVector {
       val arr = new Array[Byte](size)
       copyToArray(arr, 0)
       arr
+    }
+    def toArrayUnsafe: Array[Byte] = at match {
+      case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
+      case _ => toArray
     }
     def take(n: Int): View =
       if (n <= 0) View.empty
@@ -1290,7 +1296,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: Array[Byte]): ByteVector =
-    Chunk(View(AtArray(bytes), 0, bytes.length))
+    Chunk(View(new AtArray(bytes), 0, bytes.length))
 
   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
@@ -1299,7 +1305,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: ByteBuffer): ByteVector =
-    Chunk(View(AtByteBuffer(bytes.slice()), 0, bytes.limit))
+    Chunk(View(new AtByteBuffer(bytes.slice()), 0, bytes.limit))
 
   /**
    * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
