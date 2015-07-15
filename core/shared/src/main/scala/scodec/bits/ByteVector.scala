@@ -733,22 +733,8 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 
   final def toBase64New: String = toBase64New(Bases.Alphabets.Base64)
 
-  final def makeBase64Alphabet(c62: Char, c63: Char): Array[Char] = {
-    val arr = new Array[Char](64)
-    var i = 0
-    while (i < 26) { arr(i) = ('A' + i).toChar; i += 1 }
-    while (i < 52) { arr(i) = ('a' + i - 26).toChar; i += 1 }
-    while (i < 62) { arr(i) = ('0' + i - 52).toChar; i += 1 }
-    arr(62) = c62
-    arr(63) = c63
-    arr
-  }
-
-  final val Base64Alphabet: Array[Char] =
-    makeBase64Alphabet('+', '/')
-
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
-    val bytes = toArray
+    val bytes = toArrayUnsafe
     val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
     var buffer, idx = 0
     val mod = bytes.length % 3
@@ -782,6 +768,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     bldr.flip.toString
   }
 
+
   /**
    * Converts the contents of this vector to a base 64 string using the specified alphabet.
    *
@@ -789,8 +776,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def toBase64New(alphabet: Bases.Base64Alphabet): String = {
 
-    val alph = Base64Alphabet
-    val bytes = toArray
+    val bytes = toArrayUnsafe
     val chars = new Array[Char](((bytes.length + 2) / 3) * 4)
 
     def workLoop(): (Int, Int) = {
@@ -799,10 +785,10 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       val limit = bytes.length - 2
       while (idx < limit) {
         val n = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
-        chars(odx) = alph((n >>> 18) & 0x3f)
-        chars(odx + 1) = alph((n >>> 12) & 0x3f)
-        chars(odx + 2) = alph((n >>> 6) & 0x3f)
-        chars(odx + 3) = alph((n & 0x3f))
+        chars(odx) = alphabet.toChar((n >>> 18) & 0x3f)
+        chars(odx + 1) = alphabet.toChar((n >>> 12) & 0x3f)
+        chars(odx + 2) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 3) = alphabet.toChar(n & 0x3f)
         idx += 3
         odx += 4
       }
@@ -816,14 +802,14 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
         new String(chars, 0, odx)
       case 1 =>
         val n = (bytes(idx) & 0x0ff) << 4
-        chars(odx) = alph((n >>> 6) & 0x3f)
-        chars(odx + 1) = alph(n & 0x3f)
+        chars(odx) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 1) = alphabet.toChar(n & 0x3f)
         new String(chars, 0, odx + 2)
       case _ =>
         val n = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
-        chars(odx) = alph((n >>> 12) & 0x3f)
-        chars(odx + 1) = alph((n >>> 6) & 0x3f)
-        chars(odx + 2) = alph((n & 0x3f))
+        chars(odx) = alphabet.toChar((n >>> 12) & 0x3f)
+        chars(odx + 1) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 2) = alphabet.toChar((n & 0x3f))
         new String(chars, 0, odx + 3)
     }
   }

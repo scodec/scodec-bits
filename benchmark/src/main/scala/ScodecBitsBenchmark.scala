@@ -122,18 +122,18 @@ class ScodecBitsBenchmark {
   @Benchmark def byteStringTake_M(): Int =
     (M.toInt until 0 by -512).foldLeft(byteString_M)((b,n) => b.take(n)).size
 
-  @Benchmark def toBase64(): String =
-    bitVector_M.toBase64
-  @Benchmark def toBase64_compact(): String =
-    bitVector_M_compact.toBase64
+  // @Benchmark def toBase64(): String =
+  //   bitVector_M.toBase64
+  // @Benchmark def toBase64_compact(): String =
+  //   bitVector_M_compact.toBase64
 
-  @Benchmark def toBase64_New(): String =
-    bitVector_M.toBase64New
+  // @Benchmark def toBase64_New(): String =
+  //   bitVector_M.toBase64New
   @Benchmark def toBase64_compact_new(): String =
     bitVector_M_compact.toBase64New
 
   // @Benchmark def toBase64_JRE(): String =
-  //   java.util.Base64.getEncoder.encodeToString(bitVector_M.toByteArray)
+  //   java.util.Base64.getEncoder.encodeToString(bitVector_M_compact.toByteArray)
   // @Benchmark def toBase64_JRE_compact(): String =
   //   java.util.Base64.getEncoder.encodeToString(bitVector_M_compact.toByteArray)
 }
