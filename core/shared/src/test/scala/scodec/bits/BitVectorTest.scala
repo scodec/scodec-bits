@@ -19,6 +19,12 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
+  test("=== consistent with ==") {
+    forAll { (b: BitVector, b2: BitVector) =>
+      (b == b2) shouldBe (b === b2)
+    }
+  }
+
   test("compact is a no-op for already compact bit vectors") {
     val b = BitVector(0x80,0x90)
     (b.compact.underlying eq b.compact.underlying) shouldBe true

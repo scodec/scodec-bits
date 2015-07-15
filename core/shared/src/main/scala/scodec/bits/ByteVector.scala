@@ -350,14 +350,14 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   final def startsWith(b: ByteVector): Boolean =
-    take(b.size) == b
+    take(b.size) === b
 
   /**
    * Returns true if this byte vector ends with the specified vector.
    * @group collection
    */
   final def endsWith(b: ByteVector): Boolean =
-    takeRight(b.size) == b
+    takeRight(b.size) === b
 
   /**
    * Finds the first index of the specified byte pattern in this vector.
@@ -1025,12 +1025,21 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   }
 
   /**
+   * Returns true if the specified `ByteVector` has the same contents as this vector.
+   * @group collection
+   */
+  final def ===(other: ByteVector): Boolean =
+    this.size == other.size &&
+    (0 until this.size).forall(i => this(i) == other(i))
+
+
+  /**
    * Returns true if the specified value is a `ByteVector` with the same contents as this vector.
+   * @see [[ByteVector.===]]
    * @group collection
    */
   override def equals(other: Any) = other match {
-    case that: ByteVector => this.size == that.size &&
-                             (0 until this.size).forall(i => this(i) == that(i))
+    case that: ByteVector => this === that
     case other => false
   }
 
