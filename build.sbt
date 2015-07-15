@@ -153,7 +153,9 @@ lazy val core = crossProject.in(file("core")).
       "scodec.bits.BitVector.decodeUtf8",
       "scodec.bits.ByteVector.decodeString",
       "scodec.bits.ByteVector.decodeAscii",
-      "scodec.bits.ByteVector.decodeUtf8"
+      "scodec.bits.ByteVector.decodeUtf8",
+      "scodec.bits.ByteVector.scodec$bits$ByteVector$$AtArray",
+      "scodec.bits.ByteVector.scodec$bits$ByteVector$$AtEmpty"
     ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
     binaryIssueFilters ++= Seq(
       // result type changed, but this method is private
