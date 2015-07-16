@@ -28,7 +28,7 @@ import scala.collection.GenTraversableOnce
  *
  * @define bitwiseOperationsReprDescription bit vector
  */
-sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializable {
+sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with Serializable {
   import BitVector._
 
   /**
