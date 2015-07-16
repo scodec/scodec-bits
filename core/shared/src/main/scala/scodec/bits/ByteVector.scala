@@ -43,7 +43,7 @@ import collection.immutable.Queue
  * @define bitwiseOperationsReprDescription bit vector
  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
  */
-sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializable {
+sealed abstract class ByteVector extends BitwiseOperations[ByteVector,Int] with Serializable {
 
   /**
    * Returns the number of bytes in this vector.
