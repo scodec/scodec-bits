@@ -733,6 +733,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @group conversions
    */
   final def toBase64: String = toBase64(Bases.Alphabets.Base64)
+  final def toBase64New: String = toBase64New(Bases.Alphabets.Base64)
 
   /**
    * Converts the contents of this vector to a base 64 string using the specified alphabet.
@@ -742,6 +743,7 @@ sealed trait BitVector extends BitwiseOperations[BitVector, Long] with Serializa
    * @group conversions
    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
+  final def toBase64New(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64New(alphabet)
 
   /**
    * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.

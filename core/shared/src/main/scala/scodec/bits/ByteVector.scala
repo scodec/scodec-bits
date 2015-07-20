@@ -731,18 +731,15 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def toBase64: String = toBase64(Bases.Alphabets.Base64)
 
-  /**
-   * Converts the contents of this vector to a base 64 string using the specified alphabet.
-   *
-   * @group conversions
-   */
+  final def toBase64New: String = toBase64New(Bases.Alphabets.Base64)
+
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
-    val bytes = toArray
+    val bytes = toArrayUnsafe
     val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
-    var idx = 0
+    var buffer, idx = 0
     val mod = bytes.length % 3
     while (idx < bytes.length - mod) {
-      var buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+      buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
       val fourth = buffer & 0x3f
       buffer = buffer >> 6
       val third = buffer & 0x3f
@@ -754,13 +751,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       idx = idx + 3
     }
     if (mod == 1) {
-      var buffer = (bytes(idx) & 0x0ff) << 4
+      buffer = (bytes(idx) & 0x0ff) << 4
       val second = buffer & 0x3f
       buffer = buffer >> 6
       val first = buffer
       bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
     } else if (mod == 2) {
-      var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+      buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
       val third = buffer & 0x3f
       buffer = buffer >> 6
       val second = buffer & 0x3f
@@ -769,6 +766,52 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
       bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.toChar(third)).append(alphabet.pad)
     }
     bldr.flip.toString
+  }
+
+
+  /**
+   * Converts the contents of this vector to a base 64 string using the specified alphabet.
+   *
+   * @group conversions
+   */
+  final def toBase64New(alphabet: Bases.Base64Alphabet): String = {
+
+    val bytes = toArrayUnsafe
+    val chars = new Array[Char](((bytes.length + 2) / 3) * 4)
+
+    def workLoop(): (Int, Int) = {
+      var idx = 0
+      var odx = 0
+      val limit = bytes.length - 2
+      while (idx < limit) {
+        val n = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+        chars(odx) = alphabet.toChar((n >>> 18) & 0x3f)
+        chars(odx + 1) = alphabet.toChar((n >>> 12) & 0x3f)
+        chars(odx + 2) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 3) = alphabet.toChar(n & 0x3f)
+        idx += 3
+        odx += 4
+      }
+      (idx, odx)
+    }
+
+    val (idx, odx) = workLoop()
+
+    (bytes.length % 3) match {
+      case 0 =>
+        new String(chars, 0, odx)
+      case 1 =>
+        val n = (bytes(idx) & 0x0ff) << 4
+        chars(odx) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 1) = alphabet.toChar(n & 0x3f)
+        new String(chars, 0, odx + 2)
+      case _ =>
+        val n = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+        chars(odx) = alphabet.toChar((n >>> 12) & 0x3f)
+        chars(odx + 1) = alphabet.toChar((n >>> 6) & 0x3f)
+        chars(odx + 2) = alphabet.toChar((n & 0x3f))
+        new String(chars, 0, odx + 3)
+    }
   }
 
   /**
