@@ -923,14 +923,15 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector,Int] with 
    * Decompresses this vector using ZLIB.
    *
    * @param chunkSize buffer size, in bytes, to use when compressing
+   * @param nowrap if true, will assume no ZLIB header and checksum
    * @group conversions
    */
-  final def inflate(chunkSize: Int = 4096): Either[DataFormatException, ByteVector] = {
+  final def inflate(chunkSize: Int = 4096, nowrap: Boolean = false): Either[DataFormatException, ByteVector] = {
     if (isEmpty) Right(this)
     else {
       val arr = toArray
 
-      val inflater = new Inflater
+      val inflater = new Inflater(nowrap)
       try {
         inflater.setInput(arr)
         try {
