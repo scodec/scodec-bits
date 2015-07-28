@@ -1540,33 +1540,49 @@ object ByteVector {
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
     val Pad = alphabet.pad
-    var idx, padding = 0
-    var err: String = null
-    var acc: BitVector = BitVector.empty
-    while (idx < str.length && (err eq null)) {
-      val c = str(idx)
-      if (padding == 0) {
-        c match {
-          case c if alphabet.ignore(c) => // ignore
-          case Pad => padding += 1
-          case _ =>
-            try acc = acc ++ BitVector(alphabet.toIndex(c)).drop(2)
-            catch {
-              case e: IllegalArgumentException => err = s"Invalid base 64 character '$c' at index $idx"
+    var idx, bidx, buffer, mod, padding = 0
+    val acc = Array.ofDim[Byte](str.size / 4 * 3)
+    while (idx < str.length) {
+      str(idx) match {
+        case c if alphabet.ignore(c) => // ignore
+        case c =>
+          val cidx = {
+            if (padding == 0) {
+              try if (c == Pad) { padding += 1; 0 } else alphabet.toIndex(c)
+              catch {
+                case e: IllegalArgumentException => return Left(s"Invalid base 64 character '$c' at index $idx")
+              }
+            } else {
+              if (c == Pad) { padding += 1; 0 } else {
+                return Left(s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character")
+              }
             }
-        }
-      } else {
-        c match {
-          case c if alphabet.ignore(c) => // ignore
-          case Pad => padding += 1
-          case other => err = s"Unexpected character '$other' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
-        }
+          }
+          mod match {
+            case 0 =>
+              buffer = (cidx & 0x3f)
+              mod += 1
+            case 1 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod += 1
+            case 2 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod += 1
+            case 3 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod = 0
+              val c = buffer & 0x0ff
+              val b = (buffer >> 8) & 0x0ff
+              val a = (buffer >> 16) & 0x0ff
+              acc(bidx) = a.toByte
+              acc(bidx + 1) = b.toByte
+              acc(bidx + 2) = c.toByte
+              bidx += 3
+          }
       }
       idx += 1
     }
-    if (err eq null) {
-      Right(acc.take(acc.size / 8 * 8).toByteVector)
-    } else Left(err)
+    Right(ByteVector(acc).dropRight(padding))
   }
 
   /**

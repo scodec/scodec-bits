@@ -130,4 +130,10 @@ class ScodecBitsBenchmark {
     java.util.Base64.getEncoder.encodeToString(bitVector_M.toByteArray)
   @Benchmark def toBase64_JRE_compact(): String =
     java.util.Base64.getEncoder.encodeToString(bitVector_M_compact.toByteArray)
+
+  private val bitVector_M_b64 = bitVector_M.toBase64
+  @Benchmark def fromBase64(): Option[ByteVector] =
+    ByteVector.fromBase64(bitVector_M_b64)
+  @Benchmark def fromBase64_JRE(): Array[Byte] =
+    java.util.Base64.getDecoder.decode(bitVector_M_b64)
 }
