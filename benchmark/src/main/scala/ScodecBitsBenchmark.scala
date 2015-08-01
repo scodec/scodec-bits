@@ -41,11 +41,11 @@ class ScodecBitsBenchmark {
   // N
   @Benchmark def bitVectorAppendSnoc_N(): Long =
     bitChunks_N.foldLeft(BitVector.empty)(_ ++ _).size
-  @Benchmark def byteVectorAppendSnoc_N(): Int =
+  @Benchmark def byteVectorAppendSnoc_N(): Long =
     byteChunks_N.foldLeft(ByteVector.empty)(_ ++ _).size
-  @Benchmark def byteVectorSnoc_N(): Int =
+  @Benchmark def byteVectorSnoc_N(): Long =
     bytes_N.foldLeft(ByteVector.empty)(_ :+ _).size
-  @Benchmark def byteVectorSnocUnboxed_N(): Int = {
+  @Benchmark def byteVectorSnocUnboxed_N(): Long = {
     var b = ByteVector.empty
     var i = 0
     while (i < bytes_N.length) {
@@ -69,25 +69,25 @@ class ScodecBitsBenchmark {
   }
   @Benchmark def bitVectorStride_N(): Long =
     (0L until (N/512)).foldLeft(bitVector_N)((b,_) => b.drop(512*8)).size
-  @Benchmark def byteVectorStride_N(): Int =
+  @Benchmark def byteVectorStride_N(): Long =
     (0L until (N/512)).foldLeft(byteVector_N)((b,_) => b.drop(512)).size
   @Benchmark def byteStringStride_N(): Int =
     (0L until (N/512)).foldLeft(byteString_N)((b,_) => b.drop(512)).size
   @Benchmark def bitVectorTake_N(): Long =
     (N until 0L by -512L).foldLeft(bitVector_N)((b,n) => b.take(n)).size
-  @Benchmark def byteVectorTake_N(): Int =
-    (N.toInt until 0 by -512).foldLeft(byteVector_N)((b,n) => b.take(n)).size
+  @Benchmark def byteVectorTake_N(): Long =
+    (N until 0 by -512).foldLeft(byteVector_N)((b,n) => b.take(n)).size
   @Benchmark def byteStringTake_N(): Int =
     (N.toInt until 0 by -512).foldLeft(byteString_N)((b,n) => b.take(n)).size
 
   // M
   @Benchmark def bitVectorAppendSnoc_M(): Long =
     bitChunks_M.foldLeft(BitVector.empty)(_ ++ _).size
-  @Benchmark def byteVectorAppendSnoc_M(): Int =
+  @Benchmark def byteVectorAppendSnoc_M(): Long =
     byteChunks_M.foldLeft(ByteVector.empty)(_ ++ _).size
-  @Benchmark def byteVectorSnoc_M(): Int =
+  @Benchmark def byteVectorSnoc_M(): Long =
     bytes_M.foldLeft(ByteVector.empty)(_ :+ _).size
-  @Benchmark def byteVectorSnocUnboxed_M(): Int = {
+  @Benchmark def byteVectorSnocUnboxed_M(): Long = {
     var b = ByteVector.empty
     var i = 0
     while (i < bytes_M.length) {
@@ -110,17 +110,17 @@ class ScodecBitsBenchmark {
     b.size
   }
   @Benchmark def bitVectorStride_M(): Long =
-    (0L until (M/512)).foldLeft(bitVector_M)((b,_) => b.drop(512*8)).size
-  @Benchmark def byteVectorStride_M(): Int =
-    (0L until (M/512)).foldLeft(byteVector_M)((b,_) => b.drop(512)).size
+    (0L until (M/512)).foldLeft(bitVector_M)((b,_) => b.drop(512L*8)).size
+  @Benchmark def byteVectorStride_M(): Long =
+    (0L until (M/512)).foldLeft(byteVector_M)((b,_) => b.drop(512L)).size
   @Benchmark def byteStringStride_M(): Int =
     (0L until (M/512)).foldLeft(byteString_M)((b,_) => b.drop(512)).size
   @Benchmark def bitVectorTake_M(): Long =
     (M until 0L by -512L).foldLeft(bitVector_M)((b,n) => b.take(n)).size
-  @Benchmark def byteVectorTake_M(): Int =
-    (M.toInt until 0 by -512).foldLeft(byteVector_M)((b,n) => b.take(n)).size
+  @Benchmark def byteVectorTake_M(): Long =
+    (M until 0 by -512).foldLeft(byteVector_M)((b,n) => b.take(n)).size
   @Benchmark def byteStringTake_M(): Int =
-    (M.toInt until 0 by -512).foldLeft(byteString_M)((b,n) => b.take(n)).size
+    (M until 0 by -512).foldLeft(byteString_M)((b,n) => b.take(n.toInt)).size
 
   @Benchmark def toBase64(): String =
     bitVector_M.toBase64
