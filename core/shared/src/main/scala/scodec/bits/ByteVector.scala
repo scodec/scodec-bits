@@ -544,7 +544,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
       val arr = this.toArray
       Chunk(View(new AtArray(arr), 0, sz))
     } else {
-      take(Int.MaxValue) ++ drop(Int.MaxValue)
+      take(Int.MaxValue).copy ++ drop(Int.MaxValue).copy
     }
   }
 
