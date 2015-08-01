@@ -1690,7 +1690,7 @@ object ByteVector {
    *
    * [1]: http://www.serpentine.com/blog/2014/05/31/attoparsec/
    */
-  private case class Buffer(id: AtomicLong, stamp: Long, hd: ByteVector, lastChunk: Array[Byte], lastSize: Int) extends ByteVector {
+  private class Buffer(val id: AtomicLong, val stamp: Long, val hd: ByteVector, val lastChunk: Array[Byte], val lastSize: Int) extends ByteVector {
     def size = hd.size + lastSize
 
     override def take(n: Int): ByteVector =
@@ -1746,6 +1746,11 @@ object ByteVector {
       lastChunk.copyToArray(lastChunk2)
       Buffer(new AtomicLong(0), 0, hd, lastChunk, lastSize)
     }
+  }
+
+  private object Buffer {
+    def apply(id: AtomicLong, stamp: Long, hd: ByteVector, lastChunk: Array[Byte], lastSize: Int): Buffer =
+      new Buffer(id, stamp, hd.unbuffer, lastChunk, lastSize)
   }
 }
 
