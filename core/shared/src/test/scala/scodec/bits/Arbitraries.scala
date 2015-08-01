@@ -63,7 +63,7 @@ object Arbitraries {
   val sliceByteVectors: Gen[ByteVector] = for {
     bytes <- arbitrary[Array[Byte]]
     toDrop <- Gen.choose(0, bytes.size)
-  } yield ByteVector.view(bytes).drop(toDrop)
+  } yield ByteVector.view(bytes).drop(toDrop.toLong)
 
   def genSplitBytes(g: Gen[ByteVector]) = for {
     b <- g
@@ -80,6 +80,10 @@ object Arbitraries {
   def genConcatBytes(g: Gen[ByteVector]) =
     g.map { b => b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _) }
 
+  val genVeryLargeByteVectors: Gen[ByteVector] = for {
+    b <- Gen.choose(0, 255)
+  } yield ByteVector.fill(Int.MaxValue.toLong + 1)(b)
+
   val byteVectors: Gen[ByteVector] = Gen.oneOf(
     standardByteVectors(100),
     genConcatBytes(standardByteVectors(100)),
@@ -90,7 +94,7 @@ object Arbitraries {
 
   val bytesWithIndex = for {
     b <- byteVectors
-    i <- Gen.choose(0, b.size+1)
+    i <- Gen.choose(0L, b.size+1)
   } yield (b, i)
 
   implicit val arbitraryByteVectors: Arbitrary[ByteVector] = Arbitrary(byteVectors)

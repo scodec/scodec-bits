@@ -53,11 +53,11 @@ class ByteVectorTest extends BitsSuite {
   test("consistent with Array[Byte] implementations") {
     forAll (bytesWithIndex) { case (b, ind) =>
       val ba = b.toArray
-      b.take(ind).toArray shouldBe ba.take(ind)
-      b.drop(ind).toArray shouldBe ba.drop(ind)
-      b.lift(ind) shouldBe ba.lift(ind)
-      b.takeRight(ind).toArray shouldBe ba.takeRight(ind)
-      b.dropRight(ind).toArray shouldBe ba.dropRight(ind)
+      b.take(ind).toArray shouldBe ba.take(ind.toInt)
+      b.drop(ind).toArray shouldBe ba.drop(ind.toInt)
+      b.lift(ind) shouldBe ba.lift(ind.toInt)
+      b.takeRight(ind).toArray shouldBe ba.takeRight(ind.toInt)
+      b.dropRight(ind).toArray shouldBe ba.dropRight(ind.toInt)
       b.reverse.toArray shouldBe ba.reverse
       b.partialCompact(ind).toArray shouldBe ba
       b.lastOption shouldBe ba.lastOption
@@ -68,7 +68,7 @@ class ByteVectorTest extends BitsSuite {
       }
       if (ind < b.size) {
         val actual = b.update(ind,9).toArray
-        val correct = Vector(b.toArray: _*).updated(ind, 9.toByte).toArray
+        val correct = Vector(b.toArray: _*).updated(ind.toInt, 9.toByte).toArray
         actual shouldBe correct
       }
 
@@ -133,7 +133,6 @@ class ByteVectorTest extends BitsSuite {
         a.foldLeft(acc)(_ :+ _)
       )
       unbuf shouldBe buf
-      (0 until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
     }}
   }
 
@@ -142,7 +141,6 @@ class ByteVectorTest extends BitsSuite {
       val unbuf = bs.foldLeft(b)(_ ++ _)
       val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))(_ ++ _)
       unbuf shouldBe buf
-      (0 until unbuf.size).foreach { i => unbuf(i) shouldBe buf(i) }
       val ind = (n % (unbuf.size+1)).max(0) + 1
       buf.take(ind) shouldBe unbuf.take(ind)
       buf.drop(ind) shouldBe unbuf.drop(ind)
@@ -173,7 +171,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("rotations") {
-    forAll { (b: ByteVector, n: Int) =>
+    forAll { (b: ByteVector, n: Long) =>
       b.rotateLeft(b.size * 8) shouldBe b
       b.rotateRight(b.size * 8) shouldBe b
       b.rotateRight(n).rotateLeft(n) shouldBe b
@@ -226,7 +224,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("dropping from a view is consistent with dropping from a strict vector") {
-    forAll { (b: ByteVector, n0: Int) =>
+    forAll { (b: ByteVector, n0: Long) =>
       val view = ByteVector.view(b.toArray)
       val n = n0.abs
       b.drop(n) shouldBe view.drop(n)
@@ -306,7 +304,7 @@ class ByteVectorTest extends BitsSuite {
   test("concat") {
     forAll { (bvs: List[ByteVector]) =>
       val c = ByteVector.concat(bvs)
-      c.size shouldBe bvs.map(_.size).foldLeft(0)(_ + _)
+      c.size shouldBe bvs.map(_.size).foldLeft(0L)(_ + _)
       bvs.headOption.foreach(h => c.startsWith(h))
       bvs.lastOption.foreach(l => c.endsWith(l))
     }
@@ -317,9 +315,10 @@ class ByteVectorTest extends BitsSuite {
       val size = b.size / 3
       val start = b.size / 4
       val offset = b.size / 5
-      val xs = new Array[Byte](b.size)
-      b.copyToArray(xs, start, offset, size)
-      xs shouldBe (xs.take(start) ++ b.drop(offset).take(size).toArray ++ xs.drop(start + size)).toArray
+      val xs = new Array[Byte](b.size.toInt)
+      b.copyToArray(xs, start.toInt, offset, size.toInt)
+      val startPlusSize = start + size
+      xs shouldBe (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(startPlusSize.toInt)).toArray
     }
   }
 
@@ -349,5 +348,11 @@ class ByteVectorTest extends BitsSuite {
       }
       x.takeWhile(_ != 0.toByte) shouldBe expected
     }
+  }
+
+  test("very large vectors") {
+    val huge = ByteVector.fill(Int.MaxValue * 2L)(0)
+    val huge2 = huge ++ huge ++ hex"deadbeef"
+    huge2.takeRight(2) shouldBe hex"beef"
   }
 }

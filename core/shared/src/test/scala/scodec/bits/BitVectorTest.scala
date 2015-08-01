@@ -116,7 +116,7 @@ class BitVectorTest extends BitsSuite {
       val bytes = x.bytes
       val aligned = x.align
       (0L until ((x.size + 7) / 8)).foreach { i =>
-        bytes(i.toInt) shouldBe x.getByte(i)
+        bytes(i) shouldBe x.getByte(i)
         aligned.getByte(i) shouldBe x.getByte(i)
       }
     }

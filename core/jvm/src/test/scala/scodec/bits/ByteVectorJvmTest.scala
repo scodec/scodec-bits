@@ -53,7 +53,7 @@ class ByteVectorJvmTest extends BitsSuite {
 
     val deflatableByteVectors = for {
       b <- arbitrary[Byte]
-      sz <- Gen.chooseNum(1, 8192)
+      sz <- Gen.chooseNum(1L, 8192L)
     } yield ByteVector.fill(sz)(b)
     forAll(deflatableByteVectors) { (x: ByteVector) =>
       if (x.size > 10) x.deflate().size shouldBe < (x.size)

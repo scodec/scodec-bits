@@ -42,7 +42,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * Alias for [[size]].
    * @group collection
    */
-  final def length = size
+  final def length: Long = size
 
   /**
    * Returns true if this vector has no bits.
@@ -1304,9 +1304,7 @@ object BitVector {
    * @group constructors
    */
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
-    require(bytesNeededForBits(sizeInBits) <= Int.MaxValue,
-      "Cannot have BitVector chunk larger than Int.MaxValue bytes: " + sizeInBits)
-    toBytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
+    toBytes(ByteVector.view(buffer), sizeInBits)
   }
 
   /**
@@ -1331,13 +1329,8 @@ object BitVector {
    */
   def fill(n: Long)(high: Boolean): BitVector = {
     val needed = bytesNeededForBits(n)
-    if (needed < Int.MaxValue) {
-      val bs = ByteVector.fill(needed.toInt)(if (high) -1 else 0)
-      toBytes(bs, n)
-    }
-    else {
-      fill(n / 2)(high) ++ fill(n - (n/2))(high)
-    }
+    val bs = ByteVector.fill(needed)(if (high) -1 else 0)
+    toBytes(bs, n)
   }
 
   /**
@@ -1615,7 +1608,7 @@ object BitVector {
   private[scodec] def toBytes(bs: ByteVector, sizeInBits: Long): Bytes = {
     val needed = bytesNeededForBits(sizeInBits)
     require(needed <= bs.size)
-    val b = if (bs.size > needed) bs.take(needed.toInt) else bs
+    val b = if (bs.size > needed) bs.take(needed) else bs
     Bytes(b, sizeInBits)
   }
 
@@ -1627,27 +1620,27 @@ object BitVector {
     def drop(n: Long): BitVector = {
       if (n >= size) BitVector.empty
       else if (n <= 0) this
-      else if (n % 8 == 0) Bytes(underlying.drop((n/8).toInt), size - n)
+      else if (n % 8 == 0) Bytes(underlying.drop(n / 8), size - n)
       else Drop(this, n)
     }
     def get(n: Long): Boolean = {
       checkBounds(n)
-      getBit(underlying((n / 8).toInt), (n % 8).toInt)
+      getBit(underlying(n / 8), (n % 8).toInt)
     }
     def getByte(n: Long): Byte = {
       if (n < underlying.size-1)
-        underlying(n.toInt)
+        underlying(n)
       else { // last byte may have some garbage bits, clear these out
         val valid = 8 - invalidBits
-        (underlying(n.toInt) & topNBits(valid.toInt)).toByte
+        (underlying(n) & topNBits(valid.toInt)).toByte
       }
     }
 
     def update(n: Long, high: Boolean): BitVector = {
       checkBounds(n)
       val b2 = underlying.update(
-        (n / 8).toInt,
-        underlying.lift((n / 8).toInt).map(setBit(_, (n % 8).toInt, high)).getOrElse {
+        n / 8,
+        underlying.lift(n / 8).map(setBit(_, (n % 8).toInt, high)).getOrElse {
           outOfBounds(n)
         }
       )
@@ -1703,9 +1696,9 @@ object BitVector {
       val newSize = size
       if (newSize == 0) BitVector.empty.align
       else {
-        val lowByte = (low / 8).toInt
+        val lowByte = low / 8
         val shiftedByWholeBytes: ByteVector =
-          underlying.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize).toInt + 1)
+          underlying.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize) + 1)
         val bitsToShiftEachByte = (low % 8).toInt
         val newBytes = {
           if (bitsToShiftEachByte == 0) shiftedByWholeBytes

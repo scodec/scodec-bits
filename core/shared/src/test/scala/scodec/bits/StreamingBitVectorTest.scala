@@ -37,7 +37,7 @@ object StreamingBitVectorTest extends App {
     if (b.isEmpty) acc
     else {
       val (h, t) = (b.take(Stride), b.drop(Stride))
-      var i = 0
+      var i = 0L
       if (touchBytes) {
         val bytes = h.toByteVector
         while (i < bytes.size) {
