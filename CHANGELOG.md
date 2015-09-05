@@ -1,7 +1,9 @@
 1.0.10
 ======
- - Improve performance of `toInt` and `fromInt`, `toLong` and `fromLong`, etc.
+ - Improved performance of `toInt` and `fromInt`, `toLong` and `fromLong`, etc.
  - Further performance improvements in `toBase64`.
+ - Improved performance of fromBase64 by over 200x
+ - Added type-safe === to `BitVector` and `ByteVector`
 
 1.0.9
 =====
