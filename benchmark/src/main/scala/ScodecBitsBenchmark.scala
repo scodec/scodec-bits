@@ -25,6 +25,7 @@ class ScodecBitsBenchmark {
   val byteStringChunks_M = (0L until M).map(b => ByteString(b.toByte)).toList
   val bytes_M = Array.tabulate(M.toInt)(i => i.toByte)
   val bitVector_M = bitChunks_M.foldLeft(BitVector.empty)(_ ++ _)
+  val bitVector_M_compact = bitVector_M.copy
   val byteVector_M = byteChunks_M.foldLeft(ByteVector.empty)(_ ++ _)
   val byteString_M = byteStringChunks_M.foldLeft(ByteString())(_ ++ _)
 
@@ -123,6 +124,16 @@ class ScodecBitsBenchmark {
 
   @Benchmark def toBase64(): String =
     bitVector_M.toBase64
+  @Benchmark def toBase64_compact(): String =
+    bitVector_M_compact.toBase64
   @Benchmark def toBase64_JRE(): String =
     java.util.Base64.getEncoder.encodeToString(bitVector_M.toByteArray)
+  @Benchmark def toBase64_JRE_compact(): String =
+    java.util.Base64.getEncoder.encodeToString(bitVector_M_compact.toByteArray)
+
+  private val bitVector_M_b64 = bitVector_M.toBase64
+  @Benchmark def fromBase64(): Option[ByteVector] =
+    ByteVector.fromBase64(bitVector_M_b64)
+  @Benchmark def fromBase64_JRE(): Array[Byte] =
+    java.util.Base64.getDecoder.decode(bitVector_M_b64)
 }

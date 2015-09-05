@@ -163,12 +163,28 @@ lazy val core = project.in(file("core")).
       "scodec.bits.BitVector.decodeUtf8",
       "scodec.bits.ByteVector.decodeString",
       "scodec.bits.ByteVector.decodeAscii",
-      "scodec.bits.ByteVector.decodeUtf8"
+      "scodec.bits.ByteVector.decodeUtf8",
+      "scodec.bits.ByteVector.scodec$bits$ByteVector$$AtArray",
+      "scodec.bits.ByteVector.scodec$bits$ByteVector$$AtEmpty",
+      "scodec.bits.ByteVector#Buffer.productArity",
+      "scodec.bits.ByteVector#Buffer.productElement",
+      "scodec.bits.ByteVector#Buffer.productIterator",
+      "scodec.bits.ByteVector#Buffer.productPrefix",
+      "scodec.bits.ByteVector#Buffer.unapply",
+      "scodec.bits.ByteVector#Buffer.apply",
+      "scodec.bits.ByteVector#Buffer.toString",
+      "scodec.bits.ByteVector#Buffer.canEqual",
+      "scodec.bits.BitVector.===",
+      "scodec.bits.ByteVector.==="
     ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
     binaryIssueFilters ++= Seq(
       // result type changed, but this method is private
       ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector#Append.sizeLowerBound"),
       // param type changed, but this method is private
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.crc.scodec$bits$crc$$calculate$1")
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.crc.scodec$bits$crc$$calculate$1"),
+      // ByteVector.Buffer changed in 1.0.10 but it is a private class so all changes are safe
+      ProblemFilters.exclude[MissingTypesProblem]("scodec.bits.ByteVector$Buffer"),
+      ProblemFilters.exclude[MissingTypesProblem]("scodec.bits.ByteVector$Buffer$"),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.ByteVector#Buffer.apply")
     )
 )

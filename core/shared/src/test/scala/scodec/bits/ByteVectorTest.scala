@@ -1,6 +1,6 @@
 package scodec.bits
 
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{ Arbitrary, Gen }
 import Arbitrary.arbitrary
 import java.io.ByteArrayOutputStream
 import org.scalatest.Matchers._
@@ -17,6 +17,12 @@ class ByteVectorTest extends BitsSuite {
         // kind of weak, since this will only happen 1/8th of attempts on average
         b.take(3).hashCode shouldBe b.drop(3).take(3).hashCode
       }
+    }
+  }
+
+  test("=== consistent with ==") {
+    forAll { (b: ByteVector, b2: ByteVector) =>
+      (b == b2) shouldBe (b === b2)
     }
   }
 

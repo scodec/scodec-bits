@@ -350,14 +350,14 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   final def startsWith(b: ByteVector): Boolean =
-    take(b.size) == b
+    take(b.size) === b
 
   /**
    * Returns true if this byte vector ends with the specified vector.
    * @group collection
    */
   final def endsWith(b: ByteVector): Boolean =
-    takeRight(b.size) == b
+    takeRight(b.size) === b
 
   /**
    * Finds the first index of the specified byte pattern in this vector.
@@ -532,7 +532,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    */
   final def copy: ByteVector = {
     val arr = this.toArray
-    Chunk(View(AtArray(arr), 0, size))
+    Chunk(View(new AtArray(arr), 0, size))
   }
 
   /**
@@ -554,6 +554,12 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
     foreachV { v => v.copyToArray(xs, i); i += v.size }
+  }
+
+  /** Like `toArray` but directly returns the underlying array if this vector is a backed by a single array. */
+  private[this] final def toArrayUnsafe: Array[Byte] = this match {
+    case Chunk(view) => view.toArrayUnsafe
+    case other => toArray
   }
 
   /**
@@ -731,44 +737,38 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group conversions
    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
-    val bldr = new StringBuilder
-    var mod = 0
-    var buffer = 0
-    foreachS(new F1BU {
-      def apply(b: Byte) = mod match {
-        case 0 =>
-          buffer = b & 0x0ff
-          mod = 1
-          val first = buffer >> 2
-          bldr.append(alphabet.toChar(first))
-          ()
-
-        case 1 =>
-          buffer = (buffer << 8) | (b & 0x0ff)
-          mod = 2
-          val second = (buffer >> 4) & 0x3f
-          bldr.append(alphabet.toChar(second))
-          ()
-
-        case 2 =>
-          buffer = (buffer << 8) | (b & 0x0ff)
-          mod = 0
-          val third = (buffer >> 6) & 0x3f
-          val fourth = buffer & 0x3f
-          bldr.append(alphabet.toChar(third)).append(alphabet.toChar(fourth))
-          ()
-      }
-    })
-    mod match {
-      case 0 =>
-      case 1 =>
-        val second = (buffer << 4) & 0x3f
-        bldr.append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
-      case 2 =>
-        val third = (buffer << 2) & 0x3f
-        bldr.append(alphabet.toChar(third)).append(alphabet.pad)
+    val bytes = toArray
+    val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
+    var idx = 0
+    val mod = bytes.length % 3
+    while (idx < bytes.length - mod) {
+      var buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+      val fourth = buffer & 0x3f
+      buffer = buffer >> 6
+      val third = buffer & 0x3f
+      buffer = buffer >> 6
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.toChar(third)).append(alphabet.toChar(fourth))
+      idx = idx + 3
     }
-    bldr.toString
+    if (mod == 1) {
+      var buffer = (bytes(idx) & 0x0ff) << 4
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.pad).append(alphabet.pad)
+    } else if (mod == 2) {
+      var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+      val third = buffer & 0x3f
+      buffer = buffer >> 6
+      val second = buffer & 0x3f
+      buffer = buffer >> 6
+      val first = buffer
+      bldr.append(alphabet.toChar(first)).append(alphabet.toChar(second)).append(alphabet.toChar(third)).append(alphabet.pad)
+    }
+    bldr.flip.toString
   }
 
   /**
@@ -995,6 +995,16 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
 
+  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] = {
+    try {
+      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
+      foreachV { view => ci.update(view.toArrayUnsafe); () }
+      Right(ByteVector.view(ci.doFinal()))
+    } catch {
+      case e: GeneralSecurityException => Left(e)
+    }
+  }
+
   // implementation details, Object methods
 
   /**
@@ -1015,12 +1025,21 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
   }
 
   /**
+   * Returns true if the specified `ByteVector` has the same contents as this vector.
+   * @group collection
+   */
+  final def ===(other: ByteVector): Boolean =
+    this.size == other.size &&
+    (0 until this.size).forall(i => this(i) == other(i))
+
+
+  /**
    * Returns true if the specified value is a `ByteVector` with the same contents as this vector.
+   * @see [[ByteVector.===]]
    * @group collection
    */
   override def equals(other: Any) = other match {
-    case that: ByteVector => this.size == that.size &&
-                             (0 until this.size).forall(i => this(i) == that(i))
+    case that: ByteVector => this === that
     case other => false
   }
 
@@ -1034,16 +1053,6 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
     if (isEmpty) "ByteVector(empty)"
     else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
-
-  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] = {
-    try {
-      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view => ci.update(view.asByteBuffer.array); () }
-      Right(ByteVector.view(ci.doFinal()))
-    } catch {
-      case e: GeneralSecurityException => Left(e)
-    }
-  }
 
   private[bits] def pretty(prefix: String): String = this match {
     case Append(l,r) =>
@@ -1085,7 +1094,13 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
 object ByteVector {
 
   // various specialized function types
-  private[scodec] abstract class At {
+
+  private[scodec] abstract class F1B { def apply(b: Byte): Byte }
+  private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
+  private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
+  private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
+
+  private[scodec] sealed abstract class At {
     def apply(i: Int): Byte
     def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
       val arr = new Array[Byte](size)
@@ -1107,58 +1122,48 @@ object ByteVector {
       }
     }
   }
-  private[scodec] abstract class F1B { def apply(b: Byte): Byte }
-  private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
-  private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
-  private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
 
-  private val AtEmpty: At =
-    new At {
-      def apply(i: Int) = throw new IllegalArgumentException("empty view")
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+  private object AtEmpty extends At {
+    def apply(i: Int) = throw new IllegalArgumentException("empty view")
+    override def asByteBuffer(start: Int, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
+  }
+
+  private class AtArray(val arr: Array[Byte]) extends At {
+    def apply(i: Int) = arr(i)
+
+    override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
+      val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
+      if (start == 0 && size == arr.length) b
+      else b.slice()
     }
 
-  private def AtArray(arr: Array[Byte]): At =
-    new At {
-      def apply(i: Int) = arr(i)
+    override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
+      System.arraycopy(arr, offset, xs, start, size)
 
-      override def asByteBuffer(start: Int, size: Int): ByteBuffer = {
-        val b = ByteBuffer.wrap(arr, start, size).asReadOnlyBuffer()
-        if (start == 0 && size == arr.length) b
-        else b.slice()
-      }
+    override def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
+      s.write(arr, offset, size)
+    }
+  }
 
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit =
-        System.arraycopy(arr, offset, xs, start, size)
+  private class AtByteBuffer(val buf: ByteBuffer) extends At {
+    def apply(i: Int) = buf.get(i)
 
-      override def copyToStream(s: OutputStream, offset: Int, size: Int): Unit = {
-        s.write(arr, offset, size)
-      }
+    override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
+      val n = buf.duplicate()
+      n.position(offset)
+      n.get(xs, start, size)
+      ()
     }
 
-  private def AtByteBuffer(buf: ByteBuffer): At =
-    new At {
-      def apply(i: Int) = buf.get(i)
-      override def copyToArray(xs: Array[Byte], start: Int, offset: Int, size: Int): Unit = {
-        val n = buf.duplicate()
-        n.position(offset)
-        n.get(xs, start, size)
-        ()
-      }
-
-      override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
-        val b = buf.asReadOnlyBuffer()
-        if (offset == 0 && b.position() == 0 && size == b.remaining()) b
-        else {
-          b.position(offset)
-          b.limit(offset + size)
-          b.slice()
-        }
+    override def asByteBuffer(offset: Int, size: Int): ByteBuffer = {
+      val b = buf.asReadOnlyBuffer()
+      if (offset == 0 && b.position() == 0 && size == b.remaining()) b
+      else {
+        b.position(offset)
+        b.limit(offset + size)
+        b.slice()
       }
     }
-
-  private def AtFnI(f: Int => Int): At = new At {
-    def apply(i: Int) = f(i).toByte
   }
 
   private[bits] case class View(at: At, offset: Int, size: Int) {
@@ -1190,6 +1195,10 @@ object ByteVector {
       val arr = new Array[Byte](size)
       copyToArray(arr, 0)
       arr
+    }
+    def toArrayUnsafe: Array[Byte] = at match {
+      case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
+      case _ => toArray
     }
     def take(n: Int): View =
       if (n <= 0) View.empty
@@ -1296,7 +1305,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: Array[Byte]): ByteVector =
-    Chunk(View(AtArray(bytes), 0, bytes.length))
+    Chunk(View(new AtArray(bytes), 0, bytes.length))
 
   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
@@ -1305,7 +1314,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: ByteBuffer): ByteVector =
-    Chunk(View(AtByteBuffer(bytes.slice()), 0, bytes.limit))
+    Chunk(View(new AtByteBuffer(bytes.slice()), 0, bytes.limit))
 
   /**
    * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
@@ -1530,33 +1539,49 @@ object ByteVector {
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
     val Pad = alphabet.pad
-    var idx, padding = 0
-    var err: String = null
-    var acc: BitVector = BitVector.empty
-    while (idx < str.length && (err eq null)) {
-      val c = str(idx)
-      if (padding == 0) {
-        c match {
-          case c if alphabet.ignore(c) => // ignore
-          case Pad => padding += 1
-          case _ =>
-            try acc = acc ++ BitVector(alphabet.toIndex(c)).drop(2)
-            catch {
-              case e: IllegalArgumentException => err = s"Invalid base 64 character '$c' at index $idx"
+    var idx, bidx, buffer, mod, padding = 0
+    val acc = Array.ofDim[Byte](str.size / 4 * 3)
+    while (idx < str.length) {
+      str(idx) match {
+        case c if alphabet.ignore(c) => // ignore
+        case c =>
+          val cidx = {
+            if (padding == 0) {
+              try if (c == Pad) { padding += 1; 0 } else alphabet.toIndex(c)
+              catch {
+                case e: IllegalArgumentException => return Left(s"Invalid base 64 character '$c' at index $idx")
+              }
+            } else {
+              if (c == Pad) { padding += 1; 0 } else {
+                return Left(s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character")
+              }
             }
-        }
-      } else {
-        c match {
-          case c if alphabet.ignore(c) => // ignore
-          case Pad => padding += 1
-          case other => err = s"Unexpected character '$other' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
-        }
+          }
+          mod match {
+            case 0 =>
+              buffer = (cidx & 0x3f)
+              mod += 1
+            case 1 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod += 1
+            case 2 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod += 1
+            case 3 =>
+              buffer = (buffer << 6) | (cidx & 0x3f)
+              mod = 0
+              val c = buffer & 0x0ff
+              val b = (buffer >> 8) & 0x0ff
+              val a = (buffer >> 16) & 0x0ff
+              acc(bidx) = a.toByte
+              acc(bidx + 1) = b.toByte
+              acc(bidx + 2) = c.toByte
+              bidx += 3
+          }
       }
       idx += 1
     }
-    if (err eq null) {
-      Right(acc.take(acc.size / 8 * 8).toByteVector)
-    } else Left(err)
+    Right(ByteVector(acc).dropRight(padding))
   }
 
   /**
@@ -1665,7 +1690,7 @@ object ByteVector {
    *
    * [1]: http://www.serpentine.com/blog/2014/05/31/attoparsec/
    */
-  private case class Buffer(id: AtomicLong, stamp: Long, hd: ByteVector, lastChunk: Array[Byte], lastSize: Int) extends ByteVector {
+  private class Buffer(val id: AtomicLong, val stamp: Long, val hd: ByteVector, val lastChunk: Array[Byte], val lastSize: Int) extends ByteVector {
     def size = hd.size + lastSize
 
     override def take(n: Int): ByteVector =
@@ -1721,6 +1746,11 @@ object ByteVector {
       lastChunk.copyToArray(lastChunk2)
       Buffer(new AtomicLong(0), 0, hd, lastChunk, lastSize)
     }
+  }
+
+  private object Buffer {
+    def apply(id: AtomicLong, stamp: Long, hd: ByteVector, lastChunk: Array[Byte], lastSize: Int): Buffer =
+      new Buffer(id, stamp, hd.unbuffer, lastChunk, lastSize)
   }
 }
 
