@@ -25,8 +25,8 @@ Introduction
 ------------
 
 There are two fundamental data structures provided:
- - [`BitVector`](core/src/main/scala/scodec/bits/BitVector.scala)
- - [`ByteVector`](core/src/main/scala/scodec/bits/ByteVector.scala)
+ - [`BitVector`](core/shared/src/main/scala/scodec/bits/BitVector.scala)
+ - [`ByteVector`](core/shared/src/main/scala/scodec/bits/ByteVector.scala)
 
 Both datatypes provide collection like functionality, although neither directly implement the Scala
 collection library traits. Both are implemented as binary trees where each node is either a leaf
