@@ -1,10 +1,9 @@
 package scodec.bits
 
-import java.nio.{ ByteBuffer, ByteOrder, CharBuffer }
+import java.nio.{ ByteBuffer, ByteOrder }
 import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
-import java.util.concurrent.atomic.AtomicLong
-import java.util.zip.{ DataFormatException, Deflater, Inflater }
+import java.util.zip.{ DataFormatException, Deflater }
 import javax.crypto.Cipher
 
 import scala.collection.GenTraversableOnce

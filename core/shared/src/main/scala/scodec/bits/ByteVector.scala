@@ -11,7 +11,6 @@ import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
 
 import scala.collection.GenTraversableOnce
-import collection.immutable.Queue
 
 /**
  * An immutable vector of bytes, backed by a balanced binary tree of

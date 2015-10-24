@@ -6,8 +6,8 @@ import Matchers._
 
 abstract class BitsSuite extends FunSuite with GeneratorDrivenPropertyChecks {
 
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
-    PropertyCheckConfiguration(minSuccessful = 100, workers = 4)
+  implicit override val generatorDrivenConfig: PropertyCheckConfig =
+    PropertyCheckConfig(minSuccessful = 100, workers = 4)
 
   protected def serializationShouldRoundtrip[A](x: A): Unit = {
     import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream }
