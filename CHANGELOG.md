@@ -1,3 +1,7 @@
+1.0.11
+======
+ - Improved performance of CRCs -- 32-bit CRCs improved by 600% and n-bit CRCs improved by 40$
+
 1.0.10
 ======
  - Improved performance of `toInt` and `fromInt`, `toLong` and `fromLong`, etc.
