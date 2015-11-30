@@ -486,7 +486,7 @@ sealed trait ByteVector extends BitwiseOperations[ByteVector,Int] with Serializa
    * @group collection
    */
   final def reverse: ByteVector =
-    ByteVector.view(i => apply(size - i - 1), size)
+    ByteVector.view((i: Int) => apply(size - i - 1), size)
 
   final def shiftLeft(n: Int): ByteVector =
     BitVector(this).shiftLeft(n.toLong).toByteVector
