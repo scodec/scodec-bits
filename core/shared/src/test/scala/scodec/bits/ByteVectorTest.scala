@@ -126,6 +126,11 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("base64 issue #45") {
+    val base64 = "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
+    BitVector.fromBase64Descriptive(base64).right.map { _.size } shouldBe Right(1408)
+  }
+
   test("buffer :+") {
     forAll { (b: ByteVector, bs: List[ByteVector], n: Int) => {
       val unbuf = bs.foldLeft(b)(_ ++ _)
