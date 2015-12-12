@@ -175,7 +175,16 @@ lazy val core = crossProject.in(file("core")).
       // ByteVector.Buffer changed in 1.0.10 but it is a private class so all changes are safe
       ProblemFilters.exclude[MissingTypesProblem]("scodec.bits.ByteVector$Buffer"),
       ProblemFilters.exclude[MissingTypesProblem]("scodec.bits.ByteVector$Buffer$"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.ByteVector#Buffer.apply")
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.ByteVector#Buffer.apply"),
+      // 1.0.11 2.11 artifact had stale class files from an experimental branch
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$LongSyntax$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$LongSyntax"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$IntSyntax$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$IntSyntax"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitCount$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitCount"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteCount$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteCount")
     )
 )
 
