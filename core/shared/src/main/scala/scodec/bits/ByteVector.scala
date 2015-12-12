@@ -494,7 +494,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group collection
    */
   final def reverse: ByteVector =
-    ByteVector.view((i: Int) => apply(size - i - 1), size)
+    ByteVector.view((l: Long) => apply(size - l - 1), size)
 
   final def shiftLeft(n: Long): ByteVector =
     BitVector(this).shiftLeft(n).toByteVector
