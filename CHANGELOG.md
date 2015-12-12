@@ -1,3 +1,7 @@
+1.0.12
+======
+ - Fix correctness bug in `ByteVector.fromBase64` when string contained ignored characters.
+
 1.0.11
 ======
  - Improved performance of CRCs -- 32-bit CRCs improved by 600% and n-bit CRCs improved by 40%.

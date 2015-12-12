@@ -1581,7 +1581,7 @@ object ByteVector {
       }
       idx += 1
     }
-    Right(ByteVector(acc).dropRight(padding))
+    Right(ByteVector(acc).take(bidx - padding))
   }
 
   /**
