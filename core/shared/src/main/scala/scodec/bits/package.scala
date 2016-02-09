@@ -1,7 +1,6 @@
 package scodec
 
 import scala.language.experimental.macros
-import scala.language.implicitConversions
 
 /**
  * Provides immutable data types for working with bits and bytes.

@@ -1,6 +1,5 @@
 package scodec.bits
 
-import scala.language.experimental.macros
 
 /** Macros that support binary and hexadecimal literals. */
 object LiteralSyntaxMacros {
