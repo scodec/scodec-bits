@@ -1,3 +1,8 @@
+1.1.0
+=====
+ - Changed `ByteVector` to be `Long` indexed instead of `Int` indexed.
+ - Renamed `ByteVector.view(Long => Byte, Long)` to `ByteVector.viewAt`.
+
 1.0.12
 ======
  - Fix correctness bug in `ByteVector.fromBase64` when string contained ignored characters.

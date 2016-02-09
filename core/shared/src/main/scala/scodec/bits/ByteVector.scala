@@ -474,7 +474,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group collection
    */
   final def map(f: Byte => Byte): ByteVector =
-    ByteVector.view((i: Long) => f(apply(i)), size)
+    ByteVector.viewAt((i: Long) => f(apply(i)), size)
 
   /**
    * Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
@@ -494,7 +494,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group collection
    */
   final def reverse: ByteVector =
-    ByteVector.view((l: Long) => apply(size - l - 1), size)
+    ByteVector.viewAt((l: Long) => apply(size - l - 1), size)
 
   final def shiftLeft(n: Long): ByteVector =
     BitVector(this).shiftLeft(n).toByteVector
@@ -1265,7 +1265,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a collection of bytes.
    * @group constructors
    */
-  def apply(bytes: Vector[Byte]): ByteVector = view(idx => bytes(idx.toInt), bytes.size.toLong)
+  def apply(bytes: Vector[Byte]): ByteVector = viewAt(idx => bytes(idx.toInt), bytes.size.toLong)
 
   /**
    * Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]`
@@ -1332,7 +1332,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
    * @group constructors
    */
-  def view(at: Long => Byte, size: Long): ByteVector =
+  def viewAt(at: Long => Byte, size: Long): ByteVector =
     Chunk(View(new At { def apply(i: Long) = at(i) }, 0, size))
 
   /**
