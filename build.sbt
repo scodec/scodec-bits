@@ -52,5 +52,5 @@ lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).e
   settings(
     publishArtifact := false,
     libraryDependencies ++=
-      Seq("com.typesafe.akka" %% "akka-actor" % "2.4.1")
+      Seq("com.typesafe.akka" %% "akka-actor" % (if (scalaVersion.value.startsWith("2.10.")) "2.3.4" else "2.4.1"))
   )
