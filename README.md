@@ -47,7 +47,7 @@ Base conversions to and from strings are supported. Binary, hexadecimal, and bas
 supported. Each have a default alphabet but support alternative alphabets as well as user defined
 alphabets.
 
-For more information, see the [API documentation](http://scodec.github.io/scodec-bits/latest/api/#scodec.package).
+For more information, see the [API documentation](http://scodec.org/api/).
 
 For a combinator based approach to encoding values to/from binary, see the companion project [scodec](https://github.com/scodec/scodec).
 
