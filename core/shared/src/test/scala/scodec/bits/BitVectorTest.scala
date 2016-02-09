@@ -59,6 +59,7 @@ class BitVectorTest extends BitsSuite {
       }
       bits.acquireThen(n)(Left(_),Right(_)) shouldBe b
       bits.consumeThen(n)(Left(_),(a,b) => Right((b,a))) shouldBe bits.consume(n)(Right(_))
+      ()
     }
 
     forAll (bitVectorWithTakeIndex) { case (bits, ind) =>
@@ -522,6 +523,7 @@ class BitVectorTest extends BitsSuite {
       buffered.take(delta) shouldBe unbuffered.take(delta)
       // drop
       buffered.drop(delta) shouldBe unbuffered.drop(delta)
+      ()
     }
 
     forAll { (h: BitVector, xs: List[BitVector], delta: Long) =>

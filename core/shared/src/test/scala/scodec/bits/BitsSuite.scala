@@ -18,5 +18,6 @@ abstract class BitsSuite extends FunSuite with GeneratorDrivenPropertyChecks {
     val in = new ObjectInputStream(new ByteArrayInputStream(bout.toByteArray))
     val deserialized = in.readObject.asInstanceOf[A]
     deserialized shouldBe x
+    ()
   }
 }
