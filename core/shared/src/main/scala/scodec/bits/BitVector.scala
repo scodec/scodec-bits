@@ -1306,7 +1306,7 @@ object BitVector {
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
     require(bytesNeededForBits(sizeInBits) <= Int.MaxValue,
       "Cannot have BitVector chunk larger than Int.MaxValue bytes: " + sizeInBits)
-    toBytes(ByteVector.view(ind => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
+    toBytes(ByteVector.view((ind: Int) => buffer.get(ind), bytesNeededForBits(sizeInBits).toInt), sizeInBits)
   }
 
   /**
