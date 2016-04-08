@@ -5,7 +5,7 @@ lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
-  scalaVersion := "2.12.0-M3",
+  scalaVersion := "2.12.0-M4",
   scalacOptions in Compile := (scalacOptions in Compile).value.filter {
     case "-Yinline" => false
     case "-Yclosure-elim" => false
@@ -33,8 +33,8 @@ lazy val core = project.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "2.2.5-M3" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.11.6" % "test")
+      "org.scalatest" %%% "scalatest" % "3.0.0-M16-SNAP3" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.12.5" % "test")
   ).
   settings(
     docSourcePath := new File(baseDirectory.value, "../.."),
