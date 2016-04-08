@@ -4,10 +4,12 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
-  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
+  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scalaVersion := "2.12.0-M4",
+  crossScalaVersions := List("2.12.0-M4")
 )
 
-lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).settings(commonSettings: _*).settings(
+lazy val root = project.in(file(".")).aggregate(coreJVM).settings(commonSettings: _*).settings(
   publishArtifact := false
 )
 
@@ -21,10 +23,9 @@ lazy val core = crossProject.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "3.0.0-M12" % "test",
+      "org.scalatest" %%% "scalatest" % "3.0.0-M16-SNAP3" % "test",
       "org.scalacheck" %%% "scalacheck" % "1.12.5" % "test")
   ).
-  jsSettings(commonJsSettings: _*).
   jvmSettings(
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
@@ -44,12 +45,4 @@ lazy val core = crossProject.in(file("core")).
 )
 
 lazy val coreJVM = core.jvm
-lazy val coreJS = core.js
 
-lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
-  settings(commonSettings: _*).
-  settings(
-    publishArtifact := false,
-    libraryDependencies ++=
-      Seq("com.typesafe.akka" %% "akka-actor" % (if (scalaVersion.value.startsWith("2.10.")) "2.3.4" else "2.4.1"))
-  )
