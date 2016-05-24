@@ -45,4 +45,5 @@ lazy val core = crossProject.in(file("core")).
 )
 
 lazy val coreJVM = core.jvm
+lazy val coreJS = core.js
 
