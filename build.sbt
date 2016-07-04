@@ -21,8 +21,8 @@ lazy val core = crossProject.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "3.0.0-M12" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.12.5" % "test")
+      "org.scalatest" %%% "scalatest" % "3.0.0-RC4" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.13.1" % "test")
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
