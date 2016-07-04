@@ -9,7 +9,7 @@ lazy val commonSettings = Seq(
   crossScalaVersions := List("2.12.0-M5")
 )
 
-lazy val root = project.in(file(".")).aggregate(coreJVM).settings(commonSettings: _*).settings(
+lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS).settings(commonSettings: _*).settings(
   publishArtifact := false
 )
 
