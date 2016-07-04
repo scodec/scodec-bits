@@ -5,8 +5,8 @@ lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
-  scalaVersion := "2.12.0-M4",
-  crossScalaVersions := List("2.12.0-M4")
+  scalaVersion := "2.12.0-M5",
+  crossScalaVersions := List("2.12.0-M5")
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM).settings(commonSettings: _*).settings(
@@ -23,8 +23,8 @@ lazy val core = crossProject.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "3.0.0-M16-SNAP4" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.12.5" % "test")
+      "org.scalatest" %%% "scalatest" % "3.0.0-RC4" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.13.1" % "test")
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
