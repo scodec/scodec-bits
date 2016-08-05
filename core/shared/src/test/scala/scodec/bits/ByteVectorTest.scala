@@ -74,9 +74,9 @@ class ByteVectorTest extends BitsSuite {
     val b3 = ByteVector(2, 3, 4, 5)
     val b4 = ByteVector(3, 4, 5, 6)
     b1.zipWithI3(b2, b3, b4)(_ + _ + _ + _) shouldBe ByteVector(6, 10, 14, 18)
-    /*forAll { (b: ByteVector) =>
+    forAll { (b: ByteVector) =>
       b.zipWithI3(b, b, b)(_ + _ - _ - _) shouldBe ByteVector.fill(b.size)(0)
-    }*/
+    }
   }
 
   test("consistent with Array[Byte] implementations") {
