@@ -874,9 +874,35 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   final def zipWith(other: ByteVector)(f: (Byte,Byte) => Byte): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b,b2) })
 
+  /**
+   * See [[zipWith]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWith2(other: ByteVector, other2: ByteVector)(f: (Byte,Byte,Byte) => Byte): ByteVector =
+    zipWithS(other, other2)(new F3B { def apply(b: Byte, b2: Byte, b3: Byte) = f(b,b2,b3) })
+
+  /**
+   * See [[zipWith]]   
+   * $returnsView
+   * @group collection
+   */
+  final def zipWith3(other: ByteVector, other2: ByteVector, other3: ByteVector)(f: (Byte,Byte,Byte,Byte) => Byte): ByteVector =
+    zipWithS(other, other2, other3)(new F4B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte) = f(b,b2,b3,b4) })
+
   private[scodec] final def zipWithS(other: ByteVector)(f: F2B): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i)) }
     Chunk(View(at, 0, size min other.size))
+  }
+
+  private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector)(f: F3B): ByteVector = {
+    val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i)) }
+    Chunk(View(at, 0, (size min other.size) min other2.size))
+  }
+
+  private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector, other3: ByteVector)(f: F4B): ByteVector = {
+    val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i), other3(i)) }
+    Chunk(View(at, 0, ((size min other.size) min other2.size) min other3.size))
   }
 
   /**
@@ -889,6 +915,22 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    */
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
+
+  /**
+   * See [[zipWithI]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWithI2(other: ByteVector, other2: ByteVector)(op: (Byte, Byte, Byte) => Int): ByteVector =
+    zipWith2(other, other2) { case (l, r1, r2) => op(l, r1, r2).toByte }
+
+  /**
+   * See [[zipWithI]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWithI3(other: ByteVector, other2: ByteVector, other3: ByteVector)(op: (Byte, Byte, Byte, Byte) => Int): ByteVector =
+    zipWith3(other, other2, other3) { case (l, r1, r2, r3) => op(l, r1, r2, r3).toByte }
 
   /**
    * Compresses this vector using ZLIB.
@@ -1109,7 +1151,11 @@ object ByteVector {
   private[scodec] abstract class F1B { def apply(b: Byte): Byte }
   private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
   private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
+
   private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
+  private[scodec] abstract class F3B { def apply(b: Byte, b2: Byte, b3: Byte): Byte }
+  private[scodec] abstract class F4B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte): Byte }
+  private[scodec] abstract class F5B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte, b5: Byte): Byte }
 
   private[scodec] sealed abstract class At {
     def apply(i: Long): Byte
