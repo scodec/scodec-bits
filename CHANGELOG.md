@@ -1,3 +1,8 @@
+1.1.1
+=====
+ - Added `zipWith2` and `zipWith3` to `ByteVector`
+ - Added `foldLeftBB` and `foldRightBB` to `ByteVector`, allowing zero-copy folds
+
 1.1.0
 =====
  - Changed `ByteVector` to be `Long` indexed instead of `Int` indexed.
