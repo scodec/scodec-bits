@@ -319,6 +319,32 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     reverse.foldLeft(z)((tl,h) => f(h,tl))
 
   /**
+    * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going left to right.
+    * @param z    Starting value
+    * @param f    operator to apply
+    */
+  final def foldLeftBB[A](z: A)(f: (A, ByteBuffer) => A): A = {
+    @annotation.tailrec
+    def go(rem:List[ByteVector], a:A): A = rem match {
+      case Chunk(bs)   :: rem => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
+      case Append(l,r) :: rem => go(l :: r :: rem, a)
+      case Chunks(Append(l,r)) :: rem => go(l :: r :: rem, a)
+      case (b: Buffer) :: rem => go(b.unbuffer :: rem, a)
+      case Nil => a
+    }
+    go(this :: Nil, z)
+  }
+
+  /**
+    * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going right ot left.
+    * @param z    Starting value
+    * @param f    operator to apply
+    */
+  final def foldRightBB[A](z: A)(f: (ByteBuffer, A) => A): A =
+    reverse.foldLeftBB(z)((tl,h) => f(h,tl))
+
+
+  /**
    * Applies the specified function to each element of this vector.
    * @group collection
    */
@@ -351,6 +377,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     }
     go(this::Nil)
   }
+
 
   /**
    * Returns true if this byte vector starts with the specified vector.
