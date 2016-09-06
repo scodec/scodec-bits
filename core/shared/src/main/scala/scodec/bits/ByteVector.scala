@@ -319,10 +319,11 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     reverse.foldLeft(z)((tl,h) => f(h,tl))
 
   /**
-    * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going left to right.
-    * @param z    Starting value
-    * @param f    operator to apply
-    */
+   * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going left to right.
+   * @param z    Starting value
+   * @param f    operator to apply
+   * @group collection
+   */
   final def foldLeftBB[A](z: A)(f: (A, ByteBuffer) => A): A = {
     @annotation.tailrec
     def go(rem:List[ByteVector], a:A): A = rem match {
@@ -336,13 +337,13 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
-    * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going right ot left.
-    * @param z    Starting value
-    * @param f    operator to apply
-    */
+   * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going right ot left.
+   * @param z    Starting value
+   * @param f    operator to apply
+   * @group collection
+   */
   final def foldRightBB[A](z: A)(f: (ByteBuffer, A) => A): A =
     reverse.foldLeftBB(z)((tl,h) => f(h,tl))
-
 
   /**
    * Applies the specified function to each element of this vector.
@@ -910,7 +911,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     zipWithS(other, other2)(new F3B { def apply(b: Byte, b2: Byte, b3: Byte) = f(b,b2,b3) })
 
   /**
-   * See [[zipWith]]   
+   * See [[zipWith]]
    * $returnsView
    * @group collection
    */
