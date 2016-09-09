@@ -1,6 +1,5 @@
 package scodec.bits
 
-import org.scalacheck.Arbitrary
 import java.io.ByteArrayOutputStream
 import org.scalatest.Matchers._
 
