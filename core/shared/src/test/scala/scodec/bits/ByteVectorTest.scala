@@ -412,4 +412,15 @@ class ByteVectorTest extends BitsSuite {
       b.slice(from.toLong, until.toLong) shouldBe ByteVector.view(b.toArray.slice(from, until))
     }
   }
+
+  test("unapply") {
+    val ByteVector(x, y, z) = hex"000102"
+    x shouldBe 0.toByte
+    y shouldBe 1.toByte
+    z shouldBe 2.toByte
+
+    hex"000102" match {
+      case ByteVector(0, 1, 2) => // OK
+    }
+  }
 }
