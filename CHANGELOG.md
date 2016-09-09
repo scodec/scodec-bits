@@ -2,7 +2,7 @@
 =====
  - Added `zipWith2` and `zipWith3` to `ByteVector`
  - Added `foldLeftBB` and `foldRightBB` to `ByteVector`, allowing zero-copy folds
- - Fixed stack overflow in `BitVector#hashCode` on very large vectors
+ - Fixed stack overflow in `BitVector#hashCode` and `BitVector#suspend` on very large vectors with lots of append/suspend nodes
 
 1.1.0
 =====

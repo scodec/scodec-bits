@@ -1737,13 +1737,22 @@ object BitVector {
     }
     var sizeLowerBound = left.size
 
-    def size =
+    def size = {
       if (knownSize != -1L) knownSize
       else { // faster to just allow recomputation if there's contention
-        val sz = left.size + right.size
+        @annotation.tailrec
+        def go(rem: List[BitVector], acc: Long): Long = rem match {
+          case Nil => acc
+          case Append(x, y) :: t => go(x :: y :: t, acc)
+          case Chunks(Append(x, y)) :: t => go(x :: y :: t, acc)
+          case (s: Suspend) :: t => go(s.underlying :: t, acc)
+          case h :: t => go(t, acc + h.size)
+        }
+        val sz = go(List(left, right), 0)
         knownSize = sz
         sz
       }
+    }
 
     def take(n: Long) = {
       // NB: not worth early termination in event that sizeLessThanOrEqual(n) is true -
@@ -1932,4 +1941,3 @@ object BitVector {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
 }
-

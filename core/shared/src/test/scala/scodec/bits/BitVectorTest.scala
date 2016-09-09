@@ -46,7 +46,11 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
-
+  test("size stack safety") {
+    forAll (hugeBitStreams) { b =>
+      b.size shouldBe b.size
+    }
+  }
 
   test("acquire stack safety for lazy BitVector") {
     val nats = BitVector.unfold(0)(i => Some(BitVector.high(1000) -> (i+1)))
