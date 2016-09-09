@@ -149,6 +149,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).drop(3).toByteVector shouldBe ByteVector(0xff, 0x80)
     BitVector.empty.drop(4) shouldBe BitVector.empty
     BitVector.high(4).drop(8) shouldBe BitVector.empty
+    BitVector.high(8).drop(-20) shouldBe BitVector.high(8)
     forAll { (x: BitVector, n: Long) =>
       val m = if (x.nonEmpty) (n % x.size).abs else 0
       x.compact.drop(m).toIndexedSeq.take(4) shouldBe x.toIndexedSeq.drop(m.toInt).take(4)
@@ -166,6 +167,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).take(9).toByteVector shouldBe ByteVector(0xff, 0x80)
     BitVector.high(12).take(9) shouldBe BitVector.high(9)
     BitVector.high(4).take(100).toByteVector shouldBe ByteVector(0xf0)
+    BitVector.high(12).take(-100) shouldBe BitVector.empty
     forAll { (x: BitVector, n0: Long, m0: Long) =>
       x.depth should be <= 18
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
@@ -552,5 +554,11 @@ class BitVectorTest extends BitsSuite {
       bvs.headOption.foreach(h => c.startsWith(h))
       bvs.lastOption.foreach(l => c.endsWith(l))
     }
+  }
+
+  test("slice") {
+    hex"001122334455".bits.slice(8, 32) shouldBe hex"112233".bits
+    hex"001122334455".bits.slice(-21, 32) shouldBe hex"00112233".bits
+    hex"001122334455".bits.slice(-21, -5) shouldBe hex"".bits
   }
 }

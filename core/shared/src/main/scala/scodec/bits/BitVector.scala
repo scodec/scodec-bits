@@ -266,7 +266,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def slice(from: Long, until: Long): BitVector =
-    drop(from).take(until - from)
+    drop(from).take(until - (from max 0))
 
   /**
    * Returns a vector whose contents are the results of taking the first `n` bits of this vector.

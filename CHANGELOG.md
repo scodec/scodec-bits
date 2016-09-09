@@ -1,3 +1,7 @@
+1.1.2
+=====
+ - Fixed bug in `slice` on `BitVector`/`ByteVector` when passed negative indices
+
 1.1.1
 =====
  - Added `zipWith2` and `zipWith3` to `ByteVector`
