@@ -1116,11 +1116,11 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     import util.hashing.MurmurHash3._
     val chunkSize = 8L * 1024 * 64
     @annotation.tailrec
-    def go(bits: BitVector, h: Int): Int = {
-      if (bits.isEmpty) finalizeHash(h, (size % Int.MaxValue.toLong).toInt + 1)
-      else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
+    def go(bits: BitVector, h: Int, iter: Int): Int = {
+      if (bits.isEmpty) finalizeHash(h, iter)
+      else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)), iter + 1)
     }
-    go(this, stringHash("BitVector"))
+    go(this, stringHash("BitVector"), 1)
   }
 
   /**

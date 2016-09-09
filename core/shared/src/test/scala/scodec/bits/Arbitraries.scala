@@ -18,7 +18,8 @@ object Arbitraries {
   // very deeply right nested - to check for SOE
   val hugeBitStreams = genBitStream(
     genBitVector(30,7),
-    Gen.choose(1000,5000))
+    Gen.choose(4500,5000))
+
 
   implicit val shrinkBitVector: Shrink[BitVector] =
     Shrink[BitVector] { b =>

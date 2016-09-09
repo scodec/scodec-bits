@@ -34,12 +34,19 @@ class BitVectorTest extends BitsSuite {
     (b2.toByteVector eq b2.toByteVector) shouldBe true
   }
 
-  test("hashCode/equals/take/drop stack safety") {
+  test("equals/take/drop stack safety") {
     forAll (hugeBitStreams) { b =>
       b shouldBe b // this exercises take/drop
+    }
+  }
+
+  test("hashCode/take/drop stack safety") {
+    forAll (hugeBitStreams) { b =>
       b.hashCode shouldBe b.hashCode
     }
   }
+
+
 
   test("acquire stack safety for lazy BitVector") {
     val nats = BitVector.unfold(0)(i => Some(BitVector.high(1000) -> (i+1)))
