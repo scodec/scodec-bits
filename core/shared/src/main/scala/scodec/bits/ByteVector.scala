@@ -1842,4 +1842,11 @@ object ByteVector {
   }
 
   private def toIntSize(size: Long): Int = if (size <= Int.MaxValue) size.toInt else throw new IllegalArgumentException(s"size must be <= Int.MaxValue but is $size")
+
+  /**
+   * Extractor used in support of pattern matching on the bytes of a vector.
+   *
+   * @group constructors
+   */
+  def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
 }
