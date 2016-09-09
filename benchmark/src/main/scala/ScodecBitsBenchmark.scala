@@ -2,7 +2,6 @@ package scodec.bits
 
 import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.{ Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State }
-import akka.util.ByteString
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Array(Mode.AverageTime))
@@ -14,20 +13,16 @@ class ScodecBitsBenchmark {
 
   val bitChunks_N = (0L until N).map(b => BitVector(b.toByte)).toList
   val byteChunks_N = (0L until N).map(b => ByteVector(b.toByte)).toList
-  val byteStringChunks_N = (0L until N).map(b => ByteString(b.toByte)).toList
   val bytes_N = Array.tabulate(N.toInt)(i => i.toByte)
   val bitVector_N = bitChunks_N.foldLeft(BitVector.empty)(_ ++ _)
   val byteVector_N = byteChunks_N.foldLeft(ByteVector.empty)(_ ++ _)
-  val byteString_N = byteStringChunks_N.foldLeft(ByteString())(_ ++ _)
 
   val bitChunks_M = (0L until M).map(b => BitVector(b.toByte)).toList
   val byteChunks_M = (0L until M).map(b => ByteVector(b.toByte)).toList
-  val byteStringChunks_M = (0L until M).map(b => ByteString(b.toByte)).toList
   val bytes_M = Array.tabulate(M.toInt)(i => i.toByte)
   val bitVector_M = bitChunks_M.foldLeft(BitVector.empty)(_ ++ _)
   val bitVector_M_compact = bitVector_M.copy
   val byteVector_M = byteChunks_M.foldLeft(ByteVector.empty)(_ ++ _)
-  val byteString_M = byteStringChunks_M.foldLeft(ByteString())(_ ++ _)
 
   @Benchmark def listCons_N(): Int =
     bitChunks_N.foldLeft(List[BitVector]())((t,h) => h :: t).size
@@ -47,19 +42,6 @@ class ScodecBitsBenchmark {
     bytes_N.foldLeft(ByteVector.empty)(_ :+ _).size
   @Benchmark def byteVectorSnocUnboxed_N(): Long = {
     var b = ByteVector.empty
-    var i = 0
-    while (i < bytes_N.length) {
-      b = b :+ bytes_N(i)
-      i += 1
-    }
-    b.size
-  }
-  @Benchmark def byteStringAppendSnoc_N(): Int =
-    byteStringChunks_N.foldLeft(ByteString())(_ ++ _).size
-  @Benchmark def byteStringSnoc_N(): Int =
-    bytes_N.foldLeft(ByteString())(_ :+ _).size
-  @Benchmark def byteStringSnocUnboxed_N(): Int = {
-    var b = ByteString()
     var i = 0
     while (i < bytes_N.length) {
       b = b :+ bytes_N(i)
@@ -89,19 +71,6 @@ class ScodecBitsBenchmark {
     bytes_M.foldLeft(ByteVector.empty)(_ :+ _).size
   @Benchmark def byteVectorSnocUnboxed_M(): Long = {
     var b = ByteVector.empty
-    var i = 0
-    while (i < bytes_M.length) {
-      b = b :+ bytes_M(i)
-      i += 1
-    }
-    b.size
-  }
-  @Benchmark def byteStringAppendSnoc_M(): Int =
-    byteStringChunks_M.foldLeft(ByteString())(_ ++ _).size
-  @Benchmark def byteStringSnoc_M(): Int =
-    bytes_M.foldLeft(ByteString())(_ :+ _).size
-  @Benchmark def byteStringSnocUnboxed_M(): Int = {
-    var b = ByteString()
     var i = 0
     while (i < bytes_M.length) {
       b = b :+ bytes_M(i)

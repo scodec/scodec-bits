@@ -22,7 +22,7 @@ lazy val core = crossProject.in(file("core")).
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
       "org.scalatest" %%% "scalatest" % "3.0.0" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.13.1" % "test")
+      "org.scalacheck" %%% "scalacheck" % "1.13.2" % "test")
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
@@ -50,6 +50,12 @@ lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).e
   settings(commonSettings: _*).
   settings(
     publishArtifact := false,
-    libraryDependencies ++=
-      Seq("com.typesafe.akka" %% "akka-actor" % (if (scalaVersion.value.startsWith("2.10.")) "2.3.4" else "2.4.1"))
+    // Work-around for issue with sbt-jmh from https://github.com/ktoso/sbt-jmh/issues/76
+    libraryDependencies := {
+      libraryDependencies.value.map {
+        case x if x.name == "sbt-jmh-extras" =>
+          x.cross(CrossVersion.binaryMapped(_ => "2.10"))
+        case x => x
+      }
+    }
   )
