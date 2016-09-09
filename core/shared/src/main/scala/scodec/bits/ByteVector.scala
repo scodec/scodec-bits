@@ -270,7 +270,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group collection
    */
   final def slice(from: Long, until: Long): ByteVector =
-    drop(from).take(until - from)
+    drop(from).take(until - (from max 0))
 
   /**
    * Returns a vector whose contents are the results of taking the first `n` bytes of this vector.

@@ -388,4 +388,28 @@ class ByteVectorTest extends BitsSuite {
     val huge2 = huge ++ huge ++ hex"deadbeef"
     huge2.takeRight(2) shouldBe hex"beef"
   }
+
+  test("take") {
+    hex"0011223344".take(3) shouldBe hex"001122"
+    hex"0011223344".take(1000) shouldBe hex"0011223344"
+    hex"0011223344".take(-10) shouldBe hex""
+  }
+
+  test("drop") {
+    hex"0011223344".drop(3) shouldBe hex"3344"
+    hex"0011223344".drop(-10) shouldBe hex"0011223344"
+    hex"0011223344".drop(1000) shouldBe hex""
+  }
+
+  test("slice") {
+    hex"001122334455".slice(1, 4) shouldBe hex"112233"
+    hex"001122334455".slice(-21, 4) shouldBe hex"00112233"
+    hex"001122334455".slice(-21, -4) shouldBe hex""
+  }
+
+  test("slice is consistent with array slice") {
+    forAll { (b: ByteVector, from: Int, until: Int) =>
+      b.slice(from.toLong, until.toLong) shouldBe ByteVector.view(b.toArray.slice(from, until))
+    }
+  }
 }
