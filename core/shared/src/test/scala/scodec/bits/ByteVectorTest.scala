@@ -397,8 +397,8 @@ class ByteVectorTest extends BitsSuite {
 
   test("drop") {
     hex"0011223344".drop(3) shouldBe hex"3344"
-    hex"0011223344".drop(1000) shouldBe hex""
     hex"0011223344".drop(-10) shouldBe hex"0011223344"
+    hex"0011223344".drop(1000) shouldBe hex""
   }
 
   test("slice") {
