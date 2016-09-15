@@ -2,8 +2,10 @@ package scodec.bits
 
 import java.io.ByteArrayOutputStream
 import org.scalatest.Matchers._
+import java.util.UUID
 
 import Arbitraries._
+import org.scalacheck._
 
 class ByteVectorTest extends BitsSuite {
 
@@ -331,6 +333,18 @@ class ByteVectorTest extends BitsSuite {
     forAll { (n: Long) =>
       ByteVector.fromLong(n).toLong() shouldBe n
       ByteVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+    }
+  }
+
+  test("UUID conversions") {
+    // Valid conversions
+    forAll { (u: UUID) =>
+      ByteVector.fromUUID(u).toUUID shouldBe u
+    }
+    // "Invalid" conversions
+    val badlySizedByteVector: Gen[ByteVector] = byteVectors suchThat (_.length != 16)
+    forAll(badlySizedByteVector) { badlySizedByteVector =>
+      an[IllegalArgumentException] should be thrownBy { badlySizedByteVector.toUUID }
     }
   }
 

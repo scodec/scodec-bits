@@ -6,6 +6,7 @@ import java.io.OutputStream
 import java.nio.{ ByteBuffer, CharBuffer }
 import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
@@ -855,6 +856,24 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     bits.toLong(signed, ordering)
 
   /**
+    * Converts the contents of this byte vector to a UUID.
+    *
+    * @throws IllegalArgumentException if size is not exactly 16.
+    * @group conversions
+    */
+  final def toUUID: UUID = {
+    // Sanity check
+    if (size != 16) {
+      throw new IllegalArgumentException(s"Cannot convert ByteVector of size $size to UUID; must be 16 bytes")
+    }
+    // Convert
+    val byteBuffer = toByteBuffer
+    val mostSignificant = byteBuffer.getLong
+    val leastSignificant = byteBuffer.getLong
+    new UUID(mostSignificant, leastSignificant)
+  }
+
+  /**
    * Decodes this vector as a string using the implicitly available charset.
    * @group conversions
    */
@@ -1481,6 +1500,21 @@ object ByteVector {
    */
   def fromLong(l: Long, size: Int = 8, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromLong(l, size * 8, ordering).bytes
+
+  /**
+    * Constructs a byte vector containing the binary representation of the specified UUID.
+    * The bytes are in MSB-to-LSB order.
+    *
+    * @param u value to encode
+    * @group conversions
+    */
+  final def fromUUID(u: UUID): ByteVector = {
+    val buf = ByteBuffer.allocate(16)
+    buf.putLong(u.getMostSignificantBits)
+    buf.putLong(u.getLeastSignificantBits)
+    // Go via Array[Byte] to avoid hanging on to intermediate ByteBuffer via AtByteBuffer.
+    view(buf.array())
+  }
 
   /**
    * Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
