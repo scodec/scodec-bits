@@ -4,6 +4,7 @@ import org.scalacheck.{Arbitrary, Gen, Shrink}
 import Arbitrary.arbitrary
 
 import java.nio.ByteBuffer
+import java.util.UUID
 
 object Arbitraries {
 
@@ -106,4 +107,8 @@ object Arbitraries {
         Stream.iterate(b.take(b.size / 2))(b2 => b2.take(b2.size / 2)).takeWhile(_.nonEmpty) ++ Stream(ByteVector.empty)
       else Stream.empty
     }
+
+  implicit val uuid: Arbitrary[UUID] =
+    Arbitrary(Gen.uuid)
+
 }

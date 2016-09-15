@@ -3,6 +3,8 @@ package scodec.bits
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitraries._
 import org.scalatest.Matchers._
+import org.scalacheck._
+import java.util.UUID
 
 class BitVectorTest extends BitsSuite {
   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
@@ -508,6 +510,18 @@ class BitVectorTest extends BitsSuite {
         BitVector.fromLong(n, size = 15, ordering = ByteOrdering.BigEndian).toLong(ordering = ByteOrdering.BigEndian) shouldBe n
         BitVector.fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
       }
+    }
+  }
+
+  test("UUID conversions") {
+    // Valid conversions
+    forAll { (u: UUID) =>
+      BitVector.fromUUID(u).toUUID shouldBe u
+    }
+    // "Invalid" conversions
+    val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary suchThat (_.length != 128)
+    forAll(badlySizedBitVector) { badlySizedBitVector =>
+      an[IllegalArgumentException] should be thrownBy { badlySizedBitVector.toUUID }
     }
   }
 

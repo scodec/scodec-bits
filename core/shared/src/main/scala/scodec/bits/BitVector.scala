@@ -3,6 +3,7 @@ package scodec.bits
 import java.nio.{ ByteBuffer, ByteOrder }
 import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.util.UUID
 import java.util.zip.{ DataFormatException, Deflater }
 import javax.crypto.Cipher
 
@@ -979,6 +980,24 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
+    * Converts the contents of this bit vector to a UUID.
+    *
+    * @throws IllegalArgumentException if size is not exactly 128.
+    * @group conversions
+    */
+  final def toUUID: UUID = {
+    // Sanity check
+    if (size != 128) {
+      throw new IllegalArgumentException(s"Cannot convert BitVector of size $size to UUID; must be 128 bits")
+    }
+    // Convert
+    val byteBuffer = toByteBuffer
+    val mostSignificant = byteBuffer.getLong
+    val leastSignificant = byteBuffer.getLong
+    new UUID(mostSignificant, leastSignificant)
+  }
+
+  /**
    * Decodes this vector as a string using the implicitly available charset.
    * @group conversions
    */
@@ -1386,6 +1405,21 @@ object BitVector {
     buffer.flip()
     val relevantBits = (BitVector.view(buffer) << (64L - size)).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
+  }
+
+  /**
+    * Constructs a byte vector containing the binary representation of the specified UUID.
+    * The bytes are in MSB-to-LSB order.
+    *
+    * @param u value to encode
+    * @group conversions
+    */
+  final def fromUUID(u: UUID): BitVector = {
+    val buf = ByteBuffer.allocate(16)
+    buf.putLong(u.getMostSignificantBits)
+    buf.putLong(u.getLeastSignificantBits)
+    // Go via Array[Byte] to avoid hanging on to intermediate ByteBuffer via AtByteBuffer.
+    view(buf.array())
   }
 
   /**
