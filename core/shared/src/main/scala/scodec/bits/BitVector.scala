@@ -1408,8 +1408,8 @@ object BitVector {
   }
 
   /**
-    * Constructs a byte vector containing the binary representation of the specified UUID.
-    * The bytes are in MSB-to-LSB order.
+    * Constructs a bit vector containing the binary representation of the specified UUID.
+    * The bits are in MSB-to-LSB order.
     *
     * @param u value to encode
     * @group conversions
@@ -1439,7 +1439,7 @@ object BitVector {
     }
 
   /**
-   * Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.
+   * Constructs a `BitVector` from a binary string or returns `None` if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    * @group base
@@ -1447,7 +1447,7 @@ object BitVector {
   def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).right.toOption
 
   /**
-   * Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
+   * Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    *
