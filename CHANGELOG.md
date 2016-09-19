@@ -2,6 +2,7 @@
 =====
  - Fixed bug in `slice` on `BitVector`/`ByteVector` when passed negative indices
  - Added an extractor for `ByteVector`, allowing pattern matching on the bytes that make up a vector.
+ - Added UUID conversions for `BitVector`/`ByteVector`
 
 1.1.1
 =====
