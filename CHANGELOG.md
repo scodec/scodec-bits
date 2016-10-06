@@ -3,6 +3,7 @@
  - Fixed bug in `slice` on `BitVector`/`ByteVector` when passed negative indices
  - Added an extractor for `ByteVector`, allowing pattern matching on the bytes that make up a vector
  - Added an overload of `ByteVector.view` that allows viewing a slice of an array
+ - Added UUID conversions for `BitVector`/`ByteVector`
 
 1.1.1
 =====

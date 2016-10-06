@@ -52,7 +52,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   def size: Long
 
   /**
-   * Returns the number of bits in this vector, or `None` if the size does not
+   * Returns the number of bytes in this vector, or `None` if the size does not
    * fit into an `Int`.
    *
    * @group collection
@@ -212,7 +212,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    *
    * The resulting vector's size is `n min size`.
    *
-   * Note: if an `n`-bit vector is required, use the `acquire` method instead.
+   * Note: if an `n`-byte vector is required, use the `acquire` method instead.
    *
    * @see acquire
    * @group collection
@@ -1474,7 +1474,7 @@ object ByteVector {
   def high(size: Long): ByteVector = fill(size)(0xff)
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified byte.
+   * Constructs a `ByteVector` vector with the 2's complement encoding of the specified byte.
    * @param b value to encode
    * @group numeric
    */
@@ -1482,7 +1482,7 @@ object ByteVector {
     BitVector.fromByte(b, 8).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` vector with the 2's complement encoding of the specified value.
    * @param s value to encode
    * @param size size of vector (<= 2)
    * @param ordering byte ordering of vector
@@ -1492,7 +1492,7 @@ object ByteVector {
     BitVector.fromShort(s, size * 8, ordering).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` with the 2's complement encoding of the specified value.
    * @param i value to encode
    * @param size size of vector (<= 4)
    * @param ordering byte ordering of vector
@@ -1502,7 +1502,7 @@ object ByteVector {
     BitVector.fromInt(i, size * 8, ordering).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` with the 2's complement encoding of the specified value.
    * @param l value to encode
    * @param size size of vector (<= 8)
    * @param ordering byte ordering of vector
@@ -1512,7 +1512,7 @@ object ByteVector {
     BitVector.fromLong(l, size * 8, ordering).bytes
 
   /**
-    * Constructs a byte vector containing the binary representation of the specified UUID.
+    * Constructs a `ByteVector` containing the binary representation of the specified UUID.
     * The bytes are in MSB-to-LSB order.
     *
     * @param u value to encode
