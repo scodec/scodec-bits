@@ -1412,6 +1412,16 @@ object ByteVector {
     Chunk(View(new AtArray(bytes), 0, bytes.length.toLong))
 
   /**
+   * Constructs a `ByteVector` from a slice of an `Array[Byte]`.
+   * Unlike `apply`, this does not make a copy of the input array, so
+   * callers should take care not to modify the contents of the array
+   * passed to this function.
+   * @group constructors
+   */
+  def view(bytes: Array[Byte], offset: Int, size: Int): ByteVector =
+    Chunk(View(new AtArray(bytes), offset, size.toLong))
+
+  /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
