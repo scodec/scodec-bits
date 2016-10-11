@@ -58,18 +58,29 @@ object crc {
     def output(crcreg: BitVector): BitVector =
       (if (reflectOutput) crcreg.reverse else crcreg) xor finalXor
 
-    @annotation.tailrec
-    def calculate(remaining: BitVector, crcreg: BitVector): BitVector = {
-      if (remaining.isEmpty) {
-        output(crcreg)
-      } else if (remaining sizeLessThan 8) {
-        output(goBitwise(poly, if (reflectInput) remaining.reverseBitOrder else remaining, crcreg))
+    def calculate(input: BitVector, initial: BitVector): BitVector = {
+      var crcreg = initial
+      val size = input.size
+      val byteAligned = size % 8 == 0
+      val data = if (byteAligned) input.bytes else input.bytes.init
+      if (reflectInput) {
+        data.foreach { inputByte =>
+          val index = crcreg.take(8) ^ BitVector(inputByte).reverse
+          val indexAsInt = index.bytes.head.toInt & 0x0ff
+          crcreg = (crcreg << 8) ^ table(indexAsInt)
+        }
       } else {
-        val shifted = crcreg << m
-        val inputByte = remaining.take(m)
-        val index = crcreg.take(m) xor (if (reflectInput) inputByte.reverse else inputByte)
-        val indexAsInt = index.bytes.head.toInt & 0x0ff
-        calculate(remaining drop m, shifted xor table(indexAsInt))
+        data.foreach { inputByte =>
+          val index = crcreg.take(8) ^ BitVector(inputByte)
+          val indexAsInt = index.bytes.head.toInt & 0x0ff
+          crcreg = (crcreg << 8) ^ table(indexAsInt)
+        }
+      }
+      if (byteAligned) {
+        output(crcreg)
+      } else {
+        val trailer = input.takeRight(size % 8)
+        output(goBitwise(poly, if (reflectInput) trailer.reverseBitOrder else trailer, crcreg))
       }
     }
 
@@ -91,13 +102,12 @@ object crc {
    */
   def int32(poly: Int, initial: Int, reflectInput: Boolean, reflectOutput: Boolean, finalXor: Int): BitVector => Int = {
     val table = Array.ofDim[Int](256)
-    val m = 8L
     @annotation.tailrec
     def calculateTableIndex(idx: Int): Unit = {
       if (idx < table.size) {
         @annotation.tailrec
         def shift(k: Int, crcreg: Int): Int = {
-          if (k < m) {
+          if (k < 8) {
             shift(k + 1, {
               val shifted = crcreg << 1
               if ((crcreg & 0x80000000) != 0) shifted ^ poly else shifted
@@ -113,17 +123,27 @@ object crc {
     def output(crcreg: Int): Int =
       (if (reflectOutput) BitVector.fromInt(crcreg).reverse.toInt() else crcreg) ^ finalXor
 
-    @annotation.tailrec
-    def calculate(remaining: BitVector, crcreg: Int): Int = {
-      if (remaining.isEmpty) {
-        output(crcreg)
-      } else if (remaining sizeLessThan 8) {
-        output(goBitwise(poly, if (reflectInput) remaining.reverseBitOrder else remaining, crcreg))
+    def calculate(input: BitVector, initial: Int): Int = {
+      var crcreg = initial
+      val size = input.size
+      val byteAligned = size % 8 == 0
+      val data = if (byteAligned) input.bytes else input.bytes.init
+      if (reflectInput) {
+        data.foreach { inputByte =>
+          val index = (crcreg >>> 24) ^ (BitVector.reverseBitsInByte(inputByte) & 0xFF)
+          crcreg = (crcreg << 8) ^ table(index)
+        }
       } else {
-        val shifted = crcreg << m
-        val inputByte = remaining.take(m)
-        val index = (crcreg >>> 24) ^ (if (reflectInput) inputByte.reverse else inputByte).toInt(signed = false)
-        calculate(remaining drop m, shifted ^ table(index))
+        data.foreach { inputByte =>
+          val index = (crcreg >>> 24) ^ (inputByte & 0xFF)
+          crcreg = (crcreg << 8) ^ table(index)
+        }
+      }
+      if (byteAligned) {
+        output(crcreg)
+      } else {
+        val trailer = input.takeRight(size % 8)
+        output(goBitwise(poly, if (reflectInput) trailer.reverseBitOrder else trailer, crcreg))
       }
     }
 

@@ -1419,7 +1419,7 @@ object ByteVector {
    * @group constructors
    */
   def view(bytes: Array[Byte], offset: Int, size: Int): ByteVector =
-    Chunk(View(new AtArray(bytes), offset, size.toLong))
+    Chunk(View(new AtArray(bytes), offset.toLong, size.toLong))
 
   /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this

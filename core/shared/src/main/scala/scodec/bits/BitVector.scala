@@ -438,7 +438,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    */
   final def reverse: BitVector =
     // todo: this has a log time implementation, assuming a balanced tree
-    BitVector(compact.underlying.reverse.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.reverse.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
 
   /**
    * Returns a new vector of the same size with the byte order reversed.
@@ -479,7 +479,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def reverseBitOrder: BitVector =
-    BitVector(compact.underlying.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
 
   /**
    * Returns the number of bits that are high.
@@ -1926,7 +1926,7 @@ object BitVector {
   private def bytesNeededForBits(size: Long): Long =
     (size + 7) / 8
 
-  private def reverseBitsInBytes(b: Byte): Byte = {
+  private[bits] def reverseBitsInByte(b: Byte): Byte = {
     // See Hacker's Delight Chapter 7 page 101
     var x = (b & 0x055) << 1 | (b & 0x0aa) >> 1
     x = (x & 0x033) << 2 | (x & 0x0cc) >> 2

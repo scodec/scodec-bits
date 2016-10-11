@@ -4,6 +4,7 @@
  - Added an extractor for `ByteVector`, allowing pattern matching on the bytes that make up a vector
  - Added an overload of `ByteVector.view` that allows viewing a slice of an array
  - Added UUID conversions for `BitVector`/`ByteVector`
+ - Improved performance of 32-bit CRCs by a factory of 10
 
 1.1.1
 =====
