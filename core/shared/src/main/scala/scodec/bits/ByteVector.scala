@@ -1431,14 +1431,14 @@ object ByteVector {
     Chunk(View(new AtByteBuffer(bytes.slice()), 0, bytes.limit.toLong))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Long => Byte` and a size.
    * @group constructors
    */
   def viewAt(at: Long => Byte, size: Long): ByteVector =
     Chunk(View(new At { def apply(i: Long) = at(i) }, 0, size))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `At` and a size.
    */
   private[scodec] def view(at: At, size: Long): ByteVector =
     Chunk(View(at, 0, size))
