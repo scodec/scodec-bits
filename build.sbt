@@ -49,13 +49,5 @@ lazy val coreJS = core.js
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
   settings(
-    publishArtifact := false,
-    // Work-around for issue with sbt-jmh from https://github.com/ktoso/sbt-jmh/issues/76
-    libraryDependencies := {
-      libraryDependencies.value.map {
-        case x if x.name == "sbt-jmh-extras" =>
-          x.cross(CrossVersion.binaryMapped(_ => "2.10"))
-        case x => x
-      }
-    }
+    publishArtifact := false
   )
