@@ -3,6 +3,8 @@ package scodec.bits
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitraries._
 import org.scalatest.Matchers._
+import org.scalacheck._
+import java.util.UUID
 
 class BitVectorTest extends BitsSuite {
   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
@@ -34,10 +36,21 @@ class BitVectorTest extends BitsSuite {
     (b2.toByteVector eq b2.toByteVector) shouldBe true
   }
 
-  test("hashCode/equals/take/drop stack safety") {
+  test("equals/take/drop stack safety") {
     forAll (hugeBitStreams) { b =>
       b shouldBe b // this exercises take/drop
+    }
+  }
+
+  test("hashCode/take/drop stack safety") {
+    forAll (hugeBitStreams) { b =>
       b.hashCode shouldBe b.hashCode
+    }
+  }
+
+  test("size stack safety") {
+    forAll (hugeBitStreams) { b =>
+      b.size shouldBe b.size
     }
   }
 
@@ -138,6 +151,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).drop(3).toByteVector shouldBe ByteVector(0xff, 0x80)
     BitVector.empty.drop(4) shouldBe BitVector.empty
     BitVector.high(4).drop(8) shouldBe BitVector.empty
+    BitVector.high(8).drop(-20) shouldBe BitVector.high(8)
     forAll { (x: BitVector, n: Long) =>
       val m = if (x.nonEmpty) (n % x.size).abs else 0
       x.compact.drop(m).toIndexedSeq.take(4) shouldBe x.toIndexedSeq.drop(m.toInt).take(4)
@@ -155,6 +169,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).take(9).toByteVector shouldBe ByteVector(0xff, 0x80)
     BitVector.high(12).take(9) shouldBe BitVector.high(9)
     BitVector.high(4).take(100).toByteVector shouldBe ByteVector(0xf0)
+    BitVector.high(12).take(-100) shouldBe BitVector.empty
     forAll { (x: BitVector, n0: Long, m0: Long) =>
       x.depth should be <= 18
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
@@ -498,6 +513,18 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
+  test("UUID conversions") {
+    // Valid conversions
+    forAll { (u: UUID) =>
+      BitVector.fromUUID(u).toUUID shouldBe u
+    }
+    // "Invalid" conversions
+    val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary suchThat (_.length != 128)
+    forAll(badlySizedBitVector) { badlySizedBitVector =>
+      an[IllegalArgumentException] should be thrownBy { badlySizedBitVector.toUUID }
+    }
+  }
+
   test("buffering") {
     implicit val longs = Arbitrary(Gen.choose(-1L,50L))
 
@@ -541,5 +568,11 @@ class BitVectorTest extends BitsSuite {
       bvs.headOption.foreach(h => c.startsWith(h))
       bvs.lastOption.foreach(l => c.endsWith(l))
     }
+  }
+
+  test("slice") {
+    hex"001122334455".bits.slice(8, 32) shouldBe hex"112233".bits
+    hex"001122334455".bits.slice(-21, 32) shouldBe hex"00112233".bits
+    hex"001122334455".bits.slice(-21, -5) shouldBe hex"".bits
   }
 }

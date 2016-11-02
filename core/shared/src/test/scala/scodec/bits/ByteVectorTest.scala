@@ -1,10 +1,11 @@
 package scodec.bits
 
-import org.scalacheck.Arbitrary
 import java.io.ByteArrayOutputStream
 import org.scalatest.Matchers._
+import java.util.UUID
 
 import Arbitraries._
+import org.scalacheck._
 
 class ByteVectorTest extends BitsSuite {
 
@@ -46,6 +47,36 @@ class ByteVectorTest extends BitsSuite {
     ByteVector(1,2,3,4).insert(1, 0) shouldBe ByteVector(1,0,2,3,4)
     forAll { (b: ByteVector) =>
       b.foldLeft(ByteVector.empty)((acc,b) => acc.insert(acc.size, b)) shouldBe b
+    }
+  }
+
+  test("zipWith") {
+    val b1 = ByteVector(0, 1, 2, 3)
+    val b2 = ByteVector(1, 2, 3, 4)
+    b1.zipWithI(b2)(_ + _) shouldBe ByteVector(1, 3, 5, 7)
+    forAll { (b: ByteVector) =>
+      b.zipWithI(b)(_ - _) shouldBe ByteVector.fill(b.size)(0)
+    }
+  }
+
+  test("zipWith2") {
+    val b1 = ByteVector(0, 1, 2, 3)
+    val b2 = ByteVector(1, 2, 3, 4)
+    val b3 = ByteVector(2, 3, 4, 5)
+    b1.zipWithI2(b2, b3)(_ + _ + _) shouldBe ByteVector(3, 6, 9, 12)
+    forAll { (b: ByteVector) =>
+      b.zipWithI2(b, b)(_  + _ - _) shouldBe b
+    }
+  }
+
+  test("zipWith3") {
+    val b1 = ByteVector(0, 1, 2, 3)
+    val b2 = ByteVector(1, 2, 3, 4)
+    val b3 = ByteVector(2, 3, 4, 5)
+    val b4 = ByteVector(3, 4, 5, 6)
+    b1.zipWithI3(b2, b3, b4)(_ + _ + _ + _) shouldBe ByteVector(6, 10, 14, 18)
+    forAll { (b: ByteVector) =>
+      b.zipWithI3(b, b, b)(_ + _ - _ - _) shouldBe ByteVector.fill(b.size)(0)
     }
   }
 
@@ -305,6 +336,18 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("UUID conversions") {
+    // Valid conversions
+    forAll { (u: UUID) =>
+      ByteVector.fromUUID(u).toUUID shouldBe u
+    }
+    // "Invalid" conversions
+    val badlySizedByteVector: Gen[ByteVector] = byteVectors suchThat (_.length != 16)
+    forAll(badlySizedByteVector) { badlySizedByteVector =>
+      an[IllegalArgumentException] should be thrownBy { badlySizedByteVector.toUUID }
+    }
+  }
+
   test("concat") {
     forAll { (bvs: List[ByteVector]) =>
       val c = ByteVector.concat(bvs)
@@ -358,5 +401,40 @@ class ByteVectorTest extends BitsSuite {
     val huge = ByteVector.fill(Int.MaxValue * 2L)(0)
     val huge2 = huge ++ huge ++ hex"deadbeef"
     huge2.takeRight(2) shouldBe hex"beef"
+  }
+
+  test("take") {
+    hex"0011223344".take(3) shouldBe hex"001122"
+    hex"0011223344".take(1000) shouldBe hex"0011223344"
+    hex"0011223344".take(-10) shouldBe hex""
+  }
+
+  test("drop") {
+    hex"0011223344".drop(3) shouldBe hex"3344"
+    hex"0011223344".drop(-10) shouldBe hex"0011223344"
+    hex"0011223344".drop(1000) shouldBe hex""
+  }
+
+  test("slice") {
+    hex"001122334455".slice(1, 4) shouldBe hex"112233"
+    hex"001122334455".slice(-21, 4) shouldBe hex"00112233"
+    hex"001122334455".slice(-21, -4) shouldBe hex""
+  }
+
+  test("slice is consistent with array slice") {
+    forAll { (b: ByteVector, from: Int, until: Int) =>
+      b.slice(from.toLong, until.toLong) shouldBe ByteVector.view(b.toArray.slice(from, until))
+    }
+  }
+
+  test("unapply") {
+    val ByteVector(x, y, z) = hex"000102"
+    x shouldBe 0.toByte
+    y shouldBe 1.toByte
+    z shouldBe 2.toByte
+
+    hex"000102" match {
+      case ByteVector(0, 1, 2) => // OK
+    }
   }
 }

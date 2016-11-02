@@ -6,6 +6,7 @@ import java.io.OutputStream
 import java.nio.{ ByteBuffer, CharBuffer }
 import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
@@ -51,7 +52,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   def size: Long
 
   /**
-   * Returns the number of bits in this vector, or `None` if the size does not
+   * Returns the number of bytes in this vector, or `None` if the size does not
    * fit into an `Int`.
    *
    * @group collection
@@ -211,7 +212,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    *
    * The resulting vector's size is `n min size`.
    *
-   * Note: if an `n`-bit vector is required, use the `acquire` method instead.
+   * Note: if an `n`-byte vector is required, use the `acquire` method instead.
    *
    * @see acquire
    * @group collection
@@ -270,7 +271,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group collection
    */
   final def slice(from: Long, until: Long): ByteVector =
-    drop(from).take(until - from)
+    drop(from).take(until - (from max 0))
 
   /**
    * Returns a vector whose contents are the results of taking the first `n` bytes of this vector.
@@ -319,6 +320,33 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     reverse.foldLeft(z)((tl,h) => f(h,tl))
 
   /**
+   * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going left to right.
+   * @param z    Starting value
+   * @param f    operator to apply
+   * @group collection
+   */
+  final def foldLeftBB[A](z: A)(f: (A, ByteBuffer) => A): A = {
+    @annotation.tailrec
+    def go(rem:List[ByteVector], a:A): A = rem match {
+      case Chunk(bs)   :: rem => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
+      case Append(l,r) :: rem => go(l :: r :: rem, a)
+      case Chunks(Append(l,r)) :: rem => go(l :: r :: rem, a)
+      case (b: Buffer) :: rem => go(b.unbuffer :: rem, a)
+      case Nil => a
+    }
+    go(this :: Nil, z)
+  }
+
+  /**
+   * Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going right ot left.
+   * @param z    Starting value
+   * @param f    operator to apply
+   * @group collection
+   */
+  final def foldRightBB[A](z: A)(f: (ByteBuffer, A) => A): A =
+    reverse.foldLeftBB(z)((tl,h) => f(h,tl))
+
+  /**
    * Applies the specified function to each element of this vector.
    * @group collection
    */
@@ -351,6 +379,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     }
     go(this::Nil)
   }
+
 
   /**
    * Returns true if this byte vector starts with the specified vector.
@@ -827,6 +856,24 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     bits.toLong(signed, ordering)
 
   /**
+    * Converts the contents of this byte vector to a UUID.
+    *
+    * @throws IllegalArgumentException if size is not exactly 16.
+    * @group conversions
+    */
+  final def toUUID: UUID = {
+    // Sanity check
+    if (size != 16) {
+      throw new IllegalArgumentException(s"Cannot convert ByteVector of size $size to UUID; must be 16 bytes")
+    }
+    // Convert
+    val byteBuffer = toByteBuffer
+    val mostSignificant = byteBuffer.getLong
+    val leastSignificant = byteBuffer.getLong
+    new UUID(mostSignificant, leastSignificant)
+  }
+
+  /**
    * Decodes this vector as a string using the implicitly available charset.
    * @group conversions
    */
@@ -874,9 +921,35 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   final def zipWith(other: ByteVector)(f: (Byte,Byte) => Byte): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b,b2) })
 
+  /**
+   * See [[zipWith]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWith2(other: ByteVector, other2: ByteVector)(f: (Byte,Byte,Byte) => Byte): ByteVector =
+    zipWithS(other, other2)(new F3B { def apply(b: Byte, b2: Byte, b3: Byte) = f(b,b2,b3) })
+
+  /**
+   * See [[zipWith]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWith3(other: ByteVector, other2: ByteVector, other3: ByteVector)(f: (Byte,Byte,Byte,Byte) => Byte): ByteVector =
+    zipWithS(other, other2, other3)(new F4B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte) = f(b,b2,b3,b4) })
+
   private[scodec] final def zipWithS(other: ByteVector)(f: F2B): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i)) }
     Chunk(View(at, 0, size min other.size))
+  }
+
+  private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector)(f: F3B): ByteVector = {
+    val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i)) }
+    Chunk(View(at, 0, (size min other.size) min other2.size))
+  }
+
+  private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector, other3: ByteVector)(f: F4B): ByteVector = {
+    val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i), other3(i)) }
+    Chunk(View(at, 0, ((size min other.size) min other2.size) min other3.size))
   }
 
   /**
@@ -889,6 +962,22 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    */
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
+
+  /**
+   * See [[zipWithI]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWithI2(other: ByteVector, other2: ByteVector)(op: (Byte, Byte, Byte) => Int): ByteVector =
+    zipWith2(other, other2) { case (l, r1, r2) => op(l, r1, r2).toByte }
+
+  /**
+   * See [[zipWithI]]
+   * $returnsView
+   * @group collection
+   */
+  final def zipWithI3(other: ByteVector, other2: ByteVector, other3: ByteVector)(op: (Byte, Byte, Byte, Byte) => Int): ByteVector =
+    zipWith3(other, other2, other3) { case (l, r1, r2, r3) => op(l, r1, r2, r3).toByte }
 
   /**
    * Compresses this vector using ZLIB.
@@ -1030,11 +1119,11 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     import util.hashing.MurmurHash3._
     val chunkSize = 1024 * 64L
     @annotation.tailrec
-    def go(bytes: ByteVector, h: Int): Int = {
-      if (bytes.isEmpty) finalizeHash(mix(h, (0x0ffffffff & size).toInt), (size >> 32).toInt)
-      else go(bytes.drop(chunkSize), mix(h, bytesHash(bytes.take(chunkSize).toArray)))
+    def go(bytes: ByteVector, h: Int, iter: Int): Int = {
+      if (bytes.isEmpty) finalizeHash(h, iter)
+      else go(bytes.drop(chunkSize), mix(h, bytesHash(bytes.take(chunkSize).toArray)), iter + 1)
     }
-    go(this, stringHash("ByteVector"))
+    go(this, stringHash("ByteVector"), 1)
   }
 
   /**
@@ -1109,7 +1198,11 @@ object ByteVector {
   private[scodec] abstract class F1B { def apply(b: Byte): Byte }
   private[scodec] abstract class F1BU { def apply(b: Byte): Unit }
   private[scodec] abstract class F1BB { def apply(b: Byte): Boolean }
+
   private[scodec] abstract class F2B { def apply(b: Byte, b2: Byte): Byte }
+  private[scodec] abstract class F3B { def apply(b: Byte, b2: Byte, b3: Byte): Byte }
+  private[scodec] abstract class F4B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte): Byte }
+  private[scodec] abstract class F5B { def apply(b: Byte, b2: Byte, b3: Byte, b4: Byte, b5: Byte): Byte }
 
   private[scodec] sealed abstract class At {
     def apply(i: Long): Byte
@@ -1319,6 +1412,16 @@ object ByteVector {
     Chunk(View(new AtArray(bytes), 0, bytes.length.toLong))
 
   /**
+   * Constructs a `ByteVector` from a slice of an `Array[Byte]`.
+   * Unlike `apply`, this does not make a copy of the input array, so
+   * callers should take care not to modify the contents of the array
+   * passed to this function.
+   * @group constructors
+   */
+  def view(bytes: Array[Byte], offset: Int, size: Int): ByteVector =
+    Chunk(View(new AtArray(bytes), offset.toLong, size.toLong))
+
+  /**
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
@@ -1328,14 +1431,14 @@ object ByteVector {
     Chunk(View(new AtByteBuffer(bytes.slice()), 0, bytes.limit.toLong))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `Long => Byte` and a size.
    * @group constructors
    */
   def viewAt(at: Long => Byte, size: Long): ByteVector =
     Chunk(View(new At { def apply(i: Long) = at(i) }, 0, size))
 
   /**
-   * Constructs a `ByteVector` from a function from `Int => Byte` and a size.
+   * Constructs a `ByteVector` from a function from `At` and a size.
    */
   private[scodec] def view(at: At, size: Long): ByteVector =
     Chunk(View(at, 0, size))
@@ -1371,7 +1474,7 @@ object ByteVector {
   def high(size: Long): ByteVector = fill(size)(0xff)
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified byte.
+   * Constructs a `ByteVector` vector with the 2's complement encoding of the specified byte.
    * @param b value to encode
    * @group numeric
    */
@@ -1379,7 +1482,7 @@ object ByteVector {
     BitVector.fromByte(b, 8).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` vector with the 2's complement encoding of the specified value.
    * @param s value to encode
    * @param size size of vector (<= 2)
    * @param ordering byte ordering of vector
@@ -1389,7 +1492,7 @@ object ByteVector {
     BitVector.fromShort(s, size * 8, ordering).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` with the 2's complement encoding of the specified value.
    * @param i value to encode
    * @param size size of vector (<= 4)
    * @param ordering byte ordering of vector
@@ -1399,7 +1502,7 @@ object ByteVector {
     BitVector.fromInt(i, size * 8, ordering).bytes
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
+   * Constructs a `ByteVector` with the 2's complement encoding of the specified value.
    * @param l value to encode
    * @param size size of vector (<= 8)
    * @param ordering byte ordering of vector
@@ -1407,6 +1510,21 @@ object ByteVector {
    */
   def fromLong(l: Long, size: Int = 8, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromLong(l, size * 8, ordering).bytes
+
+  /**
+    * Constructs a `ByteVector` containing the binary representation of the specified UUID.
+    * The bytes are in MSB-to-LSB order.
+    *
+    * @param u value to encode
+    * @group conversions
+    */
+  final def fromUUID(u: UUID): ByteVector = {
+    val buf = ByteBuffer.allocate(16)
+    buf.putLong(u.getMostSignificantBits)
+    buf.putLong(u.getLeastSignificantBits)
+    // Go via Array[Byte] to avoid hanging on to intermediate ByteBuffer via AtByteBuffer.
+    view(buf.array())
+  }
 
   /**
    * Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
@@ -1768,5 +1886,11 @@ object ByteVector {
   }
 
   private def toIntSize(size: Long): Int = if (size <= Int.MaxValue) size.toInt else throw new IllegalArgumentException(s"size must be <= Int.MaxValue but is $size")
-}
 
+  /**
+   * Extractor used in support of pattern matching on the bytes of a vector.
+   *
+   * @group constructors
+   */
+  def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
+}

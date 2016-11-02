@@ -1,3 +1,20 @@
+1.1.3
+=====
+
+1.1.2
+=====
+ - Fixed bug in `slice` on `BitVector`/`ByteVector` when passed negative indices
+ - Added an extractor for `ByteVector`, allowing pattern matching on the bytes that make up a vector
+ - Added an overload of `ByteVector.view` that allows viewing a slice of an array
+ - Added UUID conversions for `BitVector`/`ByteVector`
+ - Improved performance of 32-bit CRCs by a factory of 10
+
+1.1.1
+=====
+ - Added `zipWith2` and `zipWith3` to `ByteVector`
+ - Added `foldLeftBB` and `foldRightBB` to `ByteVector`, allowing zero-copy folds
+ - Fixed stack overflow in `BitVector#hashCode` and `BitVector#suspend` on very large vectors with lots of append/suspend nodes
+
 1.1.0
 =====
  - Changed `ByteVector` to be `Long` indexed instead of `Int` indexed.

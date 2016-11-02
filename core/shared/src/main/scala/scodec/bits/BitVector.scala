@@ -3,6 +3,7 @@ package scodec.bits
 import java.nio.{ ByteBuffer, ByteOrder }
 import java.nio.charset.{ CharacterCodingException, Charset }
 import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.util.UUID
 import java.util.zip.{ DataFormatException, Deflater }
 import javax.crypto.Cipher
 
@@ -266,7 +267,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def slice(from: Long, until: Long): BitVector =
-    drop(from).take(until - from)
+    drop(from).take(until - (from max 0))
 
   /**
    * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
@@ -437,7 +438,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    */
   final def reverse: BitVector =
     // todo: this has a log time implementation, assuming a balanced tree
-    BitVector(compact.underlying.reverse.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.reverse.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
 
   /**
    * Returns a new vector of the same size with the byte order reversed.
@@ -478,7 +479,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def reverseBitOrder: BitVector =
-    BitVector(compact.underlying.map(reverseBitsInBytes _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
 
   /**
    * Returns the number of bits that are high.
@@ -979,6 +980,24 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
+    * Converts the contents of this bit vector to a UUID.
+    *
+    * @throws IllegalArgumentException if size is not exactly 128.
+    * @group conversions
+    */
+  final def toUUID: UUID = {
+    // Sanity check
+    if (size != 128) {
+      throw new IllegalArgumentException(s"Cannot convert BitVector of size $size to UUID; must be 128 bits")
+    }
+    // Convert
+    val byteBuffer = toByteBuffer
+    val mostSignificant = byteBuffer.getLong
+    val leastSignificant = byteBuffer.getLong
+    new UUID(mostSignificant, leastSignificant)
+  }
+
+  /**
    * Decodes this vector as a string using the implicitly available charset.
    * @group conversions
    */
@@ -1116,11 +1135,11 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     import util.hashing.MurmurHash3._
     val chunkSize = 8L * 1024 * 64
     @annotation.tailrec
-    def go(bits: BitVector, h: Int): Int = {
-      if (bits.isEmpty) finalizeHash(h, (size % Int.MaxValue.toLong).toInt + 1)
-      else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)))
+    def go(bits: BitVector, h: Int, iter: Int): Int = {
+      if (bits.isEmpty) finalizeHash(h, iter)
+      else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)), iter + 1)
     }
-    go(this, stringHash("BitVector"))
+    go(this, stringHash("BitVector"), 1)
   }
 
   /**
@@ -1389,6 +1408,21 @@ object BitVector {
   }
 
   /**
+    * Constructs a bit vector containing the binary representation of the specified UUID.
+    * The bits are in MSB-to-LSB order.
+    *
+    * @param u value to encode
+    * @group conversions
+    */
+  final def fromUUID(u: UUID): BitVector = {
+    val buf = ByteBuffer.allocate(16)
+    buf.putLong(u.getMostSignificantBits)
+    buf.putLong(u.getLeastSignificantBits)
+    // Go via Array[Byte] to avoid hanging on to intermediate ByteBuffer via AtByteBuffer.
+    view(buf.array())
+  }
+
+  /**
    * Constructs a `BitVector` from a binary string or returns an error message if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
@@ -1405,7 +1439,7 @@ object BitVector {
     }
 
   /**
-   * Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.
+   * Constructs a `BitVector` from a binary string or returns `None` if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    * @group base
@@ -1413,7 +1447,7 @@ object BitVector {
   def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).right.toOption
 
   /**
-   * Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
+   * Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
    *
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    *
@@ -1737,13 +1771,22 @@ object BitVector {
     }
     var sizeLowerBound = left.size
 
-    def size =
+    def size = {
       if (knownSize != -1L) knownSize
       else { // faster to just allow recomputation if there's contention
-        val sz = left.size + right.size
+        @annotation.tailrec
+        def go(rem: List[BitVector], acc: Long): Long = rem match {
+          case Nil => acc
+          case Append(x, y) :: t => go(x :: y :: t, acc)
+          case Chunks(Append(x, y)) :: t => go(x :: y :: t, acc)
+          case (s: Suspend) :: t => go(s.underlying :: t, acc)
+          case h :: t => go(t, acc + h.size)
+        }
+        val sz = go(List(left, right), 0)
         knownSize = sz
         sz
       }
+    }
 
     def take(n: Long) = {
       // NB: not worth early termination in event that sizeLessThanOrEqual(n) is true -
@@ -1883,7 +1926,7 @@ object BitVector {
   private def bytesNeededForBits(size: Long): Long =
     (size + 7) / 8
 
-  private def reverseBitsInBytes(b: Byte): Byte = {
+  private[bits] def reverseBitsInByte(b: Byte): Byte = {
     // See Hacker's Delight Chapter 7 page 101
     var x = (b & 0x055) << 1 | (b & 0x0aa) >> 1
     x = (x & 0x033) << 2 | (x & 0x0cc) >> 2
@@ -1932,4 +1975,3 @@ object BitVector {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
 }
-

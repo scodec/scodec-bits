@@ -4,6 +4,7 @@ import org.scalacheck.{Arbitrary, Gen, Shrink}
 import Arbitrary.arbitrary
 
 import java.nio.ByteBuffer
+import java.util.UUID
 
 object Arbitraries {
 
@@ -18,7 +19,8 @@ object Arbitraries {
   // very deeply right nested - to check for SOE
   val hugeBitStreams = genBitStream(
     genBitVector(30,7),
-    Gen.choose(1000,5000))
+    Gen.choose(4500,5000))
+
 
   implicit val shrinkBitVector: Shrink[BitVector] =
     Shrink[BitVector] { b =>
@@ -105,4 +107,8 @@ object Arbitraries {
         Stream.iterate(b.take(b.size / 2))(b2 => b2.take(b2.size / 2)).takeWhile(_.nonEmpty) ++ Stream(ByteVector.empty)
       else Stream.empty
     }
+
+  implicit val uuid: Arbitrary[UUID] =
+    Arbitrary(Gen.uuid)
+
 }
