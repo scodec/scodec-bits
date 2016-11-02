@@ -5,8 +5,8 @@ lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
-  scalaVersion := "2.12.0-M5",
-  crossScalaVersions := List("2.12.0-M5")
+  scalaVersion := "2.12.0",
+  crossScalaVersions := List("2.12.0")
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS).settings(commonSettings: _*).settings(
