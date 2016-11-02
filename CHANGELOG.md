@@ -1,3 +1,7 @@
+1.1.3
+=====
+ - Built for Scala 2.12.0
+
 1.1.2
 =====
  - Fixed bug in `slice` on `BitVector`/`ByteVector` when passed negative indices

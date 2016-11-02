@@ -22,7 +22,7 @@ lazy val core = crossProject.in(file("core")).
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
       "org.scalatest" %%% "scalatest" % "3.0.0" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.13.2" % "test")
+      "org.scalacheck" %%% "scalacheck" % "1.13.4" % "test")
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
