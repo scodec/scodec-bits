@@ -1,5 +1,6 @@
 1.1.3
 =====
+ - Added `copyToBuffer` to `ByteVector`
 
 1.1.2
 =====

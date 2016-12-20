@@ -369,6 +369,20 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("copyToBuffer") {
+    import java.nio.ByteBuffer
+    forAll { (b: ByteVector, bufferSize0: Int, initialPosition0: Int, direct: Boolean) =>
+      val bufferSize = (bufferSize0 % 1000000).abs
+      val buffer = if (direct) ByteBuffer.allocateDirect(bufferSize) else ByteBuffer.allocate(bufferSize)
+      val initialPosition = if (bufferSize == 0) 0 else (initialPosition0 % bufferSize).abs
+      buffer.position(initialPosition)
+      val copied = b.copyToBuffer(buffer)
+      buffer.flip()
+      copied shouldBe ((bufferSize.toLong - initialPosition) min b.size)
+      ByteVector.view(buffer).drop(initialPosition.toLong) shouldBe b.take(copied.toLong)
+    }
+  }
+
   test("dropWhile") {
     forAll { (x: ByteVector) =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, dropping), b) =>
