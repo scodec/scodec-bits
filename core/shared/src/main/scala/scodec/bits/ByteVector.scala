@@ -633,10 +633,13 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * @group conversions
    */
   final def copyToBuffer(buffer: ByteBuffer): Int = {
-    val limited = take(buffer.remaining.toLong)
-    val sz = toIntSize(limited.size)
-    limited.foreachV { _.copyToBuffer(buffer) }
-    sz
+    var copied = 0
+    foreachVPartial { v =>
+      val copiedFromView = v.copyToBuffer(buffer)
+      copied += copiedFromView
+      (copiedFromView == v.size)
+    }
+    copied
   }
 
   /**
@@ -1233,12 +1236,13 @@ object ByteVector {
         i += 1
       }
     }
-    def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Unit = {
+    def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Int = {
       var i = 0
       while (i < size && buffer.remaining > 0) {
         buffer.put(apply(offset + i))
         i += 1
       }
+      i
     }
     def copyToStream(s: OutputStream, offset: Long, size: Long): Unit = {
       var i = 0
@@ -1252,7 +1256,7 @@ object ByteVector {
   private object AtEmpty extends At {
     def apply(i: Long) = throw new IllegalArgumentException("empty view")
     override def asByteBuffer(start: Long, size: Int): ByteBuffer = ByteBuffer.allocate(0).asReadOnlyBuffer()
-    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Unit = ()
+    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Int = 0
   }
 
   private class AtArray(val arr: Array[Byte]) extends At {
@@ -1271,17 +1275,10 @@ object ByteVector {
       s.write(arr, offset.toInt, toIntSize(size))
     }
 
-    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Unit = {
-      val toCopy: Array[Byte] = {
-        if (offset == 0 && size == arr.size) arr
-        else {
-          val tmp = Array.ofDim[Byte](size)
-          copyToArray(tmp, 0, offset, size)
-          tmp
-        }
-      }
-      buffer.put(toCopy)
-      ()
+    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Int = {
+      val toCopy = buffer.remaining min size
+      buffer.put(arr, offset.toInt, toCopy)
+      toCopy
     }
   }
 
@@ -1305,9 +1302,10 @@ object ByteVector {
       }
     }
 
-    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Unit = {
-      buffer.put(asByteBuffer(offset, size))
-      ()
+    override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Int = {
+      val toCopy = buffer.remaining min size
+      buffer.put(asByteBuffer(offset, toCopy))
+      toCopy
     }
   }
 
@@ -1345,7 +1343,7 @@ object ByteVector {
       case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
       case _ => toArray
     }
-    def copyToBuffer(buffer: ByteBuffer): Unit =
+    def copyToBuffer(buffer: ByteBuffer): Int =
       at.copyToBuffer(buffer, offset, toIntSize(size))
     def take(n: Long): View =
       if (n <= 0) View.empty
