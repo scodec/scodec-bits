@@ -1928,7 +1928,7 @@ object BitVector {
 
   /** Returns the bitwise reversal of the provided byte. */
   def reverseBitsInByte(b: Byte): Byte =
-    bitReversalTable(b & 0xFF)
+    bitReversalTable(b & 0x0ff)
 
   private val bitReversalTable: Array[Byte] = Array(
     0x00.toByte, 0x80.toByte, 0x40.toByte, 0xC0.toByte, 0x20.toByte, 0xA0.toByte, 0x60.toByte, 0xE0.toByte,
