@@ -1,11 +1,12 @@
 package scodec.bits
 
 import java.io.ByteArrayOutputStream
-import org.scalatest.Matchers._
+import java.nio.ByteBuffer
 import java.util.UUID
 
 import Arbitraries._
 import org.scalacheck._
+import org.scalatest.Matchers._
 
 class ByteVectorTest extends BitsSuite {
 
@@ -370,7 +371,6 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("copyToBuffer") {
-    import java.nio.ByteBuffer
     forAll { (b: ByteVector, bufferSize0: Int, initialPosition0: Int, direct: Boolean) =>
       val bufferSize = (bufferSize0 % 1000000).abs
       val buffer = if (direct) ByteBuffer.allocateDirect(bufferSize) else ByteBuffer.allocate(bufferSize)
@@ -380,6 +380,22 @@ class ByteVectorTest extends BitsSuite {
       buffer.flip()
       copied shouldBe ((bufferSize.toLong - initialPosition) min b.size)
       ByteVector.view(buffer).drop(initialPosition.toLong) shouldBe b.take(copied.toLong)
+    }
+  }
+
+  test("viewing ByteBuffer with non-zero positoin") {
+    forAll { (b: Array[Byte], position0: Int, sliceSize0: Int, direct: Boolean) =>
+      val buffer = if (direct) ByteBuffer.allocateDirect(b.size) else ByteBuffer.allocate(b.size)
+      val position = if (b.size == 0) 0 else (position0 % b.size).abs
+      val remaining = b.size - position
+      val sliceSize = if (remaining == 0) 0 else (sliceSize0 % (b.size - position)).abs
+
+      buffer.position(position).limit(position + sliceSize)
+      val slice = buffer.slice()
+      buffer.position(position).limit(position + sliceSize)
+      ByteVector.view(buffer) shouldBe ByteVector.view(slice)
+
+      buffer.position(position)
     }
   }
 

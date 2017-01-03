@@ -1,3 +1,7 @@
+1.1.4
+=====
+ - Fixed bug in `ByteVector.view` when passing a `java.nio.ByteBuffer` with a non-zero position
+
 1.1.3
 =====
  - Added `copyToBuffer` to `ByteVector`
