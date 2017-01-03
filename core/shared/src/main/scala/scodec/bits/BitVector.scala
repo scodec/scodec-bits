@@ -1929,7 +1929,7 @@ object BitVector {
   /** Returns the bitwise reversal of the provided byte. */
   def reverseBitsInByte(b: Byte): Byte = {
     val idx = b & 0xff
-    if (idx >= 0 && idx <= 255) bitReversalTable(b & 0x0ff)
+    if (idx >= 0 && idx <= 255) bitReversalTable(idx)
     else sys.error(s"idx: $idx, b: $b")
   }
 
