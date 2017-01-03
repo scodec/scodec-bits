@@ -1926,6 +1926,7 @@ object BitVector {
   private def bytesNeededForBits(size: Long): Long =
     (size + 7) / 8
 
+  /** Returns the bitwise reversal of the provided byte. */
   def reverseBitsInByte(b: Byte): Byte =
     bitReversalTable(b & 0xFF)
 
