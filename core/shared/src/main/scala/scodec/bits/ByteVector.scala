@@ -1427,6 +1427,10 @@ object ByteVector {
    * Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
    * is copied to ensure the resulting `ByteVector` is immutable.
    * If this is not desired, use `ByteVector.view`.
+   *
+   * The returned vector is a copy of a subsequence of the buffer, with bounds
+   * determined by the buffer's position and limit at the time this method is called.
+   *
    * @group constructors
    */
   def apply(buffer: ByteBuffer): ByteVector = {
@@ -1466,10 +1470,16 @@ object ByteVector {
    * Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
    * does not make a copy of the input buffer, so callers should take care
    * not to modify the contents of the buffer passed to this function.
+   *
+   * The returned vector is a view of a subsequence of the buffer, with bounds
+   * determined by the buffer's position and limit at the time this method is called.
+   *
    * @group constructors
    */
-  def view(bytes: ByteBuffer): ByteVector =
-    Chunk(View(new AtByteBuffer(bytes.slice()), 0, bytes.limit.toLong))
+  def view(bytes: ByteBuffer): ByteVector = {
+    val slice = bytes.slice()
+    Chunk(View(new AtByteBuffer(slice), 0, slice.remaining.toLong))
+  }
 
   /**
    * Constructs a `ByteVector` from a function from `Long => Byte` and a size.
