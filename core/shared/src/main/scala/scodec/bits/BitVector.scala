@@ -1928,7 +1928,7 @@ object BitVector {
 
   /** Returns the bitwise reversal of the provided byte. */
   def reverseBitsInByte(b: Byte): Byte = {
-    val idx = b & 0xff
+    val idx: Int = b & 0xff
     if (idx >= 0 && idx <= 255) {
       bitReversalTable(idx)
     } else {
