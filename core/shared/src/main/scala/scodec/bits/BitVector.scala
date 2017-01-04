@@ -1930,7 +1930,12 @@ object BitVector {
   def reverseBitsInByte(b: Byte): Byte = {
     val idx: Int = b & 0xff
     if (idx >= 0 && idx <= 255) {
-      bitReversalTable(idx)
+      try bitReversalTable(idx)
+      catch {
+        case e: Throwable =>
+          sys.error(s"exception / idx: $idx, b: $b")
+          throw e
+      }
     } else {
       sys.error(s"idx: $idx, b: $b")
     }
