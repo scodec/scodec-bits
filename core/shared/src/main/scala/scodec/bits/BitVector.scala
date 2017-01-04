@@ -1927,19 +1927,8 @@ object BitVector {
     (size + 7) / 8
 
   /** Returns the bitwise reversal of the provided byte. */
-  def reverseBitsInByte(b: Byte): Byte = {
-    val idx: Int = b & 0xff
-    if (idx >= 0 && idx <= 255) {
-      try bitReversalTable(idx)
-      catch {
-        case e: Throwable =>
-          sys.error(s"exception / idx: $idx, b: $b")
-          throw e
-      }
-    } else {
-      sys.error(s"idx: $idx, b: $b")
-    }
-  }
+  def reverseBitsInByte(b: Byte): Byte =
+    bitReversalTable(b & 0xff)
 
   private val bitReversalTable: Array[Byte] = Array(
     0x00.toByte, 0x80.toByte, 0x40.toByte, 0xC0.toByte, 0x20.toByte, 0xA0.toByte, 0x60.toByte, 0xE0.toByte,
