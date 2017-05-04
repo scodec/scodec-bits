@@ -597,12 +597,6 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     foreachV { v => v.copyToArray(xs, i); i += toIntSize(v.size) }
   }
 
-  /** Like `toArray` but directly returns the underlying array if this vector is a backed by a single array. */
-  private[this] final def toArrayUnsafe: Array[Byte] = this match {
-    case Chunk(view) => view.toArrayUnsafe
-    case other => toArray
-  }
-
   /**
    * Copies `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at index `start`.
    *
