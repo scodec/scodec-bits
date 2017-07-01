@@ -1,5 +1,6 @@
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaKeys._
+import sbtcrossproject.CrossPlugin.autoImport.crossProject
 
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
@@ -11,7 +12,7 @@ lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).sett
   publishArtifact := false
 )
 
-lazy val core = crossProject.in(file("core")).
+lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
   enablePlugins(BuildInfoPlugin).
   settings(commonSettings: _*).
   settings(scodecPrimaryModule: _*).
@@ -20,7 +21,11 @@ lazy val core = crossProject.in(file("core")).
     scodecModule := "scodec-bits",
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
+    )
+  ).
+  platformsSettings(JVMPlatform, JSPlatform)(
+    libraryDependencies ++= Seq(
       "org.scalatest" %%% "scalatest" % "3.0.3" % "test",
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test")
   ).
@@ -43,8 +48,21 @@ lazy val core = crossProject.in(file("core")).
     )
 )
 
+val Scala211 = "2.11.11"
+
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
+lazy val coreNative = core.native.settings(
+  scalaVersion := Scala211
+)
+
+lazy val nativeTest = project.dependsOn(coreNative).settings(
+  commonSettings,
+  publishArtifact := false,
+  publishLocal := {},
+  PgpKeys.publishSigned := {},
+  scalaVersion := Scala211
+).enablePlugins(ScalaNativePlugin)
 
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
