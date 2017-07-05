@@ -5,6 +5,7 @@ import sbtcrossproject.CrossPlugin.autoImport.crossProject
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
+  crossScalaVersions += "2.13.0-M1",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
 )
 
@@ -31,6 +32,18 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
+    previousArtifacts := {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 => Set.empty
+        case _ => previousArtifacts.value
+      }
+    },
+    previousArtifact := {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 => None
+        case _ => previousArtifact.value
+      }
+    },
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "16.0.1" % "test",
