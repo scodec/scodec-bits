@@ -23,6 +23,16 @@ jdk:
 script:
   - sbt ++$TRAVIS_SCALA_VERSION test mima-report-binary-issues
 
+before_cache:
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.sbt -name "*.lock" -exec rm {} +
   - find $HOME/.ivy2 -name "ivydata-*.properties" -exec rm {} +
+
+matrix:
+  include:
+  - sudo: required
+    dist: trusty
+    before_install:
+    - curl https://raw.githubusercontent.com/scala-native/scala-native/v0.3.1/bin/travis_setup.sh | bash -x
+    script:
+    - sbt nativeTest/run
