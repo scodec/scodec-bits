@@ -1,4 +1,7 @@
-sudo: false
+sudo: required
+dist: trusty
+before_install:
+  - curl https://raw.githubusercontent.com/scala-native/scala-native/v0.3.1/bin/travis_setup.sh | bash -x
 addons:
   apt:
     packages:
@@ -13,7 +16,7 @@ language: scala
 
 scala:
   - "2.10.6"
-  - "2.11.8"
+  - "2.11.11"
   - "2.12.1"
   - "2.13.0-M1"
 
@@ -27,12 +30,3 @@ before_cache:
   # Tricks to avoid unnecessary cache updates
   - find $HOME/.sbt -name "*.lock" -exec rm {} +
   - find $HOME/.ivy2 -name "ivydata-*.properties" -exec rm {} +
-
-matrix:
-  include:
-  - sudo: required
-    dist: trusty
-    before_install:
-    - curl https://raw.githubusercontent.com/scala-native/scala-native/v0.3.1/bin/travis_setup.sh | bash -x
-    script:
-    - sbt nativeTest/run

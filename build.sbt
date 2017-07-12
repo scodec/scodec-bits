@@ -31,6 +31,15 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test")
   ).
   jsSettings(commonJsSettings: _*).
+  nativeSettings(
+    crossScalaVersions := Seq(Scala211),
+    // Don't compile shared/src/test
+    unmanagedSourceDirectories.in(Test) := Seq(sourceDirectory.in(Test).value),
+    test := Def.taskDyn {
+      if (scalaVersion.value == Scala211) run.in(Test).toTask("")
+      else Def.task(())
+    }.value
+  ).
   jvmSettings(
     previousArtifacts := {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -68,14 +77,6 @@ lazy val coreJS = core.js
 lazy val coreNative = core.native.settings(
   scalaVersion := Scala211
 )
-
-lazy val nativeTest = project.dependsOn(coreNative).settings(
-  commonSettings,
-  publishArtifact := false,
-  publishLocal := {},
-  PgpKeys.publishSigned := {},
-  scalaVersion := Scala211
-).enablePlugins(ScalaNativePlugin)
 
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
