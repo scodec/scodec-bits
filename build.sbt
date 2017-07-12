@@ -4,7 +4,9 @@ import com.typesafe.tools.mima.plugin.MimaKeys._
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
-  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
+  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scalaVersion := "2.13.0-M1",
+  crossScalaVersions := Seq(scalaVersion.value)
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).settings(commonSettings: _*).settings(
@@ -21,8 +23,8 @@ lazy val core = crossProject.in(file("core")).
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalatest" %%% "scalatest" % "3.0.0" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.13.4" % "test")
+      "org.scalatest" %%% "scalatest" % "3.0.3" % "test",
+      "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test")
   ).
   jsSettings(commonJsSettings: _*).
   jvmSettings(
