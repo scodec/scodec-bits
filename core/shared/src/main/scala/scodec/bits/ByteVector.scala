@@ -1709,8 +1709,13 @@ object ByteVector {
 
   /**
    * Constructs a `ByteVector` from a base 64 string or returns an error message if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * If the final encoding quantum does not contain 4 characters, i.e. the total number of characters is not evenly divisible
+   * by 4, padding is inferred if the final quantum contains 2 or 3 characters. This is to say that padding is optional as
+   * long as the inferred padding would yield a valid base 64 string. The input is considered invalid if the final quantum
+   * only contains a single character. If padding characters are present, they must be used in accordance with the base 64
+   * specification and no padding characters will be inferred.
+   * An empty input string results in an empty ByteVector.
+   * The string may contain whitespace characters which are ignored.
    * @group base
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
@@ -1792,16 +1797,16 @@ object ByteVector {
 
   /**
    * Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * Details pertaining to base 64 decoding can be found in the comment for fromBase64Descriptive.
+   * The string may contain whitespace characters which are ignored.
    * @group base
    */
   def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[ByteVector] = fromBase64Descriptive(str, alphabet).right.toOption
 
   /**
    * Constructs a `ByteVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * Details pertaining to base 64 decoding can be found in the comment for fromBase64Descriptive.
+   * The string may contain whitespace characters which are ignored.
    *
    * @throws IllegalArgumentException if the string is not valid base 64
    * @group base

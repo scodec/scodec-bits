@@ -1490,8 +1490,8 @@ object BitVector {
 
   /**
    * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+   * The string may contain whitespace characters which are ignored.
    * @group base
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, BitVector] =
@@ -1499,16 +1499,16 @@ object BitVector {
 
   /**
    * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+   * The string may contain whitespace characters which are ignored.
    * @group base
    */
   def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[BitVector] = fromBase64Descriptive(str, alphabet).right.toOption
 
   /**
    * Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
-   *
-   * The string may contain whitespace characters.
+   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+   * The string may contain whitespace characters which are ignored.
    *
    * @throws IllegalArgumentException if the string is not valid base 64
    * @group base
