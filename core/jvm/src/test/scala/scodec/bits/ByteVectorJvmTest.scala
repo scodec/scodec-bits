@@ -26,22 +26,29 @@ class ByteVectorJvmTest extends BitsSuite {
     ByteVector.fromBase64Descriptive("AB") shouldBe Right(hex"00")
     ByteVector.fromBase64Descriptive("ABC") shouldBe Right(hex"0010")
     ByteVector.fromBase64Descriptive("ABCD") shouldBe Right(hex"001083")
+    ByteVector.fromBase64Descriptive("ABCDA") shouldBe Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
+    ByteVector.fromBase64Descriptive("ABCDAB") shouldBe Right(hex"00108300")
   }
 
   test("fromBase64 - padding") {
     ByteVector.fromBase64Descriptive("AB==") shouldBe Right(hex"00")
     val paddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
-    ByteVector.fromBase64Descriptive("A==") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("AB=") shouldBe paddingError
     ByteVector.fromBase64Descriptive("A=") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A==") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A===") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A====") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("AB=") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("AB===") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("ABC==") shouldBe paddingError
     ByteVector.fromBase64Descriptive("=") shouldBe paddingError
     ByteVector.fromBase64Descriptive("==") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("A===") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("AB===") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("A====") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("===") shouldBe paddingError
     ByteVector.fromBase64Descriptive("====") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("ABC==") shouldBe paddingError
     ByteVector.fromBase64Descriptive("=====") shouldBe paddingError
+  }
+
+  test("fromBase64 - empty input string") {
+    ByteVector.fromBase64Descriptive("") shouldBe Right(ByteVector.empty)
   }
 
   test("buffer concurrency") {
