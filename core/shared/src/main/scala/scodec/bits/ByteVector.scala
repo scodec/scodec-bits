@@ -1705,6 +1705,8 @@ object ByteVector {
   def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  private val Base64PaddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
+
   /**
    * Constructs a `ByteVector` from a base 64 string or returns an error message if the string is not valid base 64.
    *
@@ -1714,19 +1716,36 @@ object ByteVector {
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
     val Pad = alphabet.pad
     var idx, bidx, buffer, mod, padding = 0
-    val acc = Array.ofDim[Byte](str.size / 4 * 3)
+    val acc = Array.ofDim[Byte]((str.size + 3) / 4 * 3)
     while (idx < str.length) {
       str(idx) match {
         case c if alphabet.ignore(c) => // ignore
         case c =>
           val cidx = {
             if (padding == 0) {
-              try if (c == Pad) { padding += 1; 0 } else alphabet.toIndex(c)
-              catch {
-                case e: IllegalArgumentException => return Left(s"Invalid base 64 character '$c' at index $idx")
+              if (c == Pad) {
+                if (mod == 2 || mod == 3) {
+                  padding += 1
+                  0
+                } else {
+                  return Base64PaddingError
+                }
+              }
+              else {
+                try alphabet.toIndex(c)
+                catch {
+                  case e: IllegalArgumentException => return Left(s"Invalid base 64 character '$c' at index $idx")
+                }
               }
             } else {
-              if (c == Pad) { padding += 1; 0 } else {
+              if (c == Pad) {
+                if (padding == 1 && mod == 3) {
+                  padding += 1
+                  0
+                } else {
+                  return Base64PaddingError
+                }
+              } else {
                 return Left(s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character")
               }
             }
@@ -1755,7 +1774,20 @@ object ByteVector {
       }
       idx += 1
     }
-    Right(ByteVector(acc).take((bidx - padding).toLong))
+    if (padding != 0 && mod != 0) Base64PaddingError
+    else mod match {
+      case 0 => Right(ByteVector(acc).take((bidx - padding).toLong))
+      case 1 => Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
+      case 2 =>
+        acc(bidx) = ((buffer >> 4) & 0x0ff).toByte
+        bidx += 1
+        Right(ByteVector(acc).take(bidx.toLong))
+      case 3 =>
+        acc(bidx) = ((buffer >> 10) & 0x0ff).toByte
+        acc(bidx + 1) = ((buffer >> 2) & 0x0ff).toByte
+        bidx += 2
+        Right(ByteVector(acc).take(bidx.toLong))
+    }
   }
 
   /**

@@ -21,6 +21,29 @@ class ByteVectorJvmTest extends BitsSuite {
     }
   }
 
+  test("fromBase64 - digit count non-divisble by 4") {
+    ByteVector.fromBase64Descriptive("A") shouldBe Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
+    ByteVector.fromBase64Descriptive("AB") shouldBe Right(hex"00")
+    ByteVector.fromBase64Descriptive("ABC") shouldBe Right(hex"0010")
+    ByteVector.fromBase64Descriptive("ABCD") shouldBe Right(hex"001083")
+  }
+
+  test("fromBase64 - padding") {
+    ByteVector.fromBase64Descriptive("AB==") shouldBe Right(hex"00")
+    val paddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
+    ByteVector.fromBase64Descriptive("A==") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("AB=") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A=") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("=") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("==") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A===") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("AB===") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("A====") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("====") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("ABC==") shouldBe paddingError
+    ByteVector.fromBase64Descriptive("=====") shouldBe paddingError
+  }
+
   test("buffer concurrency") {
     import java.util.concurrent.Callable
     val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
