@@ -1,3 +1,9 @@
+1.1.5
+=====
+ - Added support for Scala Native
+ - Added support for Scala 2.13.0-M1
+ - Fixed `fromBase64` variants to handle malformed input better (https://github.com/scodec/scodec-bits/issues/76)
+
 1.1.4
 =====
  - Fixed bug in `ByteVector.view` when passing a `java.nio.ByteBuffer` with a non-zero position
