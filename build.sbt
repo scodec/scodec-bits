@@ -9,7 +9,7 @@ lazy val commonSettings = Seq(
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
 )
 
-lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, benchmark).settings(commonSettings: _*).settings(
+lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
   publishArtifact := false
 )
 
@@ -45,12 +45,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, v)) if v >= 13 => Set.empty
         case _ => previousArtifacts.value
-      }
-    },
-    previousArtifact := {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v >= 13 => None
-        case _ => previousArtifact.value
       }
     },
     docSourcePath := new File(baseDirectory.value, "../.."),
