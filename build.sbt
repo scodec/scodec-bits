@@ -20,8 +20,8 @@ lazy val commonSettings = Seq(
     tagRelease,
     releaseStepCommandAndRemaining("+publish"),
     ReleaseStep(
-      check = releaseStepTask(SiteKeys.makeSite in thisProjectRef.value),
-      action = releaseStepTask(GhPagesKeys.pushSite in thisProjectRef.value)
+      check = releaseStepTaskAggregated(SiteKeys.makeSite in thisProjectRef.value),
+      action = releaseStepTaskAggregated(GhPagesKeys.pushSite in thisProjectRef.value)
     ),
     setNextVersion,
     commitNextVersion,
