@@ -1,17 +1,37 @@
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaKeys._
 import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import ReleaseTransformations._
 
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   crossScalaVersions += "2.13.0-M1",
-  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano"))
+  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  // Override sbt-release settings to account for sbt-doge
+  releaseCrossBuild := false,
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    releaseStepCommandAndRemaining("+test"),
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    releaseStepCommandAndRemaining("+publish"),
+    ReleaseStep(
+      check = releaseStepTask(SiteKeys.makeSite in thisProjectRef.value),
+      action = releaseStepTask(GhPagesKeys.pushSite in thisProjectRef.value)
+    ),
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  )
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
   publishArtifact := false
-)
+).enablePlugins(CrossPerProjectPlugin)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
   enablePlugins(BuildInfoPlugin).
@@ -69,7 +89,8 @@ val Scala211 = "2.11.11"
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
 lazy val coreNative = core.native.settings(
-  scalaVersion := Scala211
+  scalaVersion := Scala211,
+  crossScalaVersions := Seq(scalaVersion.value)
 )
 
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).

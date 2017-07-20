@@ -796,7 +796,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     else getBigEndianShort(start, bits, signed)
   }
 
-  private def getBigEndianShort(start: Long, bits: Int, signed: Boolean = true): Short = {
+  private def getBigEndianShort(start: Long, bits: Int, signed: Boolean): Short = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 16)
     val mod = bits % 8
     var result = 0
