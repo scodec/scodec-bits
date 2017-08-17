@@ -1,6 +1,6 @@
 resolvers += "Sonatype Public" at "https://oss.sonatype.org/content/groups/public/"
 
-addSbtPlugin("org.scodec" % "scodec-build" % "1.8.0")
+addSbtPlugin("org.scodec" % "scodec-build" % "1.9.0-SNAPSHOT")
 
 addSbtPlugin("org.scala-native" % "sbt-scala-native" % "0.3.1")
 

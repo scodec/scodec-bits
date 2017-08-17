@@ -20,8 +20,8 @@ lazy val commonSettings = Seq(
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
     ReleaseStep(
-      check = releaseStepTaskAggregated(SiteKeys.makeSite in thisProjectRef.value),
-      action = releaseStepTaskAggregated(GhPagesKeys.pushSite in thisProjectRef.value)
+      check = releaseStepTaskAggregated(makeSite in thisProjectRef.value),
+      action = releaseStepTaskAggregated(ghpagesPushSite in thisProjectRef.value)
     ),
     setNextVersion,
     commitNextVersion,
@@ -34,10 +34,8 @@ lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, ben
 ).enablePlugins(CrossPerProjectPlugin)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
-  enablePlugins(BuildInfoPlugin).
+  enablePlugins(BuildInfoPlugin, ScodecPrimaryModuleSettings, ScodecPrimaryModuleJVMSettings).
   settings(commonSettings: _*).
-  settings(scodecPrimaryModule: _*).
-  jvmSettings(scodecPrimaryModuleJvm: _*).
   settings(
     scodecModule := "scodec-bits",
     rootPackage := "scodec.bits",
