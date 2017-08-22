@@ -1,6 +1,6 @@
 import com.typesafe.tools.mima.core._
 import com.typesafe.tools.mima.plugin.MimaKeys._
-import sbtcrossproject.CrossPlugin.autoImport.crossProject
+import sbtcrossproject.crossProject
 import ReleaseTransformations._
 
 lazy val commonSettings = Seq(
@@ -20,8 +20,8 @@ lazy val commonSettings = Seq(
     tagRelease,
     releaseStepCommandAndRemaining("+publishSigned"),
     ReleaseStep(
-      check = releaseStepTaskAggregated(SiteKeys.makeSite in thisProjectRef.value),
-      action = releaseStepTaskAggregated(GhPagesKeys.pushSite in thisProjectRef.value)
+      check = releaseStepTaskAggregated(makeSite in thisProjectRef.value),
+      action = releaseStepTaskAggregated(ghpagesPushSite in thisProjectRef.value)
     ),
     setNextVersion,
     commitNextVersion,
@@ -36,8 +36,11 @@ lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, ben
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
   enablePlugins(BuildInfoPlugin).
   settings(commonSettings: _*).
-  settings(scodecPrimaryModule: _*).
-  jvmSettings(scodecPrimaryModuleJvm: _*).
+  settings(ScodecPrimaryModuleSettings.projectSettings).
+  jvmSettings(ScodecPrimaryModuleJVMSettings.projectSettings).
+  jvmSettings(
+    ghpagesUpdatedRepository := target.value / "???"
+  ).
   settings(
     scodecModule := "scodec-bits",
     rootPackage := "scodec.bits",
