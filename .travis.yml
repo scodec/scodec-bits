@@ -17,14 +17,19 @@ language: scala
 scala:
   - "2.10.6"
   - "2.11.11"
-  - "2.12.1"
+  - "2.12.2"
   - "2.13.0-M1"
+
+env:
+  - SCALAJS_VERSION=0.6.18
+  - SCALAJS_VERSION=1.0.0-M1
 
 jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test mima-report-binary-issues
+  # plz is like ++ except it skips projects that are not defined for that scala version.
+  - sbt "plz $TRAVIS_SCALA_VERSION test mima-report-binary-issues"
 
 before_cache:
   # Tricks to avoid unnecessary cache updates
