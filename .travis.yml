@@ -24,7 +24,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test mima-report-binary-issues
+  - sbt ++$TRAVIS_SCALA_VERSION test mimaReportBinaryIssues
 
 before_cache:
   # Tricks to avoid unnecessary cache updates
