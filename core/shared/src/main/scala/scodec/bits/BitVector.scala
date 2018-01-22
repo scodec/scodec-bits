@@ -1236,13 +1236,13 @@ object BitVector {
    * 8-bit vector with all bits set low.
    * @group constants
    */
-  val lowByte: BitVector = toBytes(ByteVector.fill(8)(0), 8)
+  val lowByte: BitVector = toBytes(ByteVector.low(1), 8)
 
   /**
    * 8-bit vector with all bits set high.
    * @group constants
    */
-  val highByte: BitVector = toBytes(ByteVector.fill(8)(1), 8)
+  val highByte: BitVector = toBytes(ByteVector.high(1), 8)
 
   /**
    * 1-bit vector with only bit set to specified value.
