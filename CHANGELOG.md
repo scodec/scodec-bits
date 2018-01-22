@@ -1,3 +1,7 @@
+1.1.6
+=====
+ - Fixed `BitVector.highByte` to return the correct value (https://github.com/scodec/scodec/issues/108)
+
 1.1.5
 =====
  - Added support for Scala Native

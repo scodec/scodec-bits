@@ -575,4 +575,8 @@ class BitVectorTest extends BitsSuite {
     hex"001122334455".bits.slice(-21, 32) shouldBe hex"00112233".bits
     hex"001122334455".bits.slice(-21, -5) shouldBe hex"".bits
   }
+
+  test("highByte") {
+    BitVector.highByte.toBin shouldBe "11111111"
+  }
 }
