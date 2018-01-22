@@ -84,7 +84,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     )
 )
 
-val Scala211 = "2.11.11"
+val Scala211 = "2.11.12"
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
