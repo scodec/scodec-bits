@@ -16,15 +16,15 @@ language: scala
 
 scala:
   - "2.10.6"
-  - "2.11.11"
-  - "2.12.1"
-  - "2.13.0-M1"
+  - "2.11.12"
+  - "2.12.4"
+  - "2.13.0-M2"
 
 jdk:
   - oraclejdk8
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION test mima-report-binary-issues
+  - sbt ++$TRAVIS_SCALA_VERSION test mimaReportBinaryIssues
 
 before_cache:
   # Tricks to avoid unnecessary cache updates
