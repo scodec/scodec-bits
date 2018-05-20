@@ -6,6 +6,14 @@ lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scalacOptions --= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v >= 13 =>
+        Seq("-Yno-adapted-args")
+      case _ =>
+        Nil
+    }
+  },
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -42,10 +50,18 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     )
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
-    crossScalaVersions += "2.13.0-M3",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test")
+    crossScalaVersions += "2.13.0-M4",
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 =>
+          Nil
+        case _ =>
+          Seq(
+            "org.scalatest" %%% "scalatest" % "3.0.5-M1" % "test",
+            "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test"
+          )
+      }
+    }
   ).
   jsSettings(commonJsSettings: _*).
   nativeSettings(
@@ -93,6 +109,6 @@ lazy val coreNative = core.native.settings(
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions += "2.13.0-M3",
+    crossScalaVersions += "2.13.0-M4",
     publishArtifact := false
   )
