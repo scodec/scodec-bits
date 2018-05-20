@@ -90,12 +90,6 @@ class ByteVectorJvmTest extends BitsSuite {
     }
   }
 
-  test("gzip - nowrap") {
-    forAll { (x: ByteVector) =>
-      x.deflate(nowrap = true).inflate(nowrap = true) shouldBe Right(x)
-    }
-  }
-
   test("serialization") {
     forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
   }
