@@ -35,6 +35,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
   settings(commonSettings: _*).
   settings(
     scodecModule := "scodec-bits",
+    name := scodecModule.value,
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
