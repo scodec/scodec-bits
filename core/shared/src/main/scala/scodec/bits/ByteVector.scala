@@ -1957,7 +1957,7 @@ object ByteVector {
     def rebuffer(chunkSize: Int): ByteVector = {
       require (chunkSize > lastChunk.length)
       val lastChunk2 = new Array[Byte](chunkSize)
-      lastChunk.copyToArray(lastChunk2)
+      lastChunk.copyToArray(lastChunk2, 0, lastChunk2.length)
       Buffer(new AtomicLong(0), 0, hd, lastChunk, lastSize)
     }
   }
