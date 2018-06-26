@@ -1313,7 +1313,7 @@ object BitVector {
    * not to modify the contents of the buffer passed to this function.
    * @group constructors
    */
-  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit.toLong * 8)
+  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit().toLong * 8)
 
   /**
    * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
@@ -1632,7 +1632,7 @@ object BitVector {
         require (pos < in.size)
         val bytesToRead = (in.size - pos) min chunkSizeInBytes.toLong
         val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
-        require(buf.limit == bytesToRead)
+        require(buf.limit() == bytesToRead)
         Some((BitVector.view(buf), (in -> (pos + bytesToRead))))
       }
     }
