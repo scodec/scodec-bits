@@ -50,7 +50,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     )
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
-    crossScalaVersions += "2.13.0-M4",
     libraryDependencies ++= Seq(
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test"
     ),
@@ -113,6 +112,5 @@ lazy val coreNative = core.native.settings(
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions += "2.13.0-M4",
     publishArtifact := false
   )
