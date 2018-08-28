@@ -778,6 +778,20 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
+    * Converts the contents of this vector to a base 58 string.
+    *
+    * @group conversions
+    */
+  final def toBase58: String = toBase58(Bases.Alphabets.Base58)
+
+  /**
+    * Converts the contents of this vector to a base 64 string using the specified alphabet.
+    *
+    * @group conversions
+    */
+  final def toBase58(alphabet: Bases.Alphabet): String = ???
+  
+  /**
    * Converts the contents of this vector to a base 64 string.
    *
    * @group conversions

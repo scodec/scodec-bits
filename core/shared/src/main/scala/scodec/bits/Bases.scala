@@ -88,6 +88,22 @@ object Bases {
       def toChar(i: Int) = Chars(i)
     }
 
+    /** Base 58 alphabet as defined by [[https://en.wikipedia.org/wiki/Base58]]. We use the ordering used for Bitcoin Addresses and IPFS hashes */
+    object Base58 extends Alphabet {
+      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z')).filterNot(c => List('O', 'I', 'l').exists(_ == c))
+      def toChar(i: Int) = Chars(i)
+      def toIndex(c: Char) = c match {
+        case c if c >= '1' && c <= '9' => c - '1'
+        case c if c >= 'A' && c <= 'H' => c - 'A' + 9
+        case c if c >= 'J' && c <= 'N' => c - 'J' + 9 + 8
+        case c if c >= 'P' && c <= 'Z' => c - 'P' + 9 + 8 + 5
+        case c if c >= 'a' && c <= 'k' => c - 'a' + 9 + 8 + 5 + 11
+        case c if c >= 'm' && c <= 'z' => c - 'm' + 9 + 8 + 5 + 11 + 11
+        case c => throw new IllegalArgumentException
+      }
+
+      def ignore(c: Char) = c.isWhitespace
+    }
     /** Base 64 alphabet as defined by [[http://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
     object Base64 extends Base64Alphabet {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '+' :+ '/').toArray
