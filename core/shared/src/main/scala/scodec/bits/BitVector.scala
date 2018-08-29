@@ -725,6 +725,26 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     }
   }
 
+
+  /**
+    * Converts the contents of this vector to a base 64 string.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
+  final def toBase58: String = toBase58(Bases.Alphabets.Base58)
+
+  /**
+    * Converts the contents of this vector to a base 64 string using the specified alphabet.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
+  final def toBase58(alphabet: Bases.Alphabet): String = toByteVector.toBase58(alphabet)
+
+
   /**
    * Converts the contents of this vector to a base 64 string.
    *

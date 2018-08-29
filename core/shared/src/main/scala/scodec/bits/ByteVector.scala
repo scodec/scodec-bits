@@ -1,16 +1,17 @@
 package scodec.bits
 
 import ByteVector._
-
 import java.io.OutputStream
-import java.nio.{ ByteBuffer, CharBuffer }
-import java.nio.charset.{ CharacterCodingException, Charset }
-import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.nio.{ByteBuffer, CharBuffer}
+import java.nio.charset.{CharacterCodingException, Charset}
+import java.security.{AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom}
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
-import java.util.zip.{ DataFormatException, Deflater, Inflater }
+import java.util.zip.{DataFormatException, Deflater, Inflater}
+
 import javax.crypto.Cipher
 
+import scala.annotation.tailrec
 import scala.collection.GenTraversableOnce
 
 /**
@@ -789,8 +790,25 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     *
     * @group conversions
     */
-  final def toBase58(alphabet: Bases.Alphabet): String = ???
-  
+  final def toBase58(alphabet: Bases.Alphabet): String = {
+    val bytes = toArray
+    val ZERO = BigInt(0)
+    val RADIX = BigInt(58)
+    val ones = List.fill(toBase64.takeWhile(_ == 0).length)(1)
+
+    @tailrec
+    def go(value: BigInt, str: String): String = value match {
+      case v if v == ZERO => ones.mkString + str.reverse
+      case _ => {
+        val rem = value/RADIX
+        val mod = value.mod(RADIX)
+        go(rem, str :+ alphabet.toChar(mod.toInt))
+      }
+    }
+
+    if(bytes.isEmpty) "" else go(BigInt(1, bytes), "")
+  }
+
   /**
    * Converts the contents of this vector to a base 64 string.
    *
