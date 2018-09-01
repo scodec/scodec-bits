@@ -725,25 +725,23 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     }
   }
 
-
   /**
-    * Converts the contents of this vector to a base 64 string.
+    * Converts the contents of this vector to a base 58 string.
     *
-    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
     *
     * @group conversions
     */
   final def toBase58: String = toBase58(Bases.Alphabets.Base58)
 
   /**
-    * Converts the contents of this vector to a base 64 string using the specified alphabet.
+    * Converts the contents of this vector to a base 58 string using the specified alphabet.
     *
-    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
     *
     * @group conversions
     */
   final def toBase58(alphabet: Bases.Alphabet): String = toByteVector.toBase58(alphabet)
-
 
   /**
    * Converts the contents of this vector to a base 64 string.
@@ -1507,6 +1505,34 @@ object BitVector {
    */
   def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+    * Constructs a `BitVector` from a base 58 string or returns an error message if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, BitVector] =
+    ByteVector.fromBase58Descriptive(str, alphabet).right.map { _.toBitVector }
+
+  /**
+    * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58(str: String,alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[BitVector] = fromBase58Descriptive(str, alphabet).right.toOption
+
+  /**
+    * Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 58
+    * @group base
+    */
+  def fromValidBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): BitVector =
+    fromBase58Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
    * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.

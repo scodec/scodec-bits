@@ -1752,6 +1752,38 @@ object ByteVector {
   def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
+  /**
+    * Constructs a `ByteVector` from a base 58 string or returns an error message if the string is not valid base 58.
+    * It is similar to Base64 but has been modified to avoid both non-alphanumeric characters and letters which might look ambiguous when printed.
+    * It is therefore designed for human users who manually enter the data, copying from some visual source
+    * Compared to Base64, the following similar-looking letters are omitted: 0 (zero), O (capital o), I (capital i) and l (lower case L)
+    * as well as the non-alphanumeric characters + (plus) and / (slash).
+    * The actual order of letters in the alphabet depends on the application, the default order is the same used in Bitcoin
+    * An empty input string results in an empty ByteVector.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, ByteVector] = ???
+
+  /**
+    * Constructs a `ByteVector` from a base 58 string or returns `None` if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[ByteVector] = fromBase58Descriptive(str, alphabet).right.toOption
+
+  /**
+    * Constructs a `ByteVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 58
+    * @group base
+    */
+  def fromValidBase58(str: String,  alphabet: Bases.Alphabet = Bases.Alphabets.Base58): ByteVector =
+    fromBase58Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
   private val Base64PaddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
 
   /**
