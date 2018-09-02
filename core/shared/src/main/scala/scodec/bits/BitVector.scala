@@ -1691,7 +1691,7 @@ object BitVector {
       } else {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
-        val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size)).toByte
+        val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size).toInt).toByte
         val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
         val updatedOtherBytes = other.drop(invalidBits).toByteVector
         toBytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
