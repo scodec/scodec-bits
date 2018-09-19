@@ -1,19 +1,19 @@
 package scodec.bits
 
 import ByteVector._
+
 import java.io.OutputStream
-import java.nio.{ByteBuffer, CharBuffer}
-import java.nio.charset.{CharacterCodingException, Charset}
-import java.security.{AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom}
+import java.nio.{ ByteBuffer, CharBuffer }
+import java.nio.charset.{ CharacterCodingException, Charset }
+import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
-import java.util.zip.{DataFormatException, Deflater, Inflater}
+import java.util.zip.{ DataFormatException, Deflater, Inflater }
 
 import javax.crypto.Cipher
 
 import scala.annotation.tailrec
 import scala.collection.GenTraversableOnce
-import scala.util.Try
 
 /**
  * An immutable vector of bytes, backed by a balanced binary tree of
@@ -795,11 +795,11 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     val bytes = toArray
     val ZERO = BigInt(0)
     val RADIX = BigInt(58L)
-    val ones = List.fill(takeWhile(_ == 0).length.toInt)(1)
+    val ones = Vector.fill(takeWhile(_ == 0).length.toInt)(1)
 
     @tailrec
-    def go(value: BigInt, chars: List[Char]): String = value match {
-      case ZERO => ones.mkString + chars.reverse
+    def go(value: BigInt, chars: Vector[Char]): String = value match {
+      case ZERO => (ones ++ chars.reverse).mkString
       case _ => {
         val rem = value/RADIX
         val mod = value.mod(RADIX)
@@ -807,7 +807,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
       }
     }
 
-    if(bytes.isEmpty) "" else go(BigInt(1, bytes), Nil)
+    if(bytes.isEmpty) "" else go(BigInt(1, bytes), Vector.empty)
   }
 
   /**
