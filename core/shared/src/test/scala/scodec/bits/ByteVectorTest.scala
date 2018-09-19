@@ -186,7 +186,7 @@ class ByteVectorTest extends BitsSuite {
     ByteVector.fromValidBase58("1111111111") shouldBe(hex"00000000000000000000")
   }
 
-  test("fromBase58") {
+  test("fail due to illegal character fromBase58") {
     ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty shouldBe(true)
   }
 
