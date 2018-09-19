@@ -13,6 +13,7 @@ import javax.crypto.Cipher
 
 import scala.annotation.tailrec
 import scala.collection.GenTraversableOnce
+import scala.util.Try
 
 /**
  * An immutable vector of bytes, backed by a balanced binary tree of
@@ -793,7 +794,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   final def toBase58(alphabet: Bases.Alphabet): String = {
     val bytes = toArray
     val ZERO = BigInt(0)
-    val RADIX = BigInt(58)
+    val RADIX = BigInt(58L)
     val ones = List.fill(takeWhile(_ == 0).length.toInt)(1)
 
     @tailrec
@@ -1763,7 +1764,23 @@ object ByteVector {
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
-  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, ByteVector] = ???
+  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, ByteVector] = {
+    val zeroLength = str.takeWhile(_ == '1').length
+    val zeroes = ByteVector.fill[Byte](zeroLength)(0)
+    val trim = str.splitAt(zeroLength)._2.toList
+    val RADIX = BigInt(58L)
+    val decoded = trim.foldLeft(BigInt(0)){ (a, c) =>
+      try {
+        a * RADIX + BigInt(alphabet.toIndex(c))
+      } catch {
+        case e: IllegalArgumentException =>
+          val idx = trim.takeWhile(_ != c).length
+          return Left(s"Invalid base 58 character '$c' at index $idx")
+
+      }
+    }
+    if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0)))
+  }
 
   /**
     * Constructs a `ByteVector` from a base 58 string or returns `None` if the string is not valid base 58.
