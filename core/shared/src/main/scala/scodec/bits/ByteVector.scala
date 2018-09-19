@@ -1766,7 +1766,7 @@ object ByteVector {
     */
   def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, ByteVector] = {
     val zeroLength = str.takeWhile(_ == '1').length
-    val zeroes = ByteVector.fill[Byte](zeroLength)(0)
+    val zeroes = ByteVector.fill(zeroLength.toLong)(0)
     val trim = str.splitAt(zeroLength)._2.toList
     val RADIX = BigInt(58L)
     val decoded = trim.foldLeft(BigInt(0)){ (a, c) =>
@@ -1776,7 +1776,6 @@ object ByteVector {
         case e: IllegalArgumentException =>
           val idx = trim.takeWhile(_ != c).length
           return Left(s"Invalid base 58 character '$c' at index $idx")
-
       }
     }
     if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0)))
