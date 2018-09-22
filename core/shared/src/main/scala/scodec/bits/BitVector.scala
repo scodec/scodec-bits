@@ -1516,8 +1516,8 @@ object BitVector {
     ByteVector.fromBase58Descriptive(str, alphabet).right.map { _.toBitVector }
 
   /**
-    * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+    * Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
