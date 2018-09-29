@@ -187,6 +187,8 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fail due to illegal character fromBase58") {
+    ByteVector.fromBase58Descriptive("R3C0NFxN") shouldBe Left("Invalid base 58 character '0' at index 3")
+    ByteVector.fromBase58Descriptive("03CMNFxN") shouldBe Left("Invalid base 58 character '0' at index 0")
     ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty shouldBe(true)
   }
 
