@@ -1778,7 +1778,7 @@ object ByteVector {
           return Left(s"Invalid base 58 character '$c' at index $idx")
       }
     }
-    Right(zeroes ++ ByteVector(decoded))
+    if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0)))
   }
 
   /**
