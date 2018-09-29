@@ -791,24 +791,24 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     *
     * @group conversions
     */
-  final def toBase58(alphabet: Bases.Alphabet): String = {
-    val bytes = toArray
-    val ZERO = BigInt(0)
-    val RADIX = BigInt(58L)
-    val ones = List.fill(takeWhile(_ == 0).length.toInt)('1')
+  final def toBase58(alphabet: Bases.Alphabet): String =
+    if (isEmpty) {
+      ""
+    } else {
+      val ZERO = BigInt(0)
+      val RADIX = BigInt(58L)
+      val ones = List.fill(takeWhile(_ == 0).length.toInt)('1')
 
-    @tailrec
-    def go(value: BigInt, chars: List[Char]): String = value match {
-      case ZERO => (ones ++ chars).mkString
-      case _ => {
-        val rem = value/RADIX
-        val mod = value.mod(RADIX)
-        go(rem, alphabet.toChar(mod.toInt) +: chars)
+      @tailrec
+      def go(value: BigInt, chars: List[Char]): String = value match {
+        case ZERO => (ones ++ chars).mkString
+        case _ => {
+          val (div, rem) = value /% RADIX
+          go(div, alphabet.toChar(rem.toInt) +: chars)
+        }
       }
+      go(BigInt(1, toArray), List.empty)
     }
-
-    if(bytes.isEmpty) "" else go(BigInt(1, bytes), List.empty)
-  }
 
   /**
    * Converts the contents of this vector to a base 64 string.
