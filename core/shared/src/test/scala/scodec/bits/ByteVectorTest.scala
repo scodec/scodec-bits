@@ -159,6 +159,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("toBase58") {
     hex"".toBase58 shouldBe("")
+    hex"00".toBase58 shouldBe("1")
     hex"61".toBase58 shouldBe("2g")
     hex"626262".toBase58 shouldBe("a3gV")
     hex"636363".toBase58 shouldBe("aPEr")
