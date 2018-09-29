@@ -173,6 +173,8 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fromValidBase58") {
+    ByteVector.fromValidBase58("") shouldBe (ByteVector.empty)
+    ByteVector.fromValidBase58("1") shouldBe hex"00"
     ByteVector.fromValidBase58("2g") shouldBe(hex"61")
     ByteVector.fromValidBase58("a3gV") shouldBe(hex"626262")
     ByteVector.fromValidBase58("aPEr") shouldBe(hex"636363")
