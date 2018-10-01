@@ -1023,7 +1023,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
           result = result ++ loop(ByteVector.empty, false)
         }
 
-        deflater.setInput(Array.empty)
+        deflater.setInput(Array.empty[Byte])
         deflater.finish()
         result ++ loop(ByteVector.empty, true)
       } finally {

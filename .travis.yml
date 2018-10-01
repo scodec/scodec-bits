@@ -20,6 +20,11 @@ scala:
   - "2.12.6"
   - "2.13.0-M4"
 
+matrix:
+  include:
+  - jdk: oraclejdk11
+    scala: 2.12.6
+
 jdk:
   - oraclejdk8
 
