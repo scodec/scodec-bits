@@ -9,7 +9,15 @@ lazy val commonSettings = Seq(
   scalacOptions --= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, v)) if v >= 13 =>
-        Seq("-Yno-adapted-args")
+        Seq("-Yno-adapted-args", "-Ywarn-unused-import")
+      case _ =>
+        Nil
+    }
+  },
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v >= 13 =>
+        Seq("-Ywarn-unused:imports")
       case _ =>
         Nil
     }
