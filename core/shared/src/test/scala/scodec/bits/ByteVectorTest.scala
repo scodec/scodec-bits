@@ -459,11 +459,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("slice is consistent with array slice") {
     forAll { (b: ByteVector, from: Int, until: Int) =>
-      // workaround for https://github.com/scala/scala/pull/6744
-      // TODO remove when Scala 2.13.0-M5 released
-      val until0 = math.max(until, 0)
-
-      b.slice(from.toLong, until0.toLong) shouldBe ByteVector.view(b.toArray.slice(from, until0))
+      b.slice(from.toLong, until.toLong) shouldBe ByteVector.view(b.toArray.slice(from, until))
     }
   }
 
