@@ -65,11 +65,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, v)) if v >= 13 =>
           Seq(
-            "org.scalatest" %%% "scalatest" % "3.0.6-SNAP3" % "test"
+            "org.scalatest" %%% "scalatest" % "3.0.6-SNAP5" % "test"
           )
         case _ =>
           Seq(
-            "org.scalatest" %%% "scalatest" % "3.0.5-M1" % "test"
+            "org.scalatest" %%% "scalatest" % "3.0.5" % "test"
           )
       }
     }
