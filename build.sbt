@@ -23,6 +23,7 @@ lazy val commonSettings = Seq(
     }
   },
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
