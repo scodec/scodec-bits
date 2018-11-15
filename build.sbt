@@ -1,5 +1,5 @@
 import com.typesafe.tools.mima.core._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import ReleaseTransformations._
 
 lazy val commonSettings = Seq(
