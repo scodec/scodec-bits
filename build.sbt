@@ -24,6 +24,7 @@ lazy val commonSettings = Seq(
         Nil
     }
   },
+  releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
