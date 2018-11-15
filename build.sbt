@@ -2,8 +2,6 @@ import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import ReleaseTransformations._
 
-val Scala211 = "2.11.12"
-
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
@@ -24,7 +22,7 @@ lazy val commonSettings = Seq(
         Nil
     }
   },
-  releaseCrossBuild := false,
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -33,7 +31,7 @@ lazy val commonSettings = Seq(
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    releaseStepCommandAndRemaining("+publish"),
+    releaseStepCommandAndRemaining("+publishSigned"),
     ReleaseStep(
       check = releaseStepTaskAggregated(makeSite in thisProjectRef.value),
       action = releaseStepTaskAggregated(ghpagesPushSite in thisProjectRef.value)
@@ -45,8 +43,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
-  publishArtifact := false,
-  scalaVersion := Scala211
+  publishArtifact := false
 )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
@@ -111,6 +108,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     mimaBinaryIssueFilters ++= Seq(
     )
 )
+
+val Scala211 = "2.11.12"
 
 lazy val coreJVM = core.jvm.enablePlugins(ScodecPrimaryModuleJVMSettings)
 lazy val coreJS = core.js
