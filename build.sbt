@@ -1,11 +1,30 @@
 import com.typesafe.tools.mima.core._
-import sbtcrossproject.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import ReleaseTransformations._
 
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scalacOptions --= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v >= 13 =>
+        Seq("-Yno-adapted-args", "-Ywarn-unused-import")
+      case _ =>
+        Nil
+    }
+  },
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, v)) if v >= 13 =>
+        Seq("-Ywarn-unused:imports")
+      case _ =>
+        Nil
+    }
+  },
+  crossScalaVersions += "2.10.7",
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
+  releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
@@ -14,7 +33,7 @@ lazy val commonSettings = Seq(
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    releaseStepCommandAndRemaining("+publishSigned"),
+    releaseStepCommandAndRemaining("+publish"),
     ReleaseStep(
       check = releaseStepTaskAggregated(makeSite in thisProjectRef.value),
       action = releaseStepTaskAggregated(ghpagesPushSite in thisProjectRef.value)
@@ -35,16 +54,28 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
   settings(commonSettings: _*).
   settings(
     scodecModule := "scodec-bits",
+    name := scodecModule.value,
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
     )
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
-    crossScalaVersions += "2.13.0-M3",
     libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.0.5-M1" % "test",
-      "org.scalacheck" %%% "scalacheck" % "1.13.5" % "test")
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test"
+    ),
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 =>
+          Seq(
+            "org.scalatest" %%% "scalatest" % "3.0.6-SNAP5" % "test"
+          )
+        case _ =>
+          Seq(
+            "org.scalatest" %%% "scalatest" % "3.0.5" % "test"
+          )
+      }
+    }
   ).
   jsSettings(commonJsSettings: _*).
   nativeSettings(
@@ -65,8 +96,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     },
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "16.0.1" % "test",
-      "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
+      "com.google.guava" % "guava" % "23.0" % "test",
+      "com.google.code.findbugs" % "jsr305" % "3.0.2" % "test" // required for guava
     ),
     OsgiKeys.privatePackage := Nil,
     OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
@@ -92,6 +123,5 @@ lazy val coreNative = core.native.settings(
 lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
   settings(commonSettings: _*).
   settings(
-    crossScalaVersions += "2.13.0-M3",
     publishArtifact := false
   )

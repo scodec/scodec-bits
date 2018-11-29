@@ -1,6 +1,7 @@
 1.1.6
 =====
  - Fixed `BitVector.highByte` to return the correct value (https://github.com/scodec/scodec/issues/108)
+ - Fixed bug in `ByteVector#equals` which would through an `IllegalArgumentException` if the vector had more than `Int.MaxValue` elements (https://github.com/scodec/scodec-bits/issues/90)
 
 1.1.5
 =====

@@ -726,6 +726,24 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
+    * Converts the contents of this vector to a base 58 string.
+    *
+    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
+    *
+    * @group conversions
+    */
+  final def toBase58: String = toBase58(Bases.Alphabets.Base58)
+
+  /**
+    * Converts the contents of this vector to a base 58 string using the specified alphabet.
+    *
+    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
+    *
+    * @group conversions
+    */
+  final def toBase58(alphabet: Bases.Alphabet): String = toByteVector.toBase58(alphabet)
+
+  /**
    * Converts the contents of this vector to a base 64 string.
    *
    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
@@ -1313,7 +1331,7 @@ object BitVector {
    * not to modify the contents of the buffer passed to this function.
    * @group constructors
    */
-  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit.toLong * 8)
+  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit().toLong * 8)
 
   /**
    * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
@@ -1489,6 +1507,34 @@ object BitVector {
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
+    * Constructs a `BitVector` from a base 58 string or returns an error message if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, BitVector] =
+    ByteVector.fromBase58Descriptive(str, alphabet).right.map { _.toBitVector }
+
+  /**
+    * Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58(str: String,alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[BitVector] = fromBase58Descriptive(str, alphabet).right.toOption
+
+  /**
+    * Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 58
+    * @group base
+    */
+  def fromValidBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): BitVector =
+    fromBase58Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
    * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
    * The string may contain whitespace characters which are ignored.
@@ -1632,7 +1678,7 @@ object BitVector {
         require (pos < in.size)
         val bytesToRead = (in.size - pos) min chunkSizeInBytes.toLong
         val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
-        require(buf.limit == bytesToRead)
+        require(buf.limit() == bytesToRead)
         Some((BitVector.view(buf), (in -> (pos + bytesToRead))))
       }
     }
@@ -1691,7 +1737,7 @@ object BitVector {
       } else {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
-        val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size)).toByte
+        val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size).toInt).toByte
         val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
         val updatedOtherBytes = other.drop(invalidBits).toByteVector
         toBytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
