@@ -22,6 +22,7 @@ lazy val commonSettings = Seq(
         Nil
     }
   },
+  crossScalaVersions += "2.10.7",
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
   releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
