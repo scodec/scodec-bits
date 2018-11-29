@@ -2,10 +2,6 @@ sudo: required
 dist: trusty
 before_install:
   - curl https://raw.githubusercontent.com/scala-native/scala-native/v0.3.6/bin/travis_setup.sh | bash -x
-addons:
-  apt:
-    packages:
-      - oracle-java8-installer
 
 cache:
   directories:
@@ -17,16 +13,11 @@ language: scala
 scala:
   - "2.10.7"
   - "2.11.12"
-  - "2.12.6"
+  - "2.12.7"
   - "2.13.0-M5"
 
-matrix:
-  include:
-  - jdk: oraclejdk11
-    scala: 2.12.6
-
 jdk:
-  - oraclejdk8
+  - openjdk11
 
 script:
   - sbt ++$TRAVIS_SCALA_VERSION test mimaReportBinaryIssues
