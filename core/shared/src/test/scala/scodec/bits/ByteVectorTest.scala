@@ -157,6 +157,44 @@ class ByteVectorTest extends BitsSuite {
     an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000"); () }
   }
 
+  test("toBase58") {
+    hex"".toBase58 shouldBe("")
+    hex"00".toBase58 shouldBe("1")
+    hex"61".toBase58 shouldBe("2g")
+    hex"626262".toBase58 shouldBe("a3gV")
+    hex"636363".toBase58 shouldBe("aPEr")
+    hex"73696d706c792061206c6f6e6720737472696e67".toBase58 shouldBe("2cFupjhnEsSn59qHXstmK2ffpLv2")
+    hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 shouldBe("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L")
+    hex"516b6fcd0f".toBase58 shouldBe("ABnLTmg")
+    hex"bf4f89001e670274dd".toBase58 shouldBe("3SEo3LWLoPntC")
+    hex"572e4794".toBase58 shouldBe("3EFU7m")
+    hex"ecac89cad93923c02321".toBase58 shouldBe("EJDM8drfXA6uyA")
+    hex"10c8511e".toBase58 shouldBe("Rt5zm")
+    hex"00000000000000000000".toBase58 shouldBe("1111111111")
+  }
+
+  test("fromValidBase58") {
+    ByteVector.fromValidBase58("") shouldBe (ByteVector.empty)
+    ByteVector.fromValidBase58("1") shouldBe hex"00"
+    ByteVector.fromValidBase58("2g") shouldBe(hex"61")
+    ByteVector.fromValidBase58("a3gV") shouldBe(hex"626262")
+    ByteVector.fromValidBase58("aPEr") shouldBe(hex"636363")
+    ByteVector.fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") shouldBe(hex"73696d706c792061206c6f6e6720737472696e67")
+    ByteVector.fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") shouldBe(hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+    ByteVector.fromValidBase58("ABnLTmg") shouldBe(hex"516b6fcd0f")
+    ByteVector.fromValidBase58("3SEo3LWLoPntC") shouldBe(hex"bf4f89001e670274dd")
+    ByteVector.fromValidBase58("3EFU7m") shouldBe(hex"572e4794")
+    ByteVector.fromValidBase58("EJDM8drfXA6uyA") shouldBe(hex"ecac89cad93923c02321")
+    ByteVector.fromValidBase58("Rt5zm") shouldBe(hex"10c8511e")
+    ByteVector.fromValidBase58("1111111111") shouldBe(hex"00000000000000000000")
+  }
+
+  test("fail due to illegal character fromBase58") {
+    ByteVector.fromBase58Descriptive("R3C0NFxN") shouldBe Left("Invalid base 58 character '0' at index 3")
+    ByteVector.fromBase58Descriptive("03CMNFxN") shouldBe Left("Invalid base 58 character '0' at index 0")
+    ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty shouldBe(true)
+  }
+
   test("base64 roundtrip") {
     forAll { (b: ByteVector) =>
       ByteVector.fromValidBase64(b.toBase64) shouldBe b

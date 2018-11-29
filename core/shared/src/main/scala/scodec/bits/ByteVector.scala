@@ -9,8 +9,10 @@ import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, Messa
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import java.util.zip.{ DataFormatException, Deflater, Inflater }
+
 import javax.crypto.Cipher
 
+import scala.annotation.tailrec
 import scala.collection.GenTraversableOnce
 
 /**
@@ -776,6 +778,37 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     }}}
     bldr.toString
   }
+
+  /**
+    * Converts the contents of this vector to a base 58 string.
+    *
+    * @group conversions
+    */
+  final def toBase58: String = toBase58(Bases.Alphabets.Base58)
+
+  /**
+    * Converts the contents of this vector to a base 58 string using the specified alphabet.
+    *
+    * @group conversions
+    */
+  final def toBase58(alphabet: Bases.Alphabet): String =
+    if (isEmpty) {
+      ""
+    } else {
+      val ZERO = BigInt(0)
+      val RADIX = BigInt(58L)
+      val ones = List.fill(takeWhile(_ == 0).length.toInt)('1')
+
+      @tailrec
+      def go(value: BigInt, chars: List[Char]): String = value match {
+        case ZERO => (ones ++ chars).mkString
+        case _ => {
+          val (div, rem) = value /% RADIX
+          go(div, alphabet.toChar(rem.toInt) +: chars)
+        }
+      }
+      go(BigInt(1, toArray), List.empty)
+    }
 
   /**
    * Converts the contents of this vector to a base 64 string.
@@ -1719,6 +1752,53 @@ object ByteVector {
    */
   def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+    * Constructs a `ByteVector` from a base 58 string or returns an error message if the string is not valid base 58.
+    * It is similar to Base64 but has been modified to avoid both non-alphanumeric characters and letters which might look ambiguous when printed.
+    * It is therefore designed for human users who manually enter the data, copying from some visual source
+    * Compared to Base64, the following similar-looking letters are omitted: 0 (zero), O (capital o), I (capital i) and l (lower case L)
+    * as well as the non-alphanumeric characters + (plus) and / (slash).
+    * The actual order of letters in the alphabet depends on the application, the default order is the same used in Bitcoin
+    * An empty input string results in an empty ByteVector.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, ByteVector] = {
+    val zeroLength = str.takeWhile(_ == '1').length
+    val zeroes = ByteVector.fill(zeroLength.toLong)(0)
+    val trim = str.splitAt(zeroLength)._2.toList
+    val RADIX = BigInt(58L)
+    val decoded = trim.foldLeft(BigInt(0)){ (a, c) =>
+      try {
+        a * RADIX + BigInt(alphabet.toIndex(c))
+      } catch {
+        case e: IllegalArgumentException =>
+          val idx = trim.takeWhile(_ != c).length
+          return Left(s"Invalid base 58 character '$c' at index $idx")
+      }
+    }
+    if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))) //drop because toByteArray sometimes prepends a zero
+  }
+
+  /**
+    * Constructs a `ByteVector` from a base 58 string or returns `None` if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[ByteVector] = fromBase58Descriptive(str, alphabet).right.toOption
+
+  /**
+    * Constructs a `ByteVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
+    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 58
+    * @group base
+    */
+  def fromValidBase58(str: String,  alphabet: Bases.Alphabet = Bases.Alphabets.Base58): ByteVector =
+    fromBase58Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   private val Base64PaddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
 
