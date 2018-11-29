@@ -97,7 +97,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "16.0.1" % "test",
-      "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
+      "com.google.code.findbugs" % "jsr305" % "3.0.2" % "test" // required for guava
     ),
     OsgiKeys.privatePackage := Nil,
     OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
