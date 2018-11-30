@@ -418,7 +418,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def padRight(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"BitVector.padRight($n)")
+    if (n < size) throw new IllegalArgumentException(s"Trying to right-pad a vector of $size bits to only $n bits.")
     else this ++ BitVector.fill(n - size)(false)
 
   /**
@@ -428,7 +428,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group collection
    */
   final def padLeft(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"BitVector.padLeft($n)")
+    if (n < size) throw new IllegalArgumentException(s"Trying to left-pad a vector of $size bits to only $n bits.")
     else BitVector.fill(n - size)(false) ++ this
 
   /**
