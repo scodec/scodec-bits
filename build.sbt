@@ -22,6 +22,7 @@ lazy val commonSettings = Seq(
         Nil
     }
   },
+  crossScalaVersions += "2.10.7",
   publishConfiguration := publishConfiguration.value.withOverwrite(true),
   releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
@@ -95,8 +96,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     },
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "16.0.1" % "test",
-      "com.google.code.findbugs" % "jsr305" % "2.0.3" % "test" // required for guava
+      "com.google.guava" % "guava" % "23.0" % "test",
+      "com.google.code.findbugs" % "jsr305" % "3.0.2" % "test" // required for guava
     ),
     OsgiKeys.privatePackage := Nil,
     OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
