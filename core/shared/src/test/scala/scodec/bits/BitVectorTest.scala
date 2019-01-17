@@ -576,6 +576,14 @@ class BitVectorTest extends BitsSuite {
     hex"001122334455".bits.slice(-21, -5) shouldBe hex"".bits
   }
 
+  test("sliceToByte") {
+    forAll { (x: BitVector, offset0: Long, sliceSize0: Int) =>
+      val offset = if (x.nonEmpty) (offset0 % x.size).abs else 0
+      val sliceSize = (sliceSize0 % 9).abs.min((x.size - offset).toInt)
+      x.sliceToByte(offset, sliceSize).toInt shouldBe x.drop(offset).take(sliceSize.toLong).toInt()
+    }
+  }
+
   test("highByte") {
     BitVector.highByte.toBin shouldBe "11111111"
   }
