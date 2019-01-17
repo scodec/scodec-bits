@@ -770,13 +770,13 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    */
   final def sliceToByte(start: Long, bits: Int, signed: Boolean = true): Byte = {
     if (start % 8 != 0) drop(start).sliceToByte(0, bits, signed)
-    else if (isEmpty) 0.toByte
+    else if (isEmpty || bits == 0) 0.toByte
     else getByte(start, bits, signed)
   }
 
   private def getByte(start: Long, bits: Int, signed: Boolean): Byte = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 8)
-    var result = 0x0ff & getByte(0)
+    var result = 0x0ff & getByte(start / 8)
     if (bits != 0) result = result >>> (8 - bits)
     // Sign extend if necessary
     if (signed && bits != 8 && ((1 << (bits - 1)) & result) != 0) {
