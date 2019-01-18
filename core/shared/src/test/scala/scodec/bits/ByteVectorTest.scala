@@ -311,14 +311,14 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("groupedI + concatenate") {
+  test("grouped + concatenate") {
     forAll { (bv: ByteVector) =>
       if (bv.isEmpty) {
-        bv.groupedI(1).toList shouldBe Nil 
+        bv.grouped(1).toList shouldBe Nil 
       } else if (bv.size < 3) {
-        bv.groupedI(bv.size).toList shouldBe List(bv)
+        bv.grouped(bv.size).toList shouldBe List(bv)
       } else {
-        bv.groupedI(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+        bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
       }
     }
   }

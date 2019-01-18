@@ -425,22 +425,15 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    */
   final def containsSlice(slice: ByteVector): Boolean = indexOfSlice(slice) >= 0
 
-  /**
-   * Converts this vector in to a sequence of `chunkSize`-byte vectors.
-   * @group collection
-   */
-  @deprecated("1.1.8", "Use groupedI instead")
-  final def grouped(chunkSize: Long): Stream[ByteVector] =
-    groupedI(chunkSize).toStream
+  // This was public before version 1.1.8 so it must stay here for bincompat
+  // The public grouped method is adding via an extension method defined in the companion
+  private[bits] final def grouped(chunkSize: Long): Stream[ByteVector] =
+    groupedIterator(chunkSize).toStream
 
-  /**
-   * Converts this vector in to a sequence of `chunkSize`-byte vectors.
-   * @group collection
-   */
-  final def groupedI(chunkSize: Long): Iterator[ByteVector] =
+  private final def groupedIterator(chunkSize: Long): Iterator[ByteVector] =
     if (isEmpty) Iterator.empty
     else if (size <= chunkSize) Iterator(this)
-    else Iterator(take(chunkSize)) ++ drop(chunkSize).groupedI(chunkSize)
+    else Iterator(take(chunkSize)) ++ drop(chunkSize).groupedIterator(chunkSize)
 
   /**
    * Returns the first byte of this vector or throws if vector is emtpy.
@@ -2078,4 +2071,12 @@ object ByteVector {
    * @group constructors
    */
   def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
+
+  implicit class GroupedOp(private val self: ByteVector) extends AnyVal {
+    /**
+     * Converts this vector in to a sequence of `chunkSize`-byte vectors.
+     * @group collection
+     */
+    final def grouped(chunkSize: Long): Iterator[ByteVector] = self.groupedIterator(chunkSize)
+  }
 }
