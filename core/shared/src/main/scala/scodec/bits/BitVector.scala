@@ -359,13 +359,15 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    */
   final def containsSlice(slice: BitVector): Boolean = indexOfSlice(slice) >= 0
 
-  /**
-   * Converts this vector in to a sequence of `n`-bit vectors.
-   * @group collection
-   */
-  final def grouped(n: Long): Stream[BitVector] =
-    if (isEmpty) Stream.empty
-    else take(n) #:: drop(n).grouped(n)
+  // This was public before version 1.1.8 so it must stay here for bincompat
+  // The public grouped method is adding via an extension method defined in the companion
+  @deprecated("1.1.8", "Use groupedI instead")
+  private[bits] final def grouped(n: Long): Stream[BitVector] =
+    groupedIterator(n).toStream
+
+  private final def groupedIterator(n: Long): Iterator[BitVector] =
+    if (isEmpty) Iterator.empty
+    else Iterator(take(n)) ++ drop(n).groupedIterator(n)
 
   /**
    * Returns the first bit of this vector or throws if vector is emtpy.
@@ -2051,4 +2053,13 @@ object BitVector {
   private class SerializationProxy(private val bytes: Array[Byte], private val size: Long) extends Serializable {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
+
+  implicit class GroupedOp(private val self: BitVector) extends AnyVal {
+    /**
+     * Converts this vector in to a sequence of `n`-bit vectors.
+     * @group collection
+     */
+    final def grouped(n: Long): Iterator[BitVector] = self.groupedIterator(n)
+  }
+
 }
