@@ -363,9 +363,16 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * Converts this vector in to a sequence of `n`-bit vectors.
    * @group collection
    */
-  final def grouped(n: Long): Stream[BitVector] =
-    if (isEmpty) Stream.empty
-    else take(n) #:: drop(n).grouped(n)
+  @deprecated("1.1.8", "Use groupedI instead")
+  final def grouped(n: Long): Stream[BitVector] = groupedI(n).toStream
+
+  /**
+   * Converts this vector in to a sequence of `n`-bit vectors.
+   * @group collection
+   */
+  final def groupedI(n: Long): Iterator[BitVector] =
+    if (isEmpty) Iterator.empty
+    else Iterator(take(n)) ++ drop(n).groupedI(n)
 
   /**
    * Returns the first bit of this vector or throws if vector is emtpy.

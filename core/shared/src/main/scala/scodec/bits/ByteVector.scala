@@ -429,10 +429,18 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    * Converts this vector in to a sequence of `chunkSize`-byte vectors.
    * @group collection
    */
+  @deprecated("1.1.8", "Use groupedI instead")
   final def grouped(chunkSize: Long): Stream[ByteVector] =
-    if (isEmpty) Stream.empty
-    else if (size <= chunkSize) Stream(this)
-    else take(chunkSize) #:: drop(chunkSize).grouped(chunkSize)
+    groupedI(chunkSize).toStream
+
+  /**
+   * Converts this vector in to a sequence of `chunkSize`-byte vectors.
+   * @group collection
+   */
+  final def groupedI(chunkSize: Long): Iterator[ByteVector] =
+    if (isEmpty) Iterator.empty
+    else if (size <= chunkSize) Iterator(this)
+    else Iterator(take(chunkSize)) ++ drop(chunkSize).groupedI(chunkSize)
 
   /**
    * Returns the first byte of this vector or throws if vector is emtpy.

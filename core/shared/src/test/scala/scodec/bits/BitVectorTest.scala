@@ -390,14 +390,14 @@ class BitVectorTest extends BitsSuite {
     """bin"asdf"""" shouldNot compile
   }
 
-  test("grouped + concatenate") {
+  test("groupedI + concatenate") {
     forAll { (bv: BitVector) =>
       if (bv.isEmpty) {
-        bv.grouped(1) shouldBe Stream.empty
+        bv.groupedI(1).toList shouldBe Nil
       } else if (bv.size < 3) {
-        bv.grouped(bv.size) shouldBe Stream(bv)
+        bv.groupedI(bv.size).toList shouldBe List(bv)
       } else {
-        bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+        bv.groupedI(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) => acc ++ b } shouldBe bv
       }
     }
   }
