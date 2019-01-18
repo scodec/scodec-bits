@@ -7,7 +7,7 @@ import java.util.UUID
 import java.util.zip.{ DataFormatException, Deflater }
 import javax.crypto.Cipher
 
-import scala.collection.GenTraversableOnce
+import ScalaVersionSpecific._
 
 /**
  * Persistent vector of bits, stored as bytes.
@@ -300,8 +300,8 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    */
   final def consume[A](n: Long)(decode: BitVector => Either[String, A]): Either[String, (BitVector, A)] =
     for {
-      toDecode <- acquire(n).right
-      decoded <- decode(toDecode).right
+      toDecode <- acquire(n)
+      decoded <- decode(toDecode)
     } yield (drop(n), decoded)
 
   /**
@@ -361,7 +361,6 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
 
   // This was public before version 1.1.8 so it must stay here for bincompat
   // The public grouped method is adding via an extension method defined in the companion
-  @deprecated("1.1.8", "Use groupedI instead")
   private[bits] final def grouped(n: Long): Stream[BitVector] =
     groupedIterator(n).toStream
 
@@ -1061,7 +1060,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
    * @group conversions
    */
   final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
-    bytes.inflate(chunkSize).right.map(_.bits)
+    bytes.inflate(chunkSize).map(_.bits)
 
   /**
    * Computes a digest of this bit vector.
@@ -1190,7 +1189,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
-    bytes.cipher(ci, key, opmode, aparams)(sr).right.map { _.bits }
+    bytes.cipher(ci, key, opmode, aparams)(sr).map { _.bits }
 
   /**
    * Pretty print this `BitVector`.
@@ -1318,7 +1317,7 @@ object BitVector {
    * Constructs a `BitVector` from a collection of bytes.
    * @group constructors
    */
-  def apply(bs: GenTraversableOnce[Byte]): BitVector = apply(ByteVector(bs))
+  def apply(bs: IterableOnce[Byte]): BitVector = apply(ByteVector(bs))
 
   /**
    * Constructs a `BitVector` from a list of literal bytes. Only the least significant
@@ -1449,7 +1448,7 @@ object BitVector {
    * @group base
    */
   def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, BitVector] =
-    ByteVector.fromBinInternal(str, alphabet).right.map { case (bytes, size) =>
+    ByteVector.fromBinInternal(str, alphabet).map { case (bytes, size) =>
       val toDrop = size match {
         case 0 => 0
         case n if n % 8 == 0 => 0
@@ -1464,7 +1463,7 @@ object BitVector {
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).right.toOption
+  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).toOption
 
   /**
    * Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
@@ -1484,7 +1483,7 @@ object BitVector {
    * @group base
    */
   def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
-    ByteVector.fromHexInternal(str, alphabet).right.map { case (bytes, count) =>
+    ByteVector.fromHexInternal(str, alphabet).map { case (bytes, count) =>
       val toDrop = if (count % 2 == 0) 0 else 4
       bytes.toBitVector.drop(toDrop.toLong)
     }
@@ -1495,7 +1494,7 @@ object BitVector {
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str, alphabet).right.toOption
+  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str, alphabet).toOption
 
   /**
    * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
@@ -1515,7 +1514,7 @@ object BitVector {
     * @group base
     */
   def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, BitVector] =
-    ByteVector.fromBase58Descriptive(str, alphabet).right.map { _.toBitVector }
+    ByteVector.fromBase58Descriptive(str, alphabet).map { _.toBitVector }
 
   /**
     * Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid base 58.
@@ -1523,7 +1522,7 @@ object BitVector {
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
-  def fromBase58(str: String,alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[BitVector] = fromBase58Descriptive(str, alphabet).right.toOption
+  def fromBase58(str: String,alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[BitVector] = fromBase58Descriptive(str, alphabet).toOption
 
   /**
     * Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
@@ -1543,7 +1542,7 @@ object BitVector {
    * @group base
    */
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, BitVector] =
-    ByteVector.fromBase64Descriptive(str, alphabet).right.map { _.toBitVector }
+    ByteVector.fromBase64Descriptive(str, alphabet).map { _.toBitVector }
 
   /**
    * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
@@ -1551,7 +1550,7 @@ object BitVector {
    * The string may contain whitespace characters which are ignored.
    * @group base
    */
-  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[BitVector] = fromBase64Descriptive(str, alphabet).right.toOption
+  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[BitVector] = fromBase64Descriptive(str, alphabet).toOption
 
   /**
    * Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
@@ -1570,7 +1569,7 @@ object BitVector {
    * @group constructors
    */
   def encodeString(str: String)(implicit charset: Charset): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeString(str)(charset).right.map { _.bits }
+    ByteVector.encodeString(str)(charset).map { _.bits }
 
   /**
    * Encodes the specified string to a `BitVector` using the UTF-8 charset.
@@ -1578,7 +1577,7 @@ object BitVector {
    * @group constructors
    */
   def encodeUtf8(str: String): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeUtf8(str).right.map { _.bits }
+    ByteVector.encodeUtf8(str).map { _.bits }
 
   /**
    * Encodes the specified string to a `BitVector` using the US-ASCII charset.
@@ -1586,14 +1585,14 @@ object BitVector {
    * @group constructors
    */
   def encodeAscii(str: String): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeAscii(str).right.map { _.bits }
+    ByteVector.encodeAscii(str).map { _.bits }
 
   /**
    * Concatenates all the given `BitVector`s into a single instance.
    *
    * @group constructors
    */
-  def concat(bvs: GenTraversableOnce[BitVector]): BitVector = bvs.foldLeft(BitVector.empty)(_ ++ _)
+  def concat(bvs: IterableOnce[BitVector]): BitVector = bvs.foldLeft(BitVector.empty)(_ ++ _)
 
   /**
    * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
@@ -2035,7 +2034,7 @@ object BitVector {
    * stack using `f` if the top element is more than half the size of the
    * element below it.
    */
-  private[bits] def reduceBalanced[A](v: TraversableOnce[A])(size: A => Long)(
+  private[bits] def reduceBalanced[A](v: Iterable[A])(size: A => Long)(
                                       f: (A,A) => A): A = {
     @annotation.tailrec
     def fixup(stack: List[(A,Long)]): List[(A,Long)] = stack match {
@@ -2054,7 +2053,7 @@ object BitVector {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
 
-  implicit class GroupedOp(private val self: BitVector) extends AnyVal {
+  implicit class GroupedOp(val self: BitVector) extends AnyVal {
     /**
      * Converts this vector in to a sequence of `n`-bit vectors.
      * @group collection

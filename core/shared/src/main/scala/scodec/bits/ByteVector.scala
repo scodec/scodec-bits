@@ -13,7 +13,8 @@ import java.util.zip.{ DataFormatException, Deflater, Inflater }
 import javax.crypto.Cipher
 
 import scala.annotation.tailrec
-import scala.collection.GenTraversableOnce
+
+import ScalaVersionSpecific._
 
 /**
  * An immutable vector of bytes, backed by a balanced binary tree of
@@ -296,8 +297,8 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
    */
   final def consume[A](n: Long)(decode: ByteVector => Either[String, A]): Either[String, (ByteVector, A)] =
     for {
-      toDecode <- acquire(n).right
-      decoded <- decode(toDecode).right
+      toDecode <- acquire(n)
+      decoded <- decode(toDecode)
     } yield (drop(n), decoded)
 
   /**
@@ -1487,7 +1488,7 @@ object ByteVector {
    * Constructs a `ByteVector` from a `scala.collection` source of bytes.
    * @group constructors
    */
-  def apply(bs: GenTraversableOnce[Byte]): ByteVector =
+  def apply(bs: IterableOnce[Byte]): ByteVector =
     view(bs.toArray[Byte])
 
   /**
@@ -1627,7 +1628,7 @@ object ByteVector {
    * @group base
    */
   def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, ByteVector] =
-    fromHexInternal(str, alphabet).right.map { case (res, _) => res }
+    fromHexInternal(str, alphabet).map { case (res, _) => res }
 
   private[bits] def fromHexInternal(str: String, alphabet: Bases.HexAlphabet): Either[String, (ByteVector, Int)] = {
     val prefixed = (str startsWith "0x") || (str startsWith "0X")
@@ -1676,7 +1677,7 @@ object ByteVector {
    * The string may start with a `0x` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[ByteVector] = fromHexDescriptive(str, alphabet).right.toOption
+  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[ByteVector] = fromHexDescriptive(str, alphabet).toOption
 
   /**
    * Constructs a `ByteVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
@@ -1696,7 +1697,7 @@ object ByteVector {
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, ByteVector] = fromBinInternal(str, alphabet).right.map { case (res, _) => res }
+  def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, ByteVector] = fromBinInternal(str, alphabet).map { case (res, _) => res }
 
   private[bits] def fromBinInternal(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, (ByteVector, Int)] = {
     val prefixed = (str startsWith "0b") || (str startsWith "0B")
@@ -1741,7 +1742,7 @@ object ByteVector {
    * The string may start with a `0b` and it may contain whitespace or underscore characters.
    * @group base
    */
-  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[ByteVector] = fromBinDescriptive(str, alphabet).right.toOption
+  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[ByteVector] = fromBinDescriptive(str, alphabet).toOption
 
   /**
    * Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
@@ -1770,16 +1771,20 @@ object ByteVector {
     val zeroes = ByteVector.fill(zeroLength.toLong)(0)
     val trim = str.splitAt(zeroLength)._2.toList
     val RADIX = BigInt(58L)
-    val decoded = trim.foldLeft(BigInt(0)){ (a, c) =>
-      try {
-        a * RADIX + BigInt(alphabet.toIndex(c))
-      } catch {
-        case e: IllegalArgumentException =>
-          val idx = trim.takeWhile(_ != c).length
-          return Left(s"Invalid base 58 character '$c' at index $idx")
+    try {
+      val decoded = trim.foldLeft(BigInt(0)){ (a, c) =>
+        try {
+          a * RADIX + BigInt(alphabet.toIndex(c))
+        } catch {
+          case e: IllegalArgumentException =>
+            val idx = trim.takeWhile(_ != c).length
+            throw new IllegalArgumentException(s"Invalid base 58 character '$c' at index $idx")
+        }
       }
+      if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))) //drop because toByteArray sometimes prepends a zero
+    } catch {
+      case e: IllegalArgumentException => Left(e.getMessage)
     }
-    if (trim.isEmpty) Right(zeroes) else Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))) //drop because toByteArray sometimes prepends a zero
   }
 
   /**
@@ -1788,7 +1793,7 @@ object ByteVector {
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
-  def fromBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[ByteVector] = fromBase58Descriptive(str, alphabet).right.toOption
+  def fromBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[ByteVector] = fromBase58Descriptive(str, alphabet).toOption
 
   /**
     * Constructs a `ByteVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
@@ -1897,7 +1902,7 @@ object ByteVector {
    * The string may contain whitespace characters which are ignored.
    * @group base
    */
-  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[ByteVector] = fromBase64Descriptive(str, alphabet).right.toOption
+  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[ByteVector] = fromBase64Descriptive(str, alphabet).toOption
 
   /**
    * Constructs a `ByteVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
@@ -1945,7 +1950,7 @@ object ByteVector {
    *
    * @group constructors
    */
-  def concat(bvs: GenTraversableOnce[ByteVector]): ByteVector = bvs.foldLeft(ByteVector.empty)(_ ++ _).unbuffer
+  def concat(bvs: IterableOnce[ByteVector]): ByteVector = bvs.foldLeft(ByteVector.empty)(_ ++ _).unbuffer
 
   @SerialVersionUID(1L)
   private class SerializationProxy(private val bytes: Array[Byte]) extends Serializable {
@@ -2072,7 +2077,7 @@ object ByteVector {
    */
   def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
 
-  implicit class GroupedOp(private val self: ByteVector) extends AnyVal {
+  implicit class GroupedOp(val self: ByteVector) extends AnyVal {
     /**
      * Converts this vector in to a sequence of `chunkSize`-byte vectors.
      * @group collection

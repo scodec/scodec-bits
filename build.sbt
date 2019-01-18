@@ -58,7 +58,14 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
-    )
+    ),
+    unmanagedSourceDirectories in Compile += {
+      val dir = CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 => "scala_2.13"
+        case _ => "scala_pre_2.13"
+      }
+      baseDirectory.value / "../shared/src/main" /  dir
+    }
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
     libraryDependencies ++= Seq(
