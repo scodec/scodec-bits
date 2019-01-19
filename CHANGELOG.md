@@ -1,3 +1,7 @@
+1.1.9
+=====
+ - Restored JDK8 compatibility
+
 1.1.8
 =====
  - Fixed a bug in `sliceToByte` when the offset was non-zero (https://github.com/scodec/scodec-bits/issues/105)
