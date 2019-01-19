@@ -1,3 +1,10 @@
+1.1.8
+=====
+ - Fixed a bug in `sliceToByte` when the offset was non-zero (https://github.com/scodec/scodec-bits/issues/105)
+ - Changed the return type of `grouped` from `Stream` to `Iterator` (https://github.com/scodec/scodec-bits/issues/55)
+ - Improved clarity of error message in `padLeft` / `padRight` (https://github.com/scodec/scodec-bits/issues/104)
+ - Improved Scala 2.13 compatibility by avoiding deprecated collection types in signatures (https://github.com/scodec/scodec-bits/issues/108)
+
 1.1.6
 =====
  - Fixed `BitVector.highByte` to return the correct value (https://github.com/scodec/scodec/issues/108)
