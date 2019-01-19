@@ -105,7 +105,7 @@ class ByteVectorTest extends BitsSuite {
       }
       if (ind < b.size) {
         val actual = b.update(ind,9).toArray
-        val correct = Vector(b.toArray: _*).updated(ind.toInt, 9.toByte).toArray
+        val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
         actual shouldBe correct
       }
 
@@ -203,7 +203,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("base64 issue #45") {
     val base64 = "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
-    BitVector.fromBase64Descriptive(base64).right.map { _.size } shouldBe Right(1408)
+    BitVector.fromBase64Descriptive(base64).map { _.size } shouldBe Right(1408)
   }
 
   test("buffer :+") {

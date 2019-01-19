@@ -58,7 +58,14 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     rootPackage := "scodec.bits",
     libraryDependencies ++= Seq(
       "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
-    )
+    ),
+    unmanagedSourceDirectories in Compile += {
+      val dir = CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, v)) if v >= 13 => "scala_2.13"
+        case _ => "scala_pre_2.13"
+      }
+      baseDirectory.value / "../shared/src/main" /  dir
+    }
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
     libraryDependencies ++= Seq(
@@ -88,12 +95,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     }.value
   ).
   jvmSettings(
-    mimaPreviousArtifacts := {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v >= 13 => Set.empty
-        case _ => mimaPreviousArtifacts.value
-      }
-    },
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "23.0" % "test",
@@ -106,8 +107,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       "*"
     ),
     mimaBinaryIssueFilters ++= Seq(
-    ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
-    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
     )
 )
 
