@@ -95,12 +95,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     }.value
   ).
   jvmSettings(
-    mimaPreviousArtifacts := {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v >= 13 => Set.empty
-        case _ => mimaPreviousArtifacts.value
-      }
-    },
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "23.0" % "test",
