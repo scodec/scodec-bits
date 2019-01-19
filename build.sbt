@@ -113,8 +113,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       "*"
     ),
     mimaBinaryIssueFilters ++= Seq(
-    ).map { method => ProblemFilters.exclude[MissingMethodProblem](method) },
-    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
     )
 )
 
