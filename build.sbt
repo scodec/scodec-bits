@@ -79,7 +79,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
           )
         case _ =>
           Seq(
-            "org.scalatest" %%% "scalatest" % "3.0.5" % "test"
+            "org.scalatest" %%% "scalatest" % "3.0.6" % "test"
           )
       }
     }
