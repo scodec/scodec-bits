@@ -5,6 +5,7 @@ import ReleaseTransformations._
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
+  scmInfo := Some(ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")),
   contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
   scalacOptions --= {
     CrossVersion.partialVersion(scalaVersion.value) match {
