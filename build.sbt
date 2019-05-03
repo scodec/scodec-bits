@@ -72,7 +72,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     libraryDependencies ++= Seq(
       "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test"
     ),
-    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % "test"
+    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.1.0-SNAP9" % "test"
   ).
   jsSettings(commonJsSettings: _*).
   nativeSettings(
