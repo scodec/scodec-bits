@@ -1,3 +1,7 @@
+1.1.11
+======
+ - Scala 2.13.0-RC2 support
+
 1.1.9
 =====
  - Restored JDK8 compatibility
