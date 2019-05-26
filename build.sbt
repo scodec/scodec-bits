@@ -42,7 +42,8 @@ lazy val commonSettings = Seq(
     setNextVersion,
     commitNextVersion,
     pushChanges
-  )
+  ),
+  mimaPreviousArtifacts := mimaPreviousArtifacts.value.filterNot(_.toString.contains("2.13.0-RC2"))
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
