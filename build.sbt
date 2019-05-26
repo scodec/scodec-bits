@@ -42,7 +42,8 @@ lazy val commonSettings = Seq(
     setNextVersion,
     commitNextVersion,
     pushChanges
-  )
+  ),
+  mimaPreviousArtifacts := mimaPreviousArtifacts.value.filterNot(_.toString.contains("2.13.0-RC2"))
 )
 
 lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
@@ -70,9 +71,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
   ).
   platformsSettings(JVMPlatform, JSPlatform)(
     libraryDependencies ++= Seq(
-      "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test"
+      "org.scalacheck" %%% "scalacheck" % "1.14.0" % "test",
+      "org.scalatest" %%% "scalatest" % "3.1.0-SNAP11" % "test",
+      "org.scalatestplus" %%% "scalatestplus-scalacheck" % "1.0.0-SNAP6" % "test",
     ),
-    libraryDependencies += "org.scalatest" %%% "scalatest" % "3.0.8-RC2" % "test"
   ).
   jsSettings(commonJsSettings: _*).
   nativeSettings(
