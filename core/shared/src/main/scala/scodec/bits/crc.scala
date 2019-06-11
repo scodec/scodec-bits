@@ -34,7 +34,7 @@ object crc {
   }
 
   private[bits] def vectorTable(poly: BitVector, initial: BitVector, reflectInput: Boolean, reflectOutput: Boolean, finalXor: BitVector): BitVector => BitVector = {
-    val table = Array.ofDim[BitVector](256)
+    val table = new Array[BitVector](256)
     val zeroed = BitVector.fill(poly.size - 8)(false)
     val m = 8L
     @annotation.tailrec
@@ -101,7 +101,7 @@ object crc {
    * @return function that calculates a 32-bit CRC
    */
   def int32(poly: Int, initial: Int, reflectInput: Boolean, reflectOutput: Boolean, finalXor: Int): BitVector => Int = {
-    val table = Array.ofDim[Int](256)
+    val table = new Array[Int](256)
     @annotation.tailrec
     def calculateTableIndex(idx: Int): Unit = {
       if (idx < table.size) {

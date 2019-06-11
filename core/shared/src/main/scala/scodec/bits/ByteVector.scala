@@ -1479,7 +1479,7 @@ object ByteVector {
    */
   def apply(buffer: ByteBuffer): ByteVector = {
     val c = buffer.duplicate()
-    val arr = Array.ofDim[Byte](c.remaining)
+    val arr = new Array[Byte](c.remaining)
     c.get(arr)
     view(arr)
   }
@@ -1822,7 +1822,7 @@ object ByteVector {
   def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, ByteVector] = {
     val Pad = alphabet.pad
     var idx, bidx, buffer, mod, padding = 0
-    val acc = Array.ofDim[Byte]((str.size + 3) / 4 * 3)
+    val acc = new Array[Byte]((str.size + 3) / 4 * 3)
     while (idx < str.length) {
       str(idx) match {
         case c if alphabet.ignore(c) => // ignore
