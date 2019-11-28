@@ -952,7 +952,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     go(0)
     if (mod != 0) result = result >>> (8 - mod)
     // Sign extend if necessary
-    if (signed && bits != 64 && ((1 << (bits - 1)) & result) != 0) {
+    if (signed && bits != 64 && ((1L << (bits - 1)) & result) != 0) {
       val toShift = 64 - bits
       result = (result << toShift) >> toShift
     }
