@@ -511,6 +511,11 @@ class BitVectorTest extends BitsSuite {
         BitVector.fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
       }
     }
+
+    forAll (Gen.choose(Long.MinValue >> 8, Long.MinValue >> 16)) { (n: Long) =>
+      BitVector.fromLong(n, size = 56, ordering = ByteOrdering.BigEndian).toLong(ordering = ByteOrdering.BigEndian) shouldBe n
+      BitVector.fromLong(n, size = 56, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+    }
   }
 
   test("UUID conversions") {
