@@ -1,10 +1,11 @@
 package scodec.bits
 
-import org.scalatest.{ FunSuite, Matchers }
+import org.scalatest.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import Matchers._
 
-abstract class BitsSuite extends FunSuite with ScalaCheckPropertyChecks {
+abstract class BitsSuite extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
     PropertyCheckConfiguration(minSuccessful = 100, workers = 4)
