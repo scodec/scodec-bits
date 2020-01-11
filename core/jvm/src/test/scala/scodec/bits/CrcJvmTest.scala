@@ -1,6 +1,6 @@
 package scodec.bits
 
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 import Arbitraries._
 

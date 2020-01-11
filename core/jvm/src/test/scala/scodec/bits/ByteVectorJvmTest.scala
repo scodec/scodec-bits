@@ -2,7 +2,7 @@ package scodec.bits
 
 import org.scalacheck.{ Arbitrary, Gen }
 import Arbitrary.arbitrary
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import Arbitraries._
 
 class ByteVectorJvmTest extends BitsSuite {

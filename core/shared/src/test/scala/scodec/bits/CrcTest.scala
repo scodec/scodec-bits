@@ -2,7 +2,7 @@ package scodec.bits
 
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import Arbitraries._
 

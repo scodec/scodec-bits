@@ -3,7 +3,7 @@ package scodec.bits
 import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitraries._
-import org.scalatest.Matchers._
+import org.scalatest.matchers.should.Matchers._
 
 class BitVectorJvmTest extends BitsSuite {
   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
