@@ -100,9 +100,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
       "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
     ),
-    sourceDirectories in (Compile, scalafmt) += baseDirectory.value / "../shared/src/main/scala",
     autoAPIMappings := true,
-    apiURL := Some(url(s"http://scodec.org/api/scodec-bitd/${version.value}/")),
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
     scalacOptions in (Compile, doc) := {
