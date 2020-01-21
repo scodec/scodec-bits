@@ -734,7 +734,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     size % 8 match {
       case 0           => full
       case n if n <= 4 => full.init
-      case _       => full
+      case _           => full
     }
   }
 
@@ -1694,7 +1694,8 @@ object BitVector {
     *
     * @group constructors
     */
-  def concat(bvs: IterableOnce[BitVector]): BitVector = bvs.iterator.foldLeft(BitVector.empty)(_ ++ _)
+  def concat(bvs: IterableOnce[BitVector]): BitVector =
+    bvs.iterator.foldLeft(BitVector.empty)(_ ++ _)
 
   /**
     * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.

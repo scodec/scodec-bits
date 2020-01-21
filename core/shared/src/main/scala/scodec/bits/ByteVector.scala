@@ -1271,7 +1271,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     */
   override def equals(other: Any) = other match {
     case that: ByteVector => this === that
-    case _            => false
+    case _                => false
   }
 
   /**
