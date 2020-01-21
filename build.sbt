@@ -1,129 +1,151 @@
 import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
-import ReleaseTransformations._
+import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
+lazy val contributors = Seq(
+  "mpilquist" -> "Michael Pilquist",
+  "pchiusano" -> "Paul Chiusano"
+)
+
 lazy val commonSettings = Seq(
-  scodecModule := "scodec-bits",
-  rootPackage := "scodec.bits",
+  organization := "org.scodec",
+  organizationHomepage := Some(new URL("http://scodec.org")),
+  licenses += ("Three-clause BSD-style", url(
+    "https://github.com/scodec/scodec-bits/blob/master/LICENSE"
+  )),
+  git.remoteRepo := "git@github.com:scodec/scodec-bits.git",
   scmInfo := Some(
     ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
   ),
-  contributors ++= Seq(
-    Contributor("mpilquist", "Michael Pilquist"),
-    Contributor("pchiusano", "Paul Chiusano")
-  ),
-  scalacOptions --= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v >= 13 =>
-        Seq("-Yno-adapted-args", "-Ywarn-unused-import")
-      case _ =>
-        Nil
-    }
+  unmanagedResources in Compile ++= {
+    val base = baseDirectory.value
+    (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
   },
-  scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, v)) if v >= 13 =>
-        Seq("-Ywarn-unused:imports")
-      case _ =>
+  scalacOptions ++= Seq(
+    "-encoding",
+    "UTF-8",
+    "-deprecation",
+    "-feature",
+    "-unchecked"
+  ) ++
+    (scalaBinaryVersion.value match {
+      case v if v.startsWith("2.13") =>
+        List("-Xlint", "-Ywarn-unused")
+      case v if v.startsWith("2.12") =>
         Nil
-    }
+      case other => sys.error(s"Unsupported scala version: $other")
+    }),
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+  mimaPreviousArtifacts := {
+    List("1.1.13").map { pv =>
+      organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
+    }.toSet
   },
-  crossScalaVersions += "2.10.7",
-  publishConfiguration := publishConfiguration.value.withOverwrite(true),
-  releaseCrossBuild := false,
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runClean,
-    releaseStepCommandAndRemaining("+test"),
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    releaseStepCommandAndRemaining("+publish"),
-    ReleaseStep(
-      check = releaseStepTaskAggregated(makeSite in thisProjectRef.value),
-      action = releaseStepTaskAggregated(ghpagesPushSite in thisProjectRef.value)
-    ),
-    setNextVersion,
-    commitNextVersion,
-    pushChanges
+  releaseCrossBuild := true
+) ++ publishingSettings
+
+lazy val publishingSettings = Seq(
+  publishTo := {
+    val nexus = "https://oss.sonatype.org/"
+    if (version.value.trim.endsWith("SNAPSHOT"))
+      Some("snapshots".at(nexus + "content/repositories/snapshots"))
+    else
+      Some("releases".at(nexus + "service/local/staging/deploy/maven2"))
+  },
+  publishMavenStyle := true,
+  publishArtifact in Test := false,
+  pomIncludeRepository := { x =>
+    false
+  },
+  pomExtra := (
+    <url>http://github.com/scodec/scodec-bits</url>
+    <developers>
+      {for ((username, name) <- contributors) yield <developer>
+        <id>{username}</id>
+        <name>{name}</name>
+        <url>http://github.com/{username}</url>
+      </developer>}
+    </developers>
   ),
-  mimaPreviousArtifacts := mimaPreviousArtifacts.value.filterNot(_.toString.contains("2.13.0"))
+  pomPostProcess := { (node) =>
+    import scala.xml._
+    import scala.xml.transform._
+    def stripIf(f: Node => Boolean) = new RewriteRule {
+      override def transform(n: Node) =
+        if (f(n)) NodeSeq.Empty else n
+    }
+    val stripTestScope = stripIf { n =>
+      n.label == "dependency" && (n \ "scope").text == "test"
+    }
+    new RuleTransformer(stripTestScope).transform(node)(0)
+  }
 )
 
 lazy val root = project
   .in(file("."))
-  .aggregate(coreJVM, coreJS, coreNative, benchmark)
+  .aggregate(coreJVM, coreJS, benchmark)
   .settings(commonSettings: _*)
   .settings(
     publishArtifact := false
   )
 
-lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
   .enablePlugins(BuildInfoPlugin)
-  .enablePlugins(ScodecPrimaryModuleSettings)
   .settings(commonSettings: _*)
   .settings(
-    scodecModule := "scodec-bits",
-    name := scodecModule.value,
-    rootPackage := "scodec.bits",
+    name := "scodec-bits",
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided"
-    ),
-    unmanagedSourceDirectories in Compile += {
-      val dir = CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, v)) if v >= 13 => "scala_2.13"
-        case _                       => "scala_pre_2.13"
-      }
-      baseDirectory.value / "../shared/src/main" / dir
-    }
-  )
-  .platformsSettings(JVMPlatform, JSPlatform)(
-    libraryDependencies ++= Seq(
+      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
       "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test",
       "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
       "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
-    )
-  )
-  .jsSettings(commonJsSettings: _*)
-  .nativeSettings(
-    crossScalaVersions := Seq(Scala211),
-    // Don't compile shared/src/test
-    unmanagedSourceDirectories.in(Test) := Seq(sourceDirectory.in(Test).value),
-    test := Def.taskDyn {
-      if (scalaVersion.value == Scala211) run.in(Test).toTask("")
-      else Def.task(())
-    }.value
-  )
-  .jvmSettings(
-    docSourcePath := new File(baseDirectory.value, "../.."),
-    libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "23.0" % "test",
-      "com.google.code.findbugs" % "jsr305" % "3.0.2" % "test" // required for guava
     ),
-    OsgiKeys.privatePackage := Nil,
-    OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
-    OsgiKeys.importPackage := Seq(
-      """scala.*;version="$<range;[==,=+)>"""",
-      "*"
-    ),
-    mimaBinaryIssueFilters ++= Seq(
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
-    )
+    sourceDirectories in (Compile, scalafmt) += baseDirectory.value / "../shared/src/main/scala",
+    autoAPIMappings := true,
+    apiURL := Some(url(s"http://scodec.org/api/scodec-bitd/${version.value}/")),
+    buildInfoPackage := "scodec.bits",
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
+    scalacOptions in (Compile, doc) := {
+      val tagOrBranch = {
+        if (version.value.endsWith("SNAPSHOT")) gitCurrentBranch.value
+        else ("v" + version.value)
+      }
+      Seq(
+        "-groups",
+        "-implicits",
+        "-implicits-show-all",
+        "-sourcepath",
+        new File(baseDirectory.value, "../..").getCanonicalPath,
+        "-doc-source-url",
+        "https://github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
+      )
+    },
+    scalacOptions in (Compile, console) ~= {
+      _.filterNot { o =>
+        o == "-Ywarn-unused" || o == "-Xfatal-warnings"
+      }
+    },
+    scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
   )
 
-val Scala211 = "2.11.12"
-
-lazy val coreJVM = core.jvm.enablePlugins(ScodecPrimaryModuleJVMSettings)
-lazy val coreJS = core.js
-lazy val coreNative = core.native.settings(
-  scalaVersion := Scala211,
-  crossScalaVersions := Seq(scalaVersion.value)
+lazy val coreJVM = core.jvm.settings(
+  libraryDependencies ++= Seq(
+    "com.google.guava" % "guava" % "23.0" % "test"
+  ),
+  OsgiKeys.privatePackage := Nil,
+  OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
+  OsgiKeys.importPackage := Seq(
+    """scala.*;version="$<range;[==,=+)>"""",
+    "*"
+  ),
+  OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package")
 )
+
+lazy val coreJS = core.js
 
 lazy val benchmark: Project = project
   .in(file("benchmark"))
