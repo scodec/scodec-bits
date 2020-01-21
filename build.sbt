@@ -39,11 +39,6 @@ lazy val commonSettings = Seq(
       case other => sys.error(s"Unsupported scala version: $other")
     }),
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
-  mimaPreviousArtifacts := {
-    List("1.1.13").map { pv =>
-      organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
-    }.toSet
-  },
   releaseCrossBuild := true
 ) ++ publishingSettings
 
@@ -89,7 +84,8 @@ lazy val root = project
   .aggregate(coreJVM, coreJS, benchmark)
   .settings(commonSettings: _*)
   .settings(
-    publishArtifact := false
+    publishArtifact := false,
+    mimaPreviousArtifacts := Set.empty
   )
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
@@ -129,7 +125,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         o == "-Ywarn-unused" || o == "-Xfatal-warnings"
       }
     },
-    scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
+    scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
+    mimaPreviousArtifacts := {
+      List("1.1.12").map { pv =>
+        organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
+      }.toSet
+    }
   )
 
 lazy val coreJVM = core.jvm.settings(
@@ -153,5 +154,6 @@ lazy val benchmark: Project = project
   .enablePlugins(JmhPlugin)
   .settings(commonSettings: _*)
   .settings(
-    publishArtifact := false
+    publishArtifact := false,
+    mimaPreviousArtifacts := Set.empty
   )
