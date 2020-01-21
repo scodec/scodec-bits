@@ -1,5 +1,5 @@
 import com.typesafe.tools.mima.core._
-import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
+import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
 import ReleaseTransformations._
 
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
@@ -8,8 +8,13 @@ addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalaf
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",
-  scmInfo := Some(ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")),
-  contributors ++= Seq(Contributor("mpilquist", "Michael Pilquist"), Contributor("pchiusano", "Paul Chiusano")),
+  scmInfo := Some(
+    ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
+  ),
+  contributors ++= Seq(
+    Contributor("mpilquist", "Michael Pilquist"),
+    Contributor("pchiusano", "Paul Chiusano")
+  ),
   scalacOptions --= {
     CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, v)) if v >= 13 =>
@@ -49,15 +54,20 @@ lazy val commonSettings = Seq(
   mimaPreviousArtifacts := mimaPreviousArtifacts.value.filterNot(_.toString.contains("2.13.0"))
 )
 
-lazy val root = project.in(file(".")).aggregate(coreJVM, coreJS, coreNative, benchmark).settings(commonSettings: _*).settings(
-  publishArtifact := false
-)
+lazy val root = project
+  .in(file("."))
+  .aggregate(coreJVM, coreJS, coreNative, benchmark)
+  .settings(commonSettings: _*)
+  .settings(
+    publishArtifact := false
+  )
 
-lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("core")).
-  enablePlugins(BuildInfoPlugin).
-  enablePlugins(ScodecPrimaryModuleSettings).
-  settings(commonSettings: _*).
-  settings(
+lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
+  .in(file("core"))
+  .enablePlugins(BuildInfoPlugin)
+  .enablePlugins(ScodecPrimaryModuleSettings)
+  .settings(commonSettings: _*)
+  .settings(
     scodecModule := "scodec-bits",
     name := scodecModule.value,
     rootPackage := "scodec.bits",
@@ -67,20 +77,20 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     unmanagedSourceDirectories in Compile += {
       val dir = CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, v)) if v >= 13 => "scala_2.13"
-        case _ => "scala_pre_2.13"
+        case _                       => "scala_pre_2.13"
       }
-      baseDirectory.value / "../shared/src/main" /  dir
+      baseDirectory.value / "../shared/src/main" / dir
     }
-  ).
-  platformsSettings(JVMPlatform, JSPlatform)(
+  )
+  .platformsSettings(JVMPlatform, JSPlatform)(
     libraryDependencies ++= Seq(
       "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test",
       "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
-      "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test",
-    ),
-  ).
-  jsSettings(commonJsSettings: _*).
-  nativeSettings(
+      "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
+    )
+  )
+  .jsSettings(commonJsSettings: _*)
+  .nativeSettings(
     crossScalaVersions := Seq(Scala211),
     // Don't compile shared/src/test
     unmanagedSourceDirectories.in(Test) := Seq(sourceDirectory.in(Test).value),
@@ -88,8 +98,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
       if (scalaVersion.value == Scala211) run.in(Test).toTask("")
       else Def.task(())
     }.value
-  ).
-  jvmSettings(
+  )
+  .jvmSettings(
     docSourcePath := new File(baseDirectory.value, "../.."),
     libraryDependencies ++= Seq(
       "com.google.guava" % "guava" % "23.0" % "test",
@@ -104,7 +114,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform).in(file("c
     mimaBinaryIssueFilters ++= Seq(
       ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
     )
-)
+  )
 
 val Scala211 = "2.11.12"
 
@@ -115,8 +125,11 @@ lazy val coreNative = core.native.settings(
   crossScalaVersions := Seq(scalaVersion.value)
 )
 
-lazy val benchmark: Project = project.in(file("benchmark")).dependsOn(coreJVM).enablePlugins(JmhPlugin).
-  settings(commonSettings: _*).
-  settings(
+lazy val benchmark: Project = project
+  .in(file("benchmark"))
+  .dependsOn(coreJVM)
+  .enablePlugins(JmhPlugin)
+  .settings(commonSettings: _*)
+  .settings(
     publishArtifact := false
   )

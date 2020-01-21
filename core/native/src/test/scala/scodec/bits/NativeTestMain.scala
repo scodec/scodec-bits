@@ -1,15 +1,14 @@
 package scodec.bits
 
-object NativeTestMain  {
+object NativeTestMain {
 
   implicit class Ops[A](private val self: A) extends AnyVal {
-    def shouldBe(that: A) = {
-      if(self == that) {
+    def shouldBe(that: A) =
+      if (self == that) {
         println(Console.GREEN + s"$self == $that" + Console.RESET)
       } else {
         sys.error(s"$self != $that")
       }
-    }
   }
 
   def main(args: Array[String]): Unit = {
@@ -22,8 +21,8 @@ object NativeTestMain  {
     {
       val b = ByteVector.empty
       b.insert(0, 1) shouldBe ByteVector(1)
-      ByteVector(1,2,3,4).insert(0, 0) shouldBe ByteVector(0,1,2,3,4)
-      ByteVector(1,2,3,4).insert(1, 0) shouldBe ByteVector(1,0,2,3,4)
+      ByteVector(1, 2, 3, 4).insert(0, 0) shouldBe ByteVector(0, 1, 2, 3, 4)
+      ByteVector(1, 2, 3, 4).insert(1, 0) shouldBe ByteVector(1, 0, 2, 3, 4)
     }
 
     {
@@ -38,7 +37,6 @@ object NativeTestMain  {
       val b3 = ByteVector(2, 3, 4, 5)
       b1.zipWithI2(b2, b3)(_ + _ + _) shouldBe ByteVector(3, 6, 9, 12)
     }
-
 
     {
       val b1 = ByteVector(0, 1, 2, 3)
@@ -63,8 +61,12 @@ object NativeTestMain  {
     ByteVector.fromHexDescriptive("0xdeadbee") shouldBe Right(ByteVector(0x0d, 0xea, 0xdb, 0xee))
     ByteVector.fromHexDescriptive("0xde_ad_be_e") shouldBe Right(ByteVector(0x0d, 0xea, 0xdb, 0xee))
 
-    ByteVector.fromHexDescriptive("garbage") shouldBe Left("Invalid hexadecimal character 'g' at index 0")
-    ByteVector.fromHexDescriptive("deadbefg") shouldBe Left("Invalid hexadecimal character 'g' at index 7")
+    ByteVector.fromHexDescriptive("garbage") shouldBe Left(
+      "Invalid hexadecimal character 'g' at index 0"
+    )
+    ByteVector.fromHexDescriptive("deadbefg") shouldBe Left(
+      "Invalid hexadecimal character 'g' at index 7"
+    )
 
     deadbeef.toBin shouldBe "11011110101011011011111011101111"
 
@@ -72,13 +74,20 @@ object NativeTestMain  {
     ByteVector.fromBinDescriptive(deadbeef.toBin.grouped(4).mkString(" ")) shouldBe Right(deadbeef)
     ByteVector.fromBinDescriptive("0001 0011") shouldBe Right(ByteVector(0x13))
     ByteVector.fromBinDescriptive("0b 0001 0011 0111") shouldBe Right(ByteVector(0x01, 0x37))
-    ByteVector.fromBinDescriptive("1101a000") shouldBe Left("Invalid binary character 'a' at index 4")
-    ByteVector.fromBinDescriptive("0b1101a000") shouldBe Left("Invalid binary character 'a' at index 6")
-    ByteVector.fromBinDescriptive("0B1101a000") shouldBe Left("Invalid binary character 'a' at index 6")
+    ByteVector.fromBinDescriptive("1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 4"
+    )
+    ByteVector.fromBinDescriptive("0b1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 6"
+    )
+    ByteVector.fromBinDescriptive("0B1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 6"
+    )
 
     ByteVector.fromValidBin(deadbeef.toBin) shouldBe deadbeef
 
-    val base64 = "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
+    val base64 =
+      "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
     BitVector.fromBase64Descriptive(base64).right.map { _.size } shouldBe Right(1408)
 
     ByteVector(0x55, 0x55, 0x55) << 1 shouldBe ByteVector(0xaa, 0xaa, 0xaa)

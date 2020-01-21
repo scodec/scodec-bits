@@ -1,7 +1,7 @@
 package scodec.bits
 
 import java.util.concurrent.TimeUnit
-import org.openjdk.jmh.annotations.{ Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State }
+import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Array(Mode.AverageTime))
@@ -25,13 +25,13 @@ class ScodecBitsBenchmark {
   val byteVector_M = byteChunks_M.foldLeft(ByteVector.empty)(_ ++ _)
 
   @Benchmark def listCons_N(): Int =
-    bitChunks_N.foldLeft(List[BitVector]())((t,h) => h :: t).size
+    bitChunks_N.foldLeft(List[BitVector]())((t, h) => h :: t).size
   @Benchmark def vectorSnoc_N(): Int =
-    bitChunks_N.foldLeft(Vector[BitVector]())((a,b) => a :+ b).size
+    bitChunks_N.foldLeft(Vector[BitVector]())((a, b) => a :+ b).size
   @Benchmark def listCons_M(): Int =
-    bitChunks_M.foldLeft(List[BitVector]())((t,h) => h :: t).size
+    bitChunks_M.foldLeft(List[BitVector]())((t, h) => h :: t).size
   @Benchmark def vectorSnoc_M(): Int =
-    bitChunks_M.foldLeft(Vector[BitVector]())((a,b) => a :+ b).size
+    bitChunks_M.foldLeft(Vector[BitVector]())((a, b) => a :+ b).size
 
   // N
   @Benchmark def bitVectorAppendSnoc_N(): Long =
@@ -50,13 +50,13 @@ class ScodecBitsBenchmark {
     b.size
   }
   @Benchmark def bitVectorStride_N(): Long =
-    (0L until (N/512)).foldLeft(bitVector_N)((b,_) => b.drop(512*8)).size
+    (0L until (N / 512)).foldLeft(bitVector_N)((b, _) => b.drop(512 * 8)).size
   @Benchmark def byteVectorStride_N(): Long =
-    (0L until (N/512)).foldLeft(byteVector_N)((b,_) => b.drop(512)).size
+    (0L until (N / 512)).foldLeft(byteVector_N)((b, _) => b.drop(512)).size
   @Benchmark def bitVectorTake_N(): Long =
-    (N until 0L by -512L).foldLeft(bitVector_N)((b,n) => b.take(n)).size
+    (N until 0L by -512L).foldLeft(bitVector_N)((b, n) => b.take(n)).size
   @Benchmark def byteVectorTake_N(): Long =
-    (N until 0 by -512).foldLeft(byteVector_N)((b,n) => b.take(n)).size
+    (N until 0 by -512).foldLeft(byteVector_N)((b, n) => b.take(n)).size
 
   // M
   @Benchmark def bitVectorAppendSnoc_M(): Long =
@@ -75,13 +75,13 @@ class ScodecBitsBenchmark {
     b.size
   }
   @Benchmark def bitVectorStride_M(): Long =
-    (0L until (M/512)).foldLeft(bitVector_M)((b,_) => b.drop(512L*8)).size
+    (0L until (M / 512)).foldLeft(bitVector_M)((b, _) => b.drop(512L * 8)).size
   @Benchmark def byteVectorStride_M(): Long =
-    (0L until (M/512)).foldLeft(byteVector_M)((b,_) => b.drop(512L)).size
+    (0L until (M / 512)).foldLeft(byteVector_M)((b, _) => b.drop(512L)).size
   @Benchmark def bitVectorTake_M(): Long =
-    (M until 0L by -512L).foldLeft(bitVector_M)((b,n) => b.take(n)).size
+    (M until 0L by -512L).foldLeft(bitVector_M)((b, n) => b.take(n)).size
   @Benchmark def byteVectorTake_M(): Long =
-    (M until 0 by -512).foldLeft(byteVector_M)((b,n) => b.take(n)).size
+    (M until 0 by -512).foldLeft(byteVector_M)((b, n) => b.take(n)).size
 
   @Benchmark def toBase64(): String =
     bitVector_M.toBase64
@@ -99,8 +99,11 @@ class ScodecBitsBenchmark {
     java.util.Base64.getDecoder.decode(bitVector_M_b64)
 
   private val crc32 = crc(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
-  private val crc32v = crc.vectorTable(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
-  private val crc32i = crc.int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff) andThen { i => BitVector.fromInt(i) }
+  private val crc32v =
+    crc.vectorTable(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
+  private val crc32i = crc.int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen { i =>
+    BitVector.fromInt(i)
+  }
   @Benchmark def crc32_M(): BitVector = crc32(bitVector_M)
   @Benchmark def crc32v_M(): BitVector = crc32v(bitVector_M)
   @Benchmark def crc32i_M(): BitVector = crc32i(bitVector_M)
