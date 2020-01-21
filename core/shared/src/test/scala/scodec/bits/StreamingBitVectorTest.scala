@@ -13,14 +13,13 @@ object StreamingBitVectorTest extends App {
   |   file size. That is, the garbage collector should be able to
   |   reclaim previous chunks when the stream is traversed in a linear
   |   fashion. Try running with -Xmx100m to verify this.
-  """.stripMargin
-  }
+  """.stripMargin }
 
   def time[A](label: String, mb: Double)(a: => A): A = {
     val start = System.currentTimeMillis
     val result = a
     val t = (System.currentTimeMillis.toDouble - start) / 1000.0
-    println(s"$label took $t seconds, ${math.round(mb/t)} MB/s")
+    println(s"$label took $t seconds, ${math.round(mb / t)} MB/s")
     result
   }
 
@@ -33,7 +32,7 @@ object StreamingBitVectorTest extends App {
 
   val Stride = 4096L * 8 // 4kb
   @annotation.tailrec
-  def countBits(b: BitVector, acc: Long, touchBytes: Boolean): Long = {
+  def countBits(b: BitVector, acc: Long, touchBytes: Boolean): Long =
     if (b.isEmpty) acc
     else {
       val (h, t) = (b.take(Stride), b.drop(Stride))
@@ -47,14 +46,12 @@ object StreamingBitVectorTest extends App {
       }
       countBits(t, acc + (if (touchBytes) i.toLong else h.size / 8), touchBytes)
     }
-  }
   import java.io._
   val file = new File("test.largefile")
   if (!file.exists) {
     println("To test large file-backed streaming BitVector support,")
     println("place a large file at ./test.largefile")
-  }
-  else {
+  } else {
     def go(touchBytes: Boolean): Unit = {
       val in = new FileInputStream(file)
       val nioIn1 = (new FileInputStream(file)).getChannel
@@ -72,35 +69,36 @@ object StreamingBitVectorTest extends App {
           // will run out of memory, since head of stream makes entire stream
           // reachable!
           val N = countBits(BitVector.fromInputStream(in), 0, touchBytes)
-          println(s"finished processing ${N.toDouble/1e6} MB")
+          println(s"finished processing ${N.toDouble / 1e6} MB")
           printMemoryStats
         }
         println
         time("BitVector.fromChannel(chunkSize=64kB)", size) {
-          val N = countBits(BitVector.fromChannel(nioIn1, chunkSizeInBytes = 1024 * 64), 0, touchBytes)
-          println(s"finished processing ${N.toDouble/1e6} MB")
+          val N =
+            countBits(BitVector.fromChannel(nioIn1, chunkSizeInBytes = 1024 * 64), 0, touchBytes)
+          println(s"finished processing ${N.toDouble / 1e6} MB")
           printMemoryStats
         }
         println
         time("BitVector.fromChannel(direct=true, chunkSizeInBytes=64k)", size) {
           val N = countBits(BitVector.fromChannel(nioIn3, 64 * 1024, direct = true), 0, touchBytes)
-          println(s"finished processing ${N.toDouble/1e6} MB")
+          println(s"finished processing ${N.toDouble / 1e6} MB")
           printMemoryStats
         }
         println
         time("BitVector.fromChannel(direct=true, chunkSize=16MB)", size) {
-          val N = countBits(BitVector.fromChannel(nioIn2, 16 * 1024 * 1000, direct = true), 0, touchBytes)
-          println(s"finished processing ${N.toDouble/1e6} MB")
+          val N =
+            countBits(BitVector.fromChannel(nioIn2, 16 * 1024 * 1000, direct = true), 0, touchBytes)
+          println(s"finished processing ${N.toDouble / 1e6} MB")
           printMemoryStats
         }
         println
         time("BitVector.fromMmap", size) {
           val N = countBits(BitVector.fromMmap(nioIn4), 0, touchBytes)
-          println(s"finished processing ${N.toDouble/1e6} MB")
+          println(s"finished processing ${N.toDouble / 1e6} MB")
           printMemoryStats
         }
-      }
-      finally {
+      } finally {
         print("closing files... ")
         in.close
         nioIn1.close

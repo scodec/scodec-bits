@@ -1,6 +1,6 @@
 package scodec.bits
 
-import org.scalacheck.{ Arbitrary, Gen }
+import org.scalacheck.{Arbitrary, Gen}
 import Arbitrary.arbitrary
 import org.scalatest.matchers.should.Matchers._
 import Arbitraries._
@@ -22,17 +22,23 @@ class ByteVectorJvmTest extends BitsSuite {
   }
 
   test("fromBase64 - digit count non-divisble by 4") {
-    ByteVector.fromBase64Descriptive("A") shouldBe Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
+    ByteVector.fromBase64Descriptive("A") shouldBe Left(
+      "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+    )
     ByteVector.fromBase64Descriptive("AB") shouldBe Right(hex"00")
     ByteVector.fromBase64Descriptive("ABC") shouldBe Right(hex"0010")
     ByteVector.fromBase64Descriptive("ABCD") shouldBe Right(hex"001083")
-    ByteVector.fromBase64Descriptive("ABCDA") shouldBe Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
+    ByteVector.fromBase64Descriptive("ABCDA") shouldBe Left(
+      "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+    )
     ByteVector.fromBase64Descriptive("ABCDAB") shouldBe Right(hex"00108300")
   }
 
   test("fromBase64 - padding") {
     ByteVector.fromBase64Descriptive("AB==") shouldBe Right(hex"00")
-    val paddingError = Left("Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed")
+    val paddingError = Left(
+      "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
+    )
     ByteVector.fromBase64Descriptive("A=") shouldBe paddingError
     ByteVector.fromBase64Descriptive("A==") shouldBe paddingError
     ByteVector.fromBase64Descriptive("A===") shouldBe paddingError
@@ -86,11 +92,13 @@ class ByteVectorJvmTest extends BitsSuite {
       sz <- Gen.chooseNum(1L, 8192L)
     } yield ByteVector.fill(sz)(b)
     forAll(deflatableByteVectors) { (x: ByteVector) =>
-      if (x.size > 11) x.deflate().size shouldBe < (x.size)
+      if (x.size > 11) x.deflate().size shouldBe <(x.size)
     }
   }
 
   test("serialization") {
-    forAll { (x: ByteVector) => serializationShouldRoundtrip(x) }
+    forAll { (x: ByteVector) =>
+      serializationShouldRoundtrip(x)
+    }
   }
 }

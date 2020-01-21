@@ -2,6 +2,9 @@ import com.typesafe.tools.mima.core._
 import sbtcrossproject.CrossPlugin.autoImport.{crossProject, CrossType}
 import ReleaseTransformations._
 
+addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
+addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
+
 lazy val commonSettings = Seq(
   scodecModule := "scodec-bits",
   rootPackage := "scodec.bits",

@@ -28,7 +28,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   test("compact is a no-op for already compact bit vectors") {
-    val b = BitVector(0x80,0x90)
+    val b = BitVector(0x80, 0x90)
     (b.compact.underlying eq b.compact.underlying) shouldBe true
     (b.toByteVector eq b.toByteVector) shouldBe true
     val b2 = b.drop(8).align // also make sure this works if we're talking about a byte-aligned slice
@@ -37,47 +37,48 @@ class BitVectorTest extends BitsSuite {
   }
 
   test("equals/take/drop stack safety") {
-    forAll (hugeBitStreams) { b =>
+    forAll(hugeBitStreams) { b =>
       b shouldBe b // this exercises take/drop
     }
   }
 
   test("hashCode/take/drop stack safety") {
-    forAll (hugeBitStreams) { b =>
+    forAll(hugeBitStreams) { b =>
       b.hashCode shouldBe b.hashCode
     }
   }
 
   test("size stack safety") {
-    forAll (hugeBitStreams) { b =>
+    forAll(hugeBitStreams) { b =>
       b.size shouldBe b.size
     }
   }
 
   test("acquire stack safety for lazy BitVector") {
-    val nats = BitVector.unfold(0)(i => Some(BitVector.high(1000) -> (i+1)))
+    val nats = BitVector.unfold(0)(i => Some(BitVector.high(1000) -> (i + 1)))
     nats.acquire(100000).isRight shouldBe true
   }
 
   val bitVectorWithTakeIndex = Arbitrary.arbitrary[BitVector].flatMap { bits =>
-    Gen.choose(0L, bits.size+1) map ((bits,_))
+    Gen.choose(0L, bits.size + 1).map((bits, _))
   }
 
   test("acquire/take consistency") {
     def check(bits: BitVector, n: Long): Unit = {
       val b = bits.acquire(n)
       b match {
-        case Left(_) => bits.size should be < n
+        case Left(_)   => bits.size should be < n
         case Right(hd) => hd shouldBe bits.take(n)
       }
-      bits.acquireThen(n)(Left(_),Right(_)) shouldBe b
-      bits.consumeThen(n)(Left(_),(a,b) => Right((b,a))) shouldBe bits.consume(n)(Right(_))
+      bits.acquireThen(n)(Left(_), Right(_)) shouldBe b
+      bits.consumeThen(n)(Left(_), (a, b) => Right((b, a))) shouldBe bits.consume(n)(Right(_))
       ()
     }
 
-    forAll (bitVectorWithTakeIndex) { case (bits, ind) =>
-      check(bits, ind)
-      check(bits, ind*2)
+    forAll(bitVectorWithTakeIndex) {
+      case (bits, ind) =>
+        check(bits, ind)
+        check(bits, ind * 2)
     }
   }
 
@@ -107,22 +108,22 @@ class BitVectorTest extends BitsSuite {
 
   test("apply") {
     val vec = BitVector(ByteVector(0xf0, 0x0f))
-    vec(0) should be (true)
-    vec(1) should be (true)
-    vec(2) should be (true)
-    vec(3) should be (true)
-    vec(4) should be (false)
-    vec(5) should be (false)
-    vec(6) should be (false)
-    vec(7) should be (false)
-    vec(8) should be (false)
-    vec(9) should be (false)
-    vec(10) should be (false)
-    vec(11) should be (false)
-    vec(12) should be (true)
-    vec(13) should be (true)
-    vec(14) should be (true)
-    vec(15) should be (true)
+    vec(0) should be(true)
+    vec(1) should be(true)
+    vec(2) should be(true)
+    vec(3) should be(true)
+    vec(4) should be(false)
+    vec(5) should be(false)
+    vec(6) should be(false)
+    vec(7) should be(false)
+    vec(8) should be(false)
+    vec(9) should be(false)
+    vec(10) should be(false)
+    vec(11) should be(false)
+    vec(12) should be(true)
+    vec(13) should be(true)
+    vec(14) should be(true)
+    vec(15) should be(true)
   }
 
   test("getByte") {
@@ -138,9 +139,9 @@ class BitVectorTest extends BitsSuite {
 
   test("updated") {
     val vec = BitVector.low(16)
-    vec.set(6).get(6) should be (true)
-    vec.set(10).get(10) should be (true)
-    vec.set(10).clear(10).get(10) should be (false)
+    vec.set(6).get(6) should be(true)
+    vec.set(10).get(10) should be(true)
+    vec.set(10).clear(10).get(10) should be(false)
   }
 
   test("drop") {
@@ -175,10 +176,13 @@ class BitVectorTest extends BitsSuite {
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       (x.take(m) ++ x.drop(m)).compact shouldBe x
-      x.take(m+n).compact.take(n) shouldBe x.take(n)
-      x.drop(m+n).compact shouldBe x.drop(m).compact.drop(n)
+      x.take(m + n).compact.take(n) shouldBe x.take(n)
+      x.drop(m + n).compact shouldBe x.drop(m).compact.drop(n)
       x.drop(n).take(m) shouldBe x.drop(n).take(m)
-      x.drop(n).take(m).toIndexedSeq shouldBe BitVector.bits(x.drop(n).toIndexedSeq).take(m).toIndexedSeq
+      x.drop(n).take(m).toIndexedSeq shouldBe BitVector
+        .bits(x.drop(n).toIndexedSeq)
+        .take(m)
+        .toIndexedSeq
     }
   }
 
@@ -186,7 +190,7 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).clear(0).dropRight(4).toByteVector shouldBe ByteVector(0x7f)
     forAll { (x: BitVector, n0: Long, m0: Long) =>
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
-      val n =  if (x.nonEmpty) (n0 % x.size).abs else 0
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       x.dropRight(m).dropRight(n) shouldBe x.dropRight(m + n)
       x.dropRight(m) shouldBe x.take(x.size - m)
     }
@@ -196,8 +200,8 @@ class BitVectorTest extends BitsSuite {
     BitVector.high(12).clear(0).takeRight(4).toByteVector shouldBe ByteVector(0xf0)
     forAll { (x: BitVector, n0: Long, m0: Long) =>
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
-      val n =  if (x.nonEmpty) (n0 % x.size).abs else 0
-      x.takeRight(m max n).takeRight(n).compact shouldBe x.takeRight(n)
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
+      x.takeRight(m.max(n)).takeRight(n).compact shouldBe x.takeRight(n)
       x.takeRight(m) shouldBe x.drop(x.size - m)
     }
   }
@@ -223,19 +227,21 @@ class BitVectorTest extends BitsSuite {
     (BitVector.high(4) ++ BitVector.high(4)).toByteVector shouldBe ByteVector(-1: Byte)
     (BitVector.high(4) ++ BitVector.high(5)).toByteVector shouldBe ByteVector(-1.toByte.toInt, 0x80)
     (BitVector.low(2) ++ BitVector.high(4)).toByteVector shouldBe ByteVector(0x3c)
-    (BitVector.low(2) ++ BitVector.high(4) ++ BitVector.low(2)).toByteVector shouldBe ByteVector(0x3c)
+    (BitVector.low(2) ++ BitVector.high(4) ++ BitVector.low(2)).toByteVector shouldBe ByteVector(
+      0x3c
+    )
     forAll { (x: BitVector, y: BitVector) =>
       (x ++ y).compact.toIndexedSeq shouldBe (x.toIndexedSeq ++ y.toIndexedSeq)
     }
   }
 
   test("b.take(n).drop(n) == b") {
-    implicit val intGen = Arbitrary(Gen.choose(0,10000))
+    implicit val intGen = Arbitrary(Gen.choose(0, 10000))
     forAll { (xs: List[Boolean], n0: Int, m0: Int) =>
       whenever(xs.nonEmpty) {
         val n = n0.abs % xs.size
         val m = m0.abs % xs.size
-        xs.drop(m).take(n) shouldBe xs.take(m+n).drop(m)
+        xs.drop(m).take(n) shouldBe xs.take(m + n).drop(m)
       }
     }
     forAll { (xs: BitVector, n0: Long) =>
@@ -347,7 +353,9 @@ class BitVectorTest extends BitsSuite {
 
   test("fromHexDescriptive") {
     BitVector.fromHexDescriptive("0x012") shouldBe Right(BitVector(0x01, 0x20).take(12))
-    BitVector.fromHexDescriptive("0x01gg") shouldBe Left("Invalid hexadecimal character 'g' at index 4")
+    BitVector.fromHexDescriptive("0x01gg") shouldBe Left(
+      "Invalid hexadecimal character 'g' at index 4"
+    )
     forAll { (bv: BitVector) =>
       val x = bv.padTo((bv.size + 3) / 4 * 4)
       BitVector.fromValidHex(x.toHex) shouldBe x
@@ -397,23 +405,27 @@ class BitVectorTest extends BitsSuite {
       } else if (bv.size < 3) {
         bv.grouped(bv.size).toList shouldBe List(bv)
       } else {
-        bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+        bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) =>
+          acc ++ b
+        } shouldBe bv
       }
     }
   }
 
   test("population count") {
     forAll { (bv: BitVector) =>
-      val cnt = bv.toIndexedSeq.foldLeft(0) { (acc, b) => if (b) acc + 1 else acc }
+      val cnt = bv.toIndexedSeq.foldLeft(0) { (acc, b) =>
+        if (b) acc + 1 else acc
+      }
       bv.populationCount shouldBe cnt
     }
   }
 
   test("indexOfSlice/containsSlice/startsWith") {
     forAll { (bv: BitVector, m0: Long, n0: Long) =>
-      val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0l
-      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0l
-      val slice = bv.slice(m min n, m max n)
+      val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0L
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0L
+      val slice = bv.slice(m.min(n), m.max(n))
       val idx = bv.indexOfSlice(slice)
       idx shouldBe bv.toIndexedSeq.indexOfSlice(slice.toIndexedSeq)
       bv.containsSlice(slice) shouldBe true
@@ -423,7 +435,7 @@ class BitVectorTest extends BitsSuite {
 
   test("endsWith") {
     forAll { (bv: BitVector, n0: Long) =>
-      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0l
+      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0L
       val slice = bv.takeRight(n)
       bv.endsWith(slice) shouldBe true
       if (slice.nonEmpty) bv.endsWith(~slice) shouldBe false
@@ -432,7 +444,7 @@ class BitVectorTest extends BitsSuite {
 
   test("splice") {
     forAll { (x: BitVector, y: BitVector, n0: Long) =>
-      val n = if (x.nonEmpty) (n0 % x.size).abs else 0l
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0L
       x.splice(n, BitVector.empty) shouldBe x
       x.splice(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n))
     }
@@ -440,23 +452,27 @@ class BitVectorTest extends BitsSuite {
 
   test("patch") {
     forAll { (x: BitVector, y: BitVector, n0: Long) =>
-      val n = if (x.nonEmpty) (n0 % x.size).abs else 0l
+      val n = if (x.nonEmpty) (n0 % x.size).abs else 0L
       x.patch(n, x.slice(n, n)) shouldBe x
       x.patch(n, y) shouldBe (x.take(n) ++ y ++ x.drop(n + y.size))
     }
   }
 
-  test("sizeLessThan") { forAll { (x: BitVector) =>
-    x.sizeLessThan(x.size+1) shouldBe true
-    x.sizeLessThan(x.size) shouldBe false
-  }}
+  test("sizeLessThan") {
+    forAll { (x: BitVector) =>
+      x.sizeLessThan(x.size + 1) shouldBe true
+      x.sizeLessThan(x.size) shouldBe false
+    }
+  }
 
-  test("sizeGreaterThan") { forAll { (x: BitVector) =>
-    (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i.toLong)) shouldBe true
-    x.sizeLessThan(x.size+1) shouldBe true
-  }}
+  test("sizeGreaterThan") {
+    forAll { (x: BitVector) =>
+      (0 until x.size.toInt).forall(i => x.sizeGreaterThan(i.toLong)) shouldBe true
+      x.sizeLessThan(x.size + 1) shouldBe true
+    }
+  }
 
-  test("byte conversions"){
+  test("byte conversions") {
     forAll { (n: Byte) =>
       BitVector.fromByte(n).toByte() shouldBe n
       BitVector.fromByte(n).sliceToShort(0, 8) shouldBe n
@@ -467,17 +483,23 @@ class BitVectorTest extends BitsSuite {
     BitVector.fromByte(3, 3) shouldBe bin"011"
   }
 
-  test("short conversions"){
+  test("short conversions") {
     forAll { (n: Short) =>
       BitVector.fromShort(n).toShort() shouldBe n
-      BitVector.fromShort(n, ordering = ByteOrdering.LittleEndian).toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector
+        .fromShort(n, ordering = ByteOrdering.LittleEndian)
+        .toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
       BitVector.fromShort(n).sliceToShort(0, 16) shouldBe n
-      BitVector.fromShort(n).sliceToShort(4,12) shouldBe BitVector.fromShort(n).drop(4).toShort()
-      BitVector.fromShort(n).sliceToShort(4,12, ordering = ByteOrdering.LittleEndian) shouldBe
+      BitVector.fromShort(n).sliceToShort(4, 12) shouldBe BitVector.fromShort(n).drop(4).toShort()
+      BitVector.fromShort(n).sliceToShort(4, 12, ordering = ByteOrdering.LittleEndian) shouldBe
         BitVector.fromShort(n).drop(4).toShort(ordering = ByteOrdering.LittleEndian)
       if (n >= 0 && n < 16384) {
-        BitVector.fromShort(n, size = 15, ordering = ByteOrdering.BigEndian).toShort(ordering = ByteOrdering.BigEndian) shouldBe n
-        BitVector.fromShort(n, size = 15, ordering = ByteOrdering.LittleEndian).toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
+        BitVector
+          .fromShort(n, size = 15, ordering = ByteOrdering.BigEndian)
+          .toShort(ordering = ByteOrdering.BigEndian) shouldBe n
+        BitVector
+          .fromShort(n, size = 15, ordering = ByteOrdering.LittleEndian)
+          .toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
       }
     }
     bin"11".toShort() shouldBe -1
@@ -487,14 +509,20 @@ class BitVectorTest extends BitsSuite {
   test("int conversions") {
     forAll { (n: Int) =>
       BitVector.fromInt(n).toInt() shouldBe n
-      BitVector.fromInt(n, ordering = ByteOrdering.LittleEndian).toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector
+        .fromInt(n, ordering = ByteOrdering.LittleEndian)
+        .toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
       BitVector.fromInt(n).sliceToInt(0, 32) shouldBe n
-      BitVector.fromInt(n).sliceToInt(10,22) shouldBe BitVector.fromInt(n).drop(10).toInt()
-      BitVector.fromInt(n).sliceToInt(10,22, ordering = ByteOrdering.LittleEndian) shouldBe
+      BitVector.fromInt(n).sliceToInt(10, 22) shouldBe BitVector.fromInt(n).drop(10).toInt()
+      BitVector.fromInt(n).sliceToInt(10, 22, ordering = ByteOrdering.LittleEndian) shouldBe
         BitVector.fromInt(n).drop(10).toInt(ordering = ByteOrdering.LittleEndian)
       if (n >= -16383 && n < 16384) {
-        BitVector.fromInt(n, size = 15, ordering = ByteOrdering.BigEndian).toInt(ordering = ByteOrdering.BigEndian) shouldBe n
-        BitVector.fromInt(n, size = 15, ordering = ByteOrdering.LittleEndian).toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
+        BitVector
+          .fromInt(n, size = 15, ordering = ByteOrdering.BigEndian)
+          .toInt(ordering = ByteOrdering.BigEndian) shouldBe n
+        BitVector
+          .fromInt(n, size = 15, ordering = ByteOrdering.LittleEndian)
+          .toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
       }
     }
   }
@@ -502,19 +530,29 @@ class BitVectorTest extends BitsSuite {
   test("long conversions") {
     forAll { (n: Long) =>
       BitVector.fromLong(n).toLong() shouldBe n
-      BitVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
-      BitVector.fromLong(n).sliceToLong(10,54) shouldBe BitVector.fromLong(n).drop(10).toLong()
-      BitVector.fromLong(n).sliceToLong(10,54, ordering = ByteOrdering.LittleEndian) shouldBe
+      BitVector
+        .fromLong(n, ordering = ByteOrdering.LittleEndian)
+        .toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+      BitVector.fromLong(n).sliceToLong(10, 54) shouldBe BitVector.fromLong(n).drop(10).toLong()
+      BitVector.fromLong(n).sliceToLong(10, 54, ordering = ByteOrdering.LittleEndian) shouldBe
         BitVector.fromLong(n).drop(10).toLong(ordering = ByteOrdering.LittleEndian)
       if (n >= -16383 && n < 16384) {
-        BitVector.fromLong(n, size = 15, ordering = ByteOrdering.BigEndian).toLong(ordering = ByteOrdering.BigEndian) shouldBe n
-        BitVector.fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+        BitVector
+          .fromLong(n, size = 15, ordering = ByteOrdering.BigEndian)
+          .toLong(ordering = ByteOrdering.BigEndian) shouldBe n
+        BitVector
+          .fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian)
+          .toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
       }
     }
 
-    forAll (Gen.choose(Long.MinValue >> 8, Long.MinValue >> 16)) { (n: Long) =>
-      BitVector.fromLong(n, size = 56, ordering = ByteOrdering.BigEndian).toLong(ordering = ByteOrdering.BigEndian) shouldBe n
-      BitVector.fromLong(n, size = 56, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+    forAll(Gen.choose(Long.MinValue >> 8, Long.MinValue >> 16)) { (n: Long) =>
+      BitVector
+        .fromLong(n, size = 56, ordering = ByteOrdering.BigEndian)
+        .toLong(ordering = ByteOrdering.BigEndian) shouldBe n
+      BitVector
+        .fromLong(n, size = 56, ordering = ByteOrdering.LittleEndian)
+        .toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
     }
   }
 
@@ -524,18 +562,18 @@ class BitVectorTest extends BitsSuite {
       BitVector.fromUUID(u).toUUID shouldBe u
     }
     // "Invalid" conversions
-    val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary suchThat (_.length != 128)
+    val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary.suchThat(_.length != 128)
     forAll(badlySizedBitVector) { badlySizedBitVector =>
       an[IllegalArgumentException] should be thrownBy { badlySizedBitVector.toUUID }
     }
   }
 
   test("buffering") {
-    implicit val longs = Arbitrary(Gen.choose(-1L,50L))
+    implicit val longs = Arbitrary(Gen.choose(-1L, 50L))
 
     def check(h: BitVector, xs: List[BitVector], delta: Long): Unit = {
       val unbuffered =
-        BitVector.reduceBalanced(h :: xs)(_.size)(BitVector.Append(_,_))
+        BitVector.reduceBalanced(h :: xs)(_.size)(BitVector.Append(_, _))
       val buffered = xs.foldLeft(h)(_ ++ _)
       // sanity check for buffered
       (buffered.take(delta) ++ buffered.drop(delta)) shouldBe buffered
@@ -546,9 +584,9 @@ class BitVectorTest extends BitsSuite {
         buffered(i) shouldBe unbuffered(i)
       }
       // update
-      val i = delta min (unbuffered.size - 1) max 0
+      val i = delta.min(unbuffered.size - 1).max(0)
       if (buffered.nonEmpty)
-        buffered.update(i, i%2 == 0)(i) shouldBe unbuffered.update(i, i%2 == 0)(i)
+        buffered.update(i, i % 2 == 0)(i) shouldBe unbuffered.update(i, i % 2 == 0)(i)
       // size
       buffered.size shouldBe unbuffered.size
       // take

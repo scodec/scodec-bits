@@ -1,135 +1,141 @@
 package scodec.bits
 
-import java.nio.{ ByteBuffer, ByteOrder }
-import java.nio.charset.{ CharacterCodingException, Charset }
-import java.security.{ AlgorithmParameters, GeneralSecurityException, Key, MessageDigest, SecureRandom }
+import java.nio.{ByteBuffer, ByteOrder}
+import java.nio.charset.{CharacterCodingException, Charset}
+import java.security.{
+  AlgorithmParameters,
+  GeneralSecurityException,
+  Key,
+  MessageDigest,
+  SecureRandom
+}
 import java.util.UUID
-import java.util.zip.{ DataFormatException, Deflater }
+import java.util.zip.{DataFormatException, Deflater}
 import javax.crypto.Cipher
 
 import ScalaVersionSpecific._
 
 /**
- * Persistent vector of bits, stored as bytes.
- *
- * Bits are numbered left to right, starting at 0.
- *
- * @groupname collection Collection Like Methods
- * @groupprio collection 0
- *
- * @groupname bitwise Bitwise Operations
- * @groupprio bitwise 1
- *
- * @groupname conversions Conversions
- * @groupprio conversions 2
- *
- * @groupname crypto Cryptography
- * @groupprio crypto 3
- *
- * @define bitwiseOperationsReprDescription bit vector
- */
+  * Persistent vector of bits, stored as bytes.
+  *
+  * Bits are numbered left to right, starting at 0.
+  *
+  * @groupname collection Collection Like Methods
+  * @groupprio collection 0
+  *
+  * @groupname bitwise Bitwise Operations
+  * @groupprio bitwise 1
+  *
+  * @groupname conversions Conversions
+  * @groupprio conversions 2
+  *
+  * @groupname crypto Cryptography
+  * @groupprio crypto 3
+  *
+  * @define bitwiseOperationsReprDescription bit vector
+  */
 sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with Serializable {
   import BitVector._
 
   /**
-   * Returns number of bits in this vector.
-   *
-   * @group collection
-   */
+    * Returns number of bits in this vector.
+    *
+    * @group collection
+    */
   def size: Long
 
   /**
-   * Alias for [[size]].
-   * @group collection
-   */
+    * Alias for [[size]].
+    * @group collection
+    */
   final def length: Long = size
 
   /**
-   * Returns true if this vector has no bits.
-   *
-   * @group collection
-   */
+    * Returns true if this vector has no bits.
+    *
+    * @group collection
+    */
   final def isEmpty: Boolean = sizeLessThan(1)
 
   /**
-   * Returns true if this vector has a non-zero number of bits.
-   *
-   * @group collection
-   */
+    * Returns true if this vector has a non-zero number of bits.
+    *
+    * @group collection
+    */
   final def nonEmpty: Boolean = !isEmpty
 
   /**
-   * Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
-   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
-   *
-   * @group collection
-   */
+    * Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
+    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+    *
+    * @group collection
+    */
   final def sizeGreaterThan(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n)
 
   /**
-   * Returns `true` if the size of this `BitVector` is greater than or equal to `n`. Unlike `size`, this
-   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
-   *
-   * @group collection
-   */
-  final def sizeGreaterThanOrEqual(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n-1)
+    * Returns `true` if the size of this `BitVector` is greater than or equal to `n`. Unlike `size`, this
+    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+    *
+    * @group collection
+    */
+  final def sizeGreaterThanOrEqual(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n - 1)
 
   /**
-   * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
-   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
-   *
-   * @group collection
-   */
+    * Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
+    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+    *
+    * @group collection
+    */
   def sizeLessThan(n: Long): Boolean
 
   /**
-   * Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`, this
-   * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
-   *
-   * @group collection
-   */
+    * Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`, this
+    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+    *
+    * @group collection
+    */
   final def sizeLessThanOrEqual(n: Long): Boolean =
-    n == Long.MaxValue || sizeLessThan(n+1)
+    n == Long.MaxValue || sizeLessThan(n + 1)
 
   /**
-   * Returns the number of bits in this vector, or `None` if the size does not
-   * fit into an `Int`.
-   *
-   * @group collection
-   */
+    * Returns the number of bits in this vector, or `None` if the size does not
+    * fit into an `Int`.
+    *
+    * @group collection
+    */
   final def intSize: Option[Int] = if (size <= Int.MaxValue) Some(size.toInt) else None
 
   /**
-   * Returns true if the `n`th bit is high, false otherwise.
-   *
-   * @throws NoSuchElementException if `n >= size`
-   *
-   * @group collection
-   */
+    * Returns true if the `n`th bit is high, false otherwise.
+    *
+    * @throws NoSuchElementException if `n >= size`
+    *
+    * @group collection
+    */
   def get(n: Long): Boolean
 
   /**
-   * Returns the `n`th byte, 0-indexed.
-   *
-   * @throws NoSuchElementException if `n >= bytes.size`
-   *
-   * @group collection
-   */
+    * Returns the `n`th byte, 0-indexed.
+    *
+    * @throws NoSuchElementException if `n >= bytes.size`
+    *
+    * @group collection
+    */
   def getByte(n: Long): Byte
 
   /**
-   * Alias for `get`.
-   *
-   * @group collection
-   * @see get(Long)
-   */
+    * Alias for `get`.
+    *
+    * @group collection
+    * @see get(Long)
+    */
   final def apply(n: Long): Boolean = get(n)
 
   /**
-   * Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >= size`.
-   *
-   * @group collection
-   */
+    * Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >= size`.
+    *
+    * @group collection
+    */
   final def lift(n: Long): Option[Boolean] =
     if (sizeGreaterThan(n)) Some(get(n))
     else None
@@ -137,226 +143,226 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   private[bits] def unchunk = this
 
   /**
-   * Returns a new bit vector with the `n`th bit high if `high` is true or low if `high` is false.
-   *
-   * @group collection
-   */
+    * Returns a new bit vector with the `n`th bit high if `high` is true or low if `high` is false.
+    *
+    * @group collection
+    */
   def update(n: Long, high: Boolean): BitVector
 
   /**
-   * Returns a vector with the specified bit inserted at the specified index.
-   * @group collection
-   */
+    * Returns a vector with the specified bit inserted at the specified index.
+    * @group collection
+    */
   final def insert(idx: Long, b: Boolean): BitVector =
     (take(idx) :+ b) ++ drop(idx)
 
   /**
-   * Returns a vector with the specified bit vector inserted at the specified index.
-   * @group collection
-   */
+    * Returns a vector with the specified bit vector inserted at the specified index.
+    * @group collection
+    */
   final def splice(idx: Long, b: BitVector): BitVector =
     take(idx) ++ b ++ drop(idx)
 
   /**
-   * Returns a vector with the specified bit vector replacing bits `[idx, idx + b.size]`.
-   * @group collection
-   */
+    * Returns a vector with the specified bit vector replacing bits `[idx, idx + b.size]`.
+    * @group collection
+    */
   final def patch(idx: Long, b: BitVector): BitVector =
     take(idx) ++ b ++ drop(idx + b.size)
 
   /**
-   * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
-   *
-   * @group collection
-   */
+    * Returns a new bit vector with the `n`th bit high (and all other bits unmodified).
+    *
+    * @group collection
+    */
   final def set(n: Long): BitVector = update(n, true)
 
   /**
-   * Returns a new bit vector with the `n`th bit low (and all other bits unmodified).
-   *
-   * @group collection
-   */
+    * Returns a new bit vector with the `n`th bit low (and all other bits unmodified).
+    *
+    * @group collection
+    */
   final def clear(n: Long): BitVector = update(n, false)
 
   /**
-   * Returns a new bit vector representing this vector's contents followed by the specified vector's contents.
-   *
-   * @group collection
-   */
+    * Returns a new bit vector representing this vector's contents followed by the specified vector's contents.
+    *
+    * @group collection
+    */
   def ++(b2: BitVector): BitVector =
     if (this.isEmpty) b2
     else Chunks(Append(this, b2))
 
   /**
-   * Returns a new vector with the specified bit prepended.
-   * @group collection
-   */
-  final def +:(b: Boolean): BitVector  = BitVector.bit(b) ++ this
+    * Returns a new vector with the specified bit prepended.
+    * @group collection
+    */
+  final def +:(b: Boolean): BitVector = BitVector.bit(b) ++ this
 
   /**
-   * Returns a new vector with the specified bit appended.
-   * @group collection
-   */
+    * Returns a new vector with the specified bit appended.
+    * @group collection
+    */
   final def :+(b: Boolean): BitVector = this ++ BitVector.bit(b)
 
   /**
-   * Returns the depth of this tree. The result of `compact` has depth 0.
-   */
+    * Returns the depth of this tree. The result of `compact` has depth 0.
+    */
   private[bits] def depth: Int = this match {
-    case Append(l,r) => 1 + (l.depth max r.depth)
-    case c: Chunks => 1 + c.chunks.depth
-    case _ => 0
+    case Append(l, r) => 1 + (l.depth.max(r.depth))
+    case c: Chunks    => 1 + c.chunks.depth
+    case _            => 0
   }
 
   /**
-   * Returns a vector of all bits in this vector except the first `n` bits.
-   *
-   * The resulting vector's size is `0 max (size - n)`.
-   *
-   * @group collection
-   */
+    * Returns a vector of all bits in this vector except the first `n` bits.
+    *
+    * The resulting vector's size is `0 max (size - n)`.
+    *
+    * @group collection
+    */
   def drop(n: Long): BitVector
 
   /**
-   * Returns a vector of all bits in this vector except the last `n` bits.
-   *
-   * The resulting vector's size is `0 max (size - n)`.
-   *
-   * @group collection
-   */
+    * Returns a vector of all bits in this vector except the last `n` bits.
+    *
+    * The resulting vector's size is `0 max (size - n)`.
+    *
+    * @group collection
+    */
   final def dropRight(n: Long): BitVector =
     if (n <= 0) this
     else if (n >= size) BitVector.empty
     else take(size - n)
 
   /**
-   * Returns a vector of the first `n` bits of this vector.
-   *
-   * The resulting vector's size is `n min size`.
-   *
-   * Note: if an `n`-bit vector is required, use the `acquire` method instead.
-   *
-   * @see acquire
-   * @group collection
-   */
+    * Returns a vector of the first `n` bits of this vector.
+    *
+    * The resulting vector's size is `n min size`.
+    *
+    * Note: if an `n`-bit vector is required, use the `acquire` method instead.
+    *
+    * @see acquire
+    * @group collection
+    */
   def take(n: Long): BitVector
 
   /**
-   * Returns a vector of the last `n` bits of this vector.
-   *
-   * The resulting vector's size is `n min size`.
-   *
-   * @group collection
-   */
+    * Returns a vector of the last `n` bits of this vector.
+    *
+    * The resulting vector's size is `n min size`.
+    *
+    * @group collection
+    */
   final def takeRight(n: Long): BitVector =
     if (n < 0) throw new IllegalArgumentException(s"takeRight($n)")
     else if (n >= size) this
-    else this.drop(size-n)
-
+    else this.drop(size - n)
 
   /**
-   * Returns a pair of vectors that is equal to `(take(n), drop(n))`.
-   * @group collection
-   */
+    * Returns a pair of vectors that is equal to `(take(n), drop(n))`.
+    * @group collection
+    */
   final def splitAt(n: Long): (BitVector, BitVector) = (take(n), drop(n))
 
   /**
-   * Returns a vector made up of the bits starting at index `from` up to index `until`,
-   * not including the index `until`.
-   *
-   * @group collection
-   */
+    * Returns a vector made up of the bits starting at index `from` up to index `until`,
+    * not including the index `until`.
+    *
+    * @group collection
+    */
   final def slice(from: Long, until: Long): BitVector =
-    drop(from).take(until - (from max 0))
+    drop(from).take(until - (from.max(0)))
 
   /**
-   * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
-   *
-   * If this vector does not contain at least `n` bits, an error message is returned.
-   *
-   * @see take
-   * @group collection
-   */
+    * Returns a vector whose contents are the results of taking the first `n` bits of this vector.
+    *
+    * If this vector does not contain at least `n` bits, an error message is returned.
+    *
+    * @see take
+    * @group collection
+    */
   def acquire(n: Long): Either[String, BitVector] =
     if (sizeGreaterThanOrEqual(n)) Right(take(n))
     else Left(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
-   * Like `aquire`, but immediately consumes the `Either` via the pair of functions `err` and `f`.
-   *
-   * @see acquire
-   * @group collection
-   */
+    * Like `aquire`, but immediately consumes the `Either` via the pair of functions `err` and `f`.
+    *
+    * @see acquire
+    * @group collection
+    */
   final def acquireThen[R](n: Long)(err: String => R, f: BitVector => R): R =
     if (sizeGreaterThanOrEqual(n)) f(take(n))
     else err(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
-   * Consumes the first `n` bits of this vector and decodes them with the specified function,
-   * resulting in a vector of the remaining bits and the decoded value. If this vector
-   * does not have `n` bits or an error occurs while decoding, an error is returned instead.
-   *
-   * @group collection
-   */
-  final def consume[A](n: Long)(decode: BitVector => Either[String, A]): Either[String, (BitVector, A)] =
+    * Consumes the first `n` bits of this vector and decodes them with the specified function,
+    * resulting in a vector of the remaining bits and the decoded value. If this vector
+    * does not have `n` bits or an error occurs while decoding, an error is returned instead.
+    *
+    * @group collection
+    */
+  final def consume[A](
+      n: Long
+  )(decode: BitVector => Either[String, A]): Either[String, (BitVector, A)] =
     for {
       toDecode <- acquire(n)
       decoded <- decode(toDecode)
     } yield (drop(n), decoded)
 
   /**
-   * If this vector has at least `n` bits, returns `f(take(n),drop(n))`,
-   * otherwise calls `err` with a meaningful error message. This function can be used
-   * to avoid intermediate allocations of `Either` objects when using `acquire` or `consume`
-   * directly.
-   *
-   * @see acquireThen
-   * @group collection
-   */
-  final def consumeThen[R](n: Long)(err: String => R, f: (BitVector,BitVector) => R): R =
+    * If this vector has at least `n` bits, returns `f(take(n),drop(n))`,
+    * otherwise calls `err` with a meaningful error message. This function can be used
+    * to avoid intermediate allocations of `Either` objects when using `acquire` or `consume`
+    * directly.
+    *
+    * @see acquireThen
+    * @group collection
+    */
+  final def consumeThen[R](n: Long)(err: String => R, f: (BitVector, BitVector) => R): R =
     if (sizeGreaterThanOrEqual(n)) f(take(n), drop(n)) // todo unsafeTake, unsafeDrop
     else err(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /**
-   * Returns true if this bit vector starts with the specified vector.
-   * @group collection
-   */
+    * Returns true if this bit vector starts with the specified vector.
+    * @group collection
+    */
   final def startsWith(b: BitVector): Boolean =
     take(b.size) === b
 
   /**
-   * Returns true if this bit vector ends with the specified vector.
-   * @group collection
-   */
+    * Returns true if this bit vector ends with the specified vector.
+    * @group collection
+    */
   final def endsWith(b: BitVector): Boolean =
     takeRight(b.size) === b
 
   /**
-   * Finds the first index of the specified bit pattern in this vector.
-   * @return index of slice or -1 if not found
-   * @group collection
-   */
+    * Finds the first index of the specified bit pattern in this vector.
+    * @return index of slice or -1 if not found
+    * @group collection
+    */
   final def indexOfSlice(slice: BitVector): Long = indexOfSlice(slice, 0)
 
   /**
-   * Finds the first index after `from` of the specified bit pattern in this vector.
-   * @return index of slice or -1 if not found
-   * @group collection
-   */
+    * Finds the first index after `from` of the specified bit pattern in this vector.
+    * @return index of slice or -1 if not found
+    * @group collection
+    */
   final def indexOfSlice(slice: BitVector, from: Long): Long = {
     @annotation.tailrec
-    def go(b: BitVector, idx: Long): Long = {
-      if (b startsWith slice) idx
+    def go(b: BitVector, idx: Long): Long =
+      if (b.startsWith(slice)) idx
       else if (b.isEmpty) -1
       else go(b.tail, idx + 1)
-    }
     go(drop(from), from)
   }
 
   /**
-   * Determines if the specified slice is in this vector.
-   * @group collection
-   */
+    * Determines if the specified slice is in this vector.
+    * @group collection
+    */
   final def containsSlice(slice: BitVector): Boolean = indexOfSlice(slice) >= 0
 
   // This was public before version 1.1.8 so it must stay here for bincompat
@@ -369,130 +375,134 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     else Iterator(take(n)) ++ drop(n).groupedIterator(n)
 
   /**
-   * Returns the first bit of this vector or throws if vector is emtpy.
-   * @group collection
-   */
+    * Returns the first bit of this vector or throws if vector is emtpy.
+    * @group collection
+    */
   final def head: Boolean = get(0)
 
   /**
-   * Returns the first bit of this vector or `None` if vector is emtpy.
-   * @group collection
-   */
+    * Returns the first bit of this vector or `None` if vector is emtpy.
+    * @group collection
+    */
   final def headOption: Option[Boolean] = lift(0)
 
   /**
-   * Returns a vector of all bits in this vector except the first bit.
-   * @group collection
-   */
+    * Returns a vector of all bits in this vector except the first bit.
+    * @group collection
+    */
   final def tail: BitVector = drop(1)
 
   /**
-   * Returns a vector of all bits in this vector except the last bit.
-   * @group collection
-   */
+    * Returns a vector of all bits in this vector except the last bit.
+    * @group collection
+    */
   final def init: BitVector = dropRight(1)
 
   /**
-   * Returns the last bit in this vector or throws if vector is empty.
-   * @group collection
-   */
+    * Returns the last bit in this vector or throws if vector is empty.
+    * @group collection
+    */
   final def last: Boolean = apply(size - 1)
 
   /**
-   * Returns the last bit in this vector or returns `None` if vector is empty.
-   * @group collection
-   */
+    * Returns the last bit in this vector or returns `None` if vector is empty.
+    * @group collection
+    */
   final def lastOption: Option[Boolean] = lift(size - 1)
 
   /**
-   * Alias for `padRight`.
-   *
-   * @throws IllegalArgumentException if `n < size`
-   * @group collection
-   */
+    * Alias for `padRight`.
+    *
+    * @throws IllegalArgumentException if `n < size`
+    * @group collection
+    */
   final def padTo(n: Long): BitVector = padRight(n)
 
   /**
-   * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
-   *
-   * @throws IllegalArgumentException if `n < size`
-   * @group collection
-   */
+    * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+    *
+    * @throws IllegalArgumentException if `n < size`
+    * @group collection
+    */
   final def padRight(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"Trying to right-pad a vector of $size bits to only $n bits.")
+    if (n < size)
+      throw new IllegalArgumentException(
+        s"Trying to right-pad a vector of $size bits to only $n bits."
+      )
     else this ++ BitVector.fill(n - size)(false)
 
   /**
-   * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
-   *
-   * @throws IllegalArgumentException if `n < size`
-   * @group collection
-   */
+    * Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+    *
+    * @throws IllegalArgumentException if `n < size`
+    * @group collection
+    */
   final def padLeft(n: Long): BitVector =
-    if (n < size) throw new IllegalArgumentException(s"Trying to left-pad a vector of $size bits to only $n bits.")
+    if (n < size)
+      throw new IllegalArgumentException(
+        s"Trying to left-pad a vector of $size bits to only $n bits."
+      )
     else BitVector.fill(n - size)(false) ++ this
 
   /**
-   * Reverse the bits of this vector.
-   *
-   * @group collection
-   */
+    * Reverse the bits of this vector.
+    *
+    * @group collection
+    */
   final def reverse: BitVector =
     // todo: this has a log time implementation, assuming a balanced tree
-    BitVector(compact.underlying.reverse.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.reverse.map(reverseBitsInByte _))
+      .drop(8 - validBitsInLastByte(size))
 
   /**
-   * Returns a new vector of the same size with the byte order reversed.
-   *
-   * Note that `reverseByteOrder.reverseByteOrder == identity` only when `size` is evenly divisble by 8.
-   * To invert `reverseByteOrder` for an arbitrary size, use `invertReverseByteOrder`.
-   *
-   * @group collection
-   */
-  final def reverseByteOrder: BitVector = {
+    * Returns a new vector of the same size with the byte order reversed.
+    *
+    * Note that `reverseByteOrder.reverseByteOrder == identity` only when `size` is evenly divisble by 8.
+    * To invert `reverseByteOrder` for an arbitrary size, use `invertReverseByteOrder`.
+    *
+    * @group collection
+    */
+  final def reverseByteOrder: BitVector =
     if (size % 8 == 0) toBytes(compact.underlying.reverse, size)
     else {
       val validFinalBits = validBitsInLastByte(size)
       val last = take(validFinalBits).compact
       val b = drop(validFinalBits).toByteVector.reverse
-      val init = toBytes(b, size-last.size)
+      val init = toBytes(b, size - last.size)
       init ++ last
     }
-  }
 
   /**
-   * Inverse of `reverseByteOrder`.
-   *
-   * @group collection
-   */
-  final def invertReverseByteOrder: BitVector = {
+    * Inverse of `reverseByteOrder`.
+    *
+    * @group collection
+    */
+  final def invertReverseByteOrder: BitVector =
     if (size % 8 == 0) reverseByteOrder
     else {
       val validFinalBits = validBitsInLastByte(size)
       val (init, last) = splitAt(size - validFinalBits)
       last ++ init.bytes.reverse.bits
     }
-  }
 
   /**
-   * Returns a new vector of the same size with the bit order reversed.
-   *
-   * @group collection
-   */
+    * Returns a new vector of the same size with the bit order reversed.
+    *
+    * @group collection
+    */
   final def reverseBitOrder: BitVector =
     BitVector(compact.underlying.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
 
   /**
-   * Returns the number of bits that are high.
-   *
-   * @group bitwise
-   */
+    * Returns the number of bits that are high.
+    *
+    * @group bitwise
+    */
   final def populationCount: Long = {
     @annotation.tailrec
-    def go(b: BitVector, acc: Long): Long = {
+    def go(b: BitVector, acc: Long): Long =
       if (b.isEmpty) acc
       else go(b.tail, if (b.head) acc + 1 else acc)
-    }
     go(this, 0)
   }
 
@@ -506,7 +516,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     else if (n >= size) BitVector.low(size)
     else drop(n) ++ BitVector.low(n)
 
-  final def shiftRight(n: Long, signExtension: Boolean): BitVector = {
+  final def shiftRight(n: Long, signExtension: Boolean): BitVector =
     if (isEmpty || n <= 0) this
     else {
       val extensionHigh = signExtension && head
@@ -516,7 +526,6 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
         (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++ dropRight(n)
       }
     }
-  }
 
   final def rotateLeft(n: Long): BitVector =
     if (n <= 0) this
@@ -537,39 +546,41 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     }
 
   /**
-   * Return a `BitVector` with the same contents as `this`, but
-   * based off a single `ByteVector`.
-   *
-   * This may involve copying data to a fresh `ByteVector`, but
-   * has the advantage that lookups index directly into a single
-   * `ByteVector` rather than traversing a logarithmic number of nodes
-   * in this tree.
-   *
-   * Calling this method on an already compacted vector is a no-op.
-   *
-   * @group collection
-   */
+    * Return a `BitVector` with the same contents as `this`, but
+    * based off a single `ByteVector`.
+    *
+    * This may involve copying data to a fresh `ByteVector`, but
+    * has the advantage that lookups index directly into a single
+    * `ByteVector` rather than traversing a logarithmic number of nodes
+    * in this tree.
+    *
+    * Calling this method on an already compacted vector is a no-op.
+    *
+    * @group collection
+    */
   final def compact: Bytes = {
     if (bytesNeededForBits(size) > Int.MaxValue)
-      throw new IllegalArgumentException(s"cannot compact bit vector of size ${size.toDouble / 8 / 1e9} GB")
+      throw new IllegalArgumentException(
+        s"cannot compact bit vector of size ${size.toDouble / 8 / 1e9} GB"
+      )
 
     // we collect up all the chunks, then merge them in O(n * log n)
     @annotation.tailrec
     def go(b: List[BitVector], acc: Vector[Bytes]): Vector[Bytes] = b match {
-      case (s@Suspend(_)) :: rem => go(s.underlying :: rem, acc)
-      case (b@Bytes(_,_)) :: rem => go(rem, acc :+ b)
-      case Append(l,r)    :: rem => go(l :: r :: rem, acc)
-      case (d: Drop)      :: rem => go(rem, acc :+ d.interpretDrop)
-      case (c: Chunks)    :: rem => go(c.chunks.left :: c.chunks.right :: rem, acc)
-      case _ => acc
+      case (s @ Suspend(_)) :: rem  => go(s.underlying :: rem, acc)
+      case (b @ Bytes(_, _)) :: rem => go(rem, acc :+ b)
+      case Append(l, r) :: rem      => go(l :: r :: rem, acc)
+      case (d: Drop) :: rem         => go(rem, acc :+ d.interpretDrop)
+      case (c: Chunks) :: rem       => go(c.chunks.left :: c.chunks.right :: rem, acc)
+      case _                        => acc
     }
 
     this match {
       // common case, we have a single flat `Bytes`, in which case we compact and return it directly
-      case bs@Bytes(b,n) =>
+      case bs @ Bytes(b, n) =>
         val b2 = b.compact
         if (b2 eq b) bs
-        else Bytes(b2,n)
+        else Bytes(b2, n)
       // other common case is a drop of a single flat `Bytes`
       case d: Drop =>
         val bs = d.interpretDrop
@@ -577,152 +588,156 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
         if (b2 eq bs.underlying) bs
         else Bytes(b2, bs.size)
       // otherwise we fall back to general purpose algorithm
-      case _ => reduceBalanced(go(List(this), Vector()))(_.size)(_ combine _) match {
-        case Bytes(b,n) => Bytes(b.compact,n) // we compact the underlying ByteVector as well
-      }
+      case _ =>
+        reduceBalanced(go(List(this), Vector()))(_.size)(_.combine(_)) match {
+          case Bytes(b, n) => Bytes(b.compact, n) // we compact the underlying ByteVector as well
+        }
     }
   }
 
   /**
-   * Produce a single flat `Bytes` by interpreting
-   * any non-byte-aligned appends or drops. Unlike
-   * `compact`, the underlying `ByteVector` is not
-   * necessarily copied.
-   *
-   * @group collection
-   */
+    * Produce a single flat `Bytes` by interpreting
+    * any non-byte-aligned appends or drops. Unlike
+    * `compact`, the underlying `ByteVector` is not
+    * necessarily copied.
+    *
+    * @group collection
+    */
   def align: Bytes
 
   /**
-   * Return a `BitVector` with the same contents as `this`, but
-   * based off a single flat `ByteVector`. This function is guaranteed
-   * to copy all the bytes in this `BitVector`, unlike `compact`, which
-   * may no-op if this `BitVector` already consists of a single `ByteVector`
-   * chunk.
-   *
-   * @group collection
-   */
+    * Return a `BitVector` with the same contents as `this`, but
+    * based off a single flat `ByteVector`. This function is guaranteed
+    * to copy all the bytes in this `BitVector`, unlike `compact`, which
+    * may no-op if this `BitVector` already consists of a single `ByteVector`
+    * chunk.
+    *
+    * @group collection
+    */
   final def copy: Bytes = this match {
-    case Bytes(b,n) => Bytes(b.copy, n)
-    case _ => this.compact
+    case Bytes(b, n) => Bytes(b.copy, n)
+    case _           => this.compact
   }
 
   /**
-   * Forces any `Suspend` nodes in this `BitVector` and ensures the tree is balanced.
-   *
-   * @group collection
-   */
+    * Forces any `Suspend` nodes in this `BitVector` and ensures the tree is balanced.
+    *
+    * @group collection
+    */
   final def force: BitVector = {
     @annotation.tailrec
-    def go(cont: Vector[BitVector]): BitVector = {
-      if (cont.nonEmpty) { (cont.head, cont.tail) match { case (cur, cont) =>
-        cur match {
-          case b@Bytes(_,_) => cont.foldLeft[BitVector](b)(_ ++ _)
-          case Append(l,r) => go(l +: r +: cont)
-          case d@Drop(_, _) => cont.foldLeft[BitVector](d)(_ ++ _)
-          case s@Suspend(_) => go(s.underlying +: cont)
-          case b: Chunks => go(b.chunks +: cont)
+    def go(cont: Vector[BitVector]): BitVector =
+      if (cont.nonEmpty) {
+        (cont.head, cont.tail) match {
+          case (cur, cont) =>
+            cur match {
+              case b @ Bytes(_, _) => cont.foldLeft[BitVector](b)(_ ++ _)
+              case Append(l, r)    => go(l +: r +: cont)
+              case d @ Drop(_, _)  => cont.foldLeft[BitVector](d)(_ ++ _)
+              case s @ Suspend(_)  => go(s.underlying +: cont)
+              case b: Chunks       => go(b.chunks +: cont)
+            }
         }
-      }}
-      else cont.foldLeft(BitVector.empty)(_ ++ _)
-    }
+      } else cont.foldLeft(BitVector.empty)(_ ++ _)
     go(Vector(this))
   }
 
   /**
-   * Return the sequence of bits in this vector. The returned
-   * `IndexedSeq` is just a view; nothing is actually copied.
-   *
-   * @throws IllegalArgumentException if this vector's size exceeds Int.MaxValue
-   * @see acquire
-   * @see toIndexedSeq
-   * @group conversions
-   */
-  final def toIndexedSeq: IndexedSeq[Boolean] = {
-    intSize.map { n =>
-      new IndexedSeq[Boolean] {
-        def length = BitVector.this.size.toInt
-        def apply(idx: Int): Boolean = BitVector.this.get(idx.toLong)
+    * Return the sequence of bits in this vector. The returned
+    * `IndexedSeq` is just a view; nothing is actually copied.
+    *
+    * @throws IllegalArgumentException if this vector's size exceeds Int.MaxValue
+    * @see acquire
+    * @see toIndexedSeq
+    * @group conversions
+    */
+  final def toIndexedSeq: IndexedSeq[Boolean] =
+    intSize
+      .map { n =>
+        new IndexedSeq[Boolean] {
+          def length = BitVector.this.size.toInt
+          def apply(idx: Int): Boolean = BitVector.this.get(idx.toLong)
+        }
       }
-    }.getOrElse {
-      throw new IllegalArgumentException(s"BitVector too big for Seq: $size")
-    }
-  }
+      .getOrElse {
+        throw new IllegalArgumentException(s"BitVector too big for Seq: $size")
+      }
 
   /**
-   * Converts the contents of this vector to a byte vector.
-   *
-   * If this vector's size does not divide evenly by 8, the last byte of the returned vector
-   * will be zero-padded to the right.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a byte vector.
+    *
+    * If this vector's size does not divide evenly by 8, the last byte of the returned vector
+    * will be zero-padded to the right.
+    *
+    * @group conversions
+    */
   final def toByteVector: ByteVector =
     clearUnneededBits(size, compact.underlying)
 
   /**
-   * Alias for [[toByteVector]].
-   * @group conversions
-   */
+    * Alias for [[toByteVector]].
+    * @group conversions
+    */
   final def bytes: ByteVector = toByteVector
 
   /**
-   * Converts the contents of this vector to a byte array.
-   *
-   * If this vector's size does not divide evenly by 8, the last byte of the returned vector
-   * will be zero-padded to the right.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a byte array.
+    *
+    * If this vector's size does not divide evenly by 8, the last byte of the returned vector
+    * will be zero-padded to the right.
+    *
+    * @group conversions
+    */
   final def toByteArray: Array[Byte] = toByteVector.toArray
 
   /**
-   * Converts the contents of this vector to a `java.nio.ByteBuffer`.
-   *
-   * The returned buffer is freshly allocated with limit set to the minimum number of bytes needed
-   * to represent the contents of this vector, position set to zero, and remaining set to the limit.
-   *
-   * @see toByteVector
-   * @group conversions
-   */
+    * Converts the contents of this vector to a `java.nio.ByteBuffer`.
+    *
+    * The returned buffer is freshly allocated with limit set to the minimum number of bytes needed
+    * to represent the contents of this vector, position set to zero, and remaining set to the limit.
+    *
+    * @see toByteVector
+    * @group conversions
+    */
   final def toByteBuffer: java.nio.ByteBuffer = toByteVector.toByteBuffer
 
   /**
-   * Converts the contents of this bit vector to a binary string of `size` digits.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this bit vector to a binary string of `size` digits.
+    *
+    * @group conversions
+    */
   final def toBin: String = toByteVector.toBin.take(size.toInt)
 
   /**
-   * Converts the contents of this bit vector to a binary string of `size` digits.
-   *
-   * @group conversions
-   */
-  final def toBin(alphabet: Bases.BinaryAlphabet): String = toByteVector.toBin(alphabet).take(size.toInt)
+    * Converts the contents of this bit vector to a binary string of `size` digits.
+    *
+    * @group conversions
+    */
+  final def toBin(alphabet: Bases.BinaryAlphabet): String =
+    toByteVector.toBin(alphabet).take(size.toInt)
 
   /**
-   * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
-   *
-   * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
+    *
+    * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
+    *
+    * @group conversions
+    */
   final def toHex: String = toHex(Bases.Alphabets.HexLowercase)
 
   /**
-   * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
-   *
-   * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this bit vector to a hexadecimal string of `ceil(size / 4)` nibbles.
+    *
+    * The last nibble is right-padded with zeros if the size is not evenly divisible by 4.
+    *
+    * @group conversions
+    */
   final def toHex(alphabet: Bases.HexAlphabet): String = {
     val full = toByteVector.toHex(alphabet)
     size % 8 match {
-      case 0 => full
+      case 0           => full
       case n if n <= 4 => full.init
-      case other => full
+      case other       => full
     }
   }
 
@@ -745,35 +760,34 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   final def toBase58(alphabet: Bases.Alphabet): String = toByteVector.toBase58(alphabet)
 
   /**
-   * Converts the contents of this vector to a base 64 string.
-   *
-   * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
   final def toBase64: String = toBase64(Bases.Alphabets.Base64)
 
   /**
-   * Converts the contents of this vector to a base 64 string using the specified alphabet.
-   *
-   * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string using the specified alphabet.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
-   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.
-   *
-   * @param signed whether sign extension should be performed
-   * @throws IllegalArgumentException if the slice refers to indices that are out of range
-   * @group conversions
-   */
-  final def sliceToByte(start: Long, bits: Int, signed: Boolean = true): Byte = {
+    * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.
+    *
+    * @param signed whether sign extension should be performed
+    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @group conversions
+    */
+  final def sliceToByte(start: Long, bits: Int, signed: Boolean = true): Byte =
     if (start % 8 != 0) drop(start).sliceToByte(0, bits, signed)
     else if (isEmpty || bits == 0) 0.toByte
     else getByte(start, bits, signed)
-  }
 
   private def getByte(start: Long, bits: Int, signed: Boolean): Byte = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 8)
@@ -788,12 +802,12 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Converts the contents of this vector to a byte.
-   *
-   * @param signed whether sign extension should be performed
-   * @throws IllegalArgumentException if size is greater than 8
-   * @group conversions
-   */
+    * Converts the contents of this vector to a byte.
+    *
+    * @param signed whether sign extension should be performed
+    * @throws IllegalArgumentException if size is greater than 8
+    * @group conversions
+    */
   final def toByte(signed: Boolean = true): Byte = {
     require(sizeLessThanOrEqual(8))
     if (isEmpty) 0.toByte
@@ -801,19 +815,23 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Short`.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if the slice refers to indices that are out of range
-   * @group conversions
-   */
-  final def sliceToShort(start: Long, bits: Int,
-                       signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
+    * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Short`.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @group conversions
+    */
+  final def sliceToShort(
+      start: Long,
+      bits: Int,
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): Short =
     if (start % 8 != 0) drop(start).sliceToShort(0, bits, signed, ordering)
-    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToShort(0, bits, signed, ByteOrdering.BigEndian)
+    else if (ordering == ByteOrdering.LittleEndian)
+      drop(start).invertReverseByteOrder.sliceToShort(0, bits, signed, ByteOrdering.BigEndian)
     else getBigEndianShort(start, bits, signed)
-  }
 
   private def getBigEndianShort(start: Long, bits: Int, signed: Boolean): Short = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 16)
@@ -838,33 +856,41 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Converts the contents of this vector to a short.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if size is greater than 16
-   * @group conversions
-   */
-  final def toShort(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Short = {
+    * Converts the contents of this vector to a short.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if size is greater than 16
+    * @group conversions
+    */
+  final def toShort(
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): Short = {
     require(sizeLessThanOrEqual(16))
-    if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toShort(signed, ByteOrdering.BigEndian)
+    if (ordering == ByteOrdering.LittleEndian)
+      invertReverseByteOrder.toShort(signed, ByteOrdering.BigEndian)
     else getBigEndianShort(0, size.toInt, signed)
   }
 
   /**
-   * Convert a slice of bits from this vector (`start` until `start+bits`) to an `Int`.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if the slice refers to indices that are out of range
-   * @group conversions
-   */
-  final def sliceToInt(start: Long, bits: Int,
-                       signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
+    * Convert a slice of bits from this vector (`start` until `start+bits`) to an `Int`.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @group conversions
+    */
+  final def sliceToInt(
+      start: Long,
+      bits: Int,
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): Int =
     if (start % 8 != 0) drop(start).sliceToInt(0, bits, signed, ordering)
-    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToInt(0, bits, signed, ByteOrdering.BigEndian)
+    else if (ordering == ByteOrdering.LittleEndian)
+      drop(start).invertReverseByteOrder.sliceToInt(0, bits, signed, ByteOrdering.BigEndian)
     else getBigEndianInt(start, bits, signed)
-  }
 
   private def getBigEndianInt(start: Long, bits: Int, signed: Boolean): Int = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 32)
@@ -889,13 +915,13 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Converts the contents of this vector to an int.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if size is greater than 32
-   * @group conversions
-   */
+    * Converts the contents of this vector to an int.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if size is greater than 32
+    * @group conversions
+    */
   final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
     require(sizeLessThanOrEqual(32))
     this match {
@@ -913,29 +939,35 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
             if (signed) b.toInt else b & 0x0ff
 
           case bits =>
-            if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toInt(signed, ByteOrdering.BigEndian)
+            if (ordering == ByteOrdering.LittleEndian)
+              invertReverseByteOrder.toInt(signed, ByteOrdering.BigEndian)
             else getBigEndianInt(0, bits, signed)
         }
       case _ =>
-        if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toInt(signed, ByteOrdering.BigEndian)
+        if (ordering == ByteOrdering.LittleEndian)
+          invertReverseByteOrder.toInt(signed, ByteOrdering.BigEndian)
         else getBigEndianInt(0, size.toInt, signed)
     }
   }
 
   /**
-   * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Long`.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if the slice refers to indices that are out of range
-   * @group conversions
-   */
-  final def sliceToLong(start: Long, bits: Int,
-                        signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
+    * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Long`.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @group conversions
+    */
+  final def sliceToLong(
+      start: Long,
+      bits: Int,
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): Long =
     if (start % 8 != 0) drop(start).sliceToLong(0, bits, signed, ordering)
-    else if (ordering == ByteOrdering.LittleEndian) drop(start).invertReverseByteOrder.sliceToLong(0, bits, signed, ByteOrdering.BigEndian)
+    else if (ordering == ByteOrdering.LittleEndian)
+      drop(start).invertReverseByteOrder.sliceToLong(0, bits, signed, ByteOrdering.BigEndian)
     else getBigEndianLong(start, bits, signed)
-  }
 
   private def getBigEndianLong(start: Long, bits: Int, signed: Boolean): Long = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 64)
@@ -946,7 +978,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     @annotation.tailrec
     def go(i: Int): Unit =
       if (i < bytesNeeded) {
-        result = (result << 8) | (0x0ffL & this.getByte(base + i))
+        result = (result << 8) | (0x0FFL & this.getByte(base + i))
         go(i + 1)
       }
     go(0)
@@ -960,14 +992,17 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Converts the contents of this vector to a long.
-   *
-   * @param signed whether sign extension should be performed
-   * @param ordering order bytes should be processed in
-   * @throws IllegalArgumentException if size is greater than 64
-   * @group conversions
-   */
-  final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long = {
+    * Converts the contents of this vector to a long.
+    *
+    * @param signed whether sign extension should be performed
+    * @param ordering order bytes should be processed in
+    * @throws IllegalArgumentException if size is greater than 64
+    * @group conversions
+    */
+  final def toLong(
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): Long = {
     require(sizeLessThanOrEqual(64))
     this match {
       case bytes: Bytes =>
@@ -977,23 +1012,25 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
 
           case 32 =>
             val i = bytes.underlying.toByteBuffer.order(ordering.toJava).getInt
-            if (signed) i.toLong else i & 0x0ffffffffL
+            if (signed) i.toLong else i & 0x0FFFFFFFFL
 
           case 16 =>
             val sh = bytes.underlying.toByteBuffer.order(ordering.toJava).getShort
-            if (signed) sh.toLong else sh & 0x0ffffL
+            if (signed) sh.toLong else sh & 0x0FFFFL
 
           case 8 =>
             val b = bytes.underlying.toByteBuffer.get
-            if (signed) b.toLong else b & 0x0ffL
+            if (signed) b.toLong else b & 0x0FFL
 
           case bits =>
-            if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toLong(signed, ByteOrdering.BigEndian)
+            if (ordering == ByteOrdering.LittleEndian)
+              invertReverseByteOrder.toLong(signed, ByteOrdering.BigEndian)
             else getBigEndianLong(0, bits, signed)
         }
 
       case _ =>
-        if (ordering == ByteOrdering.LittleEndian) invertReverseByteOrder.toLong(signed, ByteOrdering.BigEndian)
+        if (ordering == ByteOrdering.LittleEndian)
+          invertReverseByteOrder.toLong(signed, ByteOrdering.BigEndian)
         else getBigEndianLong(0, size.toInt, signed)
     }
   }
@@ -1007,7 +1044,9 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   final def toUUID: UUID = {
     // Sanity check
     if (size != 128) {
-      throw new IllegalArgumentException(s"Cannot convert BitVector of size $size to UUID; must be 128 bits")
+      throw new IllegalArgumentException(
+        s"Cannot convert BitVector of size $size to UUID; must be 128 bits"
+      )
     }
     // Convert
     val byteBuffer = toByteBuffer
@@ -1017,111 +1056,120 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Decodes this vector as a string using the implicitly available charset.
-   * @group conversions
-   */
+    * Decodes this vector as a string using the implicitly available charset.
+    * @group conversions
+    */
   final def decodeString(implicit charset: Charset): Either[CharacterCodingException, String] =
     bytes.decodeString(charset)
 
   /**
-   * Decodes this vector as a string using the UTF-8 charset.
-   * @group conversions
-   */
+    * Decodes this vector as a string using the UTF-8 charset.
+    * @group conversions
+    */
   final def decodeUtf8: Either[CharacterCodingException, String] =
     bytes.decodeUtf8
 
   /**
-   * Decodes this vector as a string using the US-ASCII charset.
-   * @group conversions
-   */
+    * Decodes this vector as a string using the US-ASCII charset.
+    * @group conversions
+    */
   final def decodeAscii: Either[CharacterCodingException, String] =
     bytes.decodeAscii
 
   /**
-   * Compresses this vector using ZLIB.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
-   * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
-   * @param nowrap if true, ZLIB header and checksum will not be used
-   * @param chunkSize buffer size, in bytes, to use when compressing
-   * @group conversions
-   */
-  final def deflate(level: Int = Deflater.DEFAULT_COMPRESSION, strategy: Int = Deflater.DEFAULT_STRATEGY, nowrap: Boolean = false, chunkSize: Int = 4096): BitVector =
+    * Compresses this vector using ZLIB.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
+    * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
+    * @param nowrap if true, ZLIB header and checksum will not be used
+    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @group conversions
+    */
+  final def deflate(
+      level: Int = Deflater.DEFAULT_COMPRESSION,
+      strategy: Int = Deflater.DEFAULT_STRATEGY,
+      nowrap: Boolean = false,
+      chunkSize: Int = 4096
+  ): BitVector =
     bytes.deflate(level, strategy, nowrap, chunkSize).bits
 
   /**
-   * Decompresses this vector using ZLIB.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param chunkSize buffer size, in bytes, to use when compressing
-   * @group conversions
-   */
+    * Decompresses this vector using ZLIB.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @group conversions
+    */
   final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
     bytes.inflate(chunkSize).map(_.bits)
 
   /**
-   * Computes a digest of this bit vector.
-   *
-   * Exceptions thrown from the underlying JCA API are propagated.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param algorithm digest algorithm to use
-   * @group crypto
-   */
+    * Computes a digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param algorithm digest algorithm to use
+    * @group crypto
+    */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
 
   /**
-   * Computes a digest of this bit vector.
-   *
-   * Exceptions thrown from the underlying JCA API are propagated.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param digest digest to use
-   * @group crypto
-   */
+    * Computes a digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param digest digest to use
+    * @group crypto
+    */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
 
   /**
-   * Encrypts this bit vector using the specified cipher and key.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param ci cipher to use for encryption
-   * @param key key to encrypt with
-   * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
-   * @param sr secure random
-   * @group crypto
-   */
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
+    * Encrypts this bit vector using the specified cipher and key.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param ci cipher to use for encryption
+    * @param key key to encrypt with
+    * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
+    * @param sr secure random
+    * @group crypto
+    */
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
+      implicit sr: SecureRandom
+  ): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
 
   /**
-   * Decrypts this bit vector using the specified cipher and key.
-   *
-   * The last byte is zero padded if the size is not evenly divisible by 8.
-   *
-   * @param ci cipher to use for decryption
-   * @param key key to decrypt with
-   * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
-   * @param sr secure random
-   * @group crypto
-   */
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
+    * Decrypts this bit vector using the specified cipher and key.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @param ci cipher to use for decryption
+    * @param key key to decrypt with
+    * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
+    * @param sr secure random
+    * @group crypto
+    */
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
+      implicit sr: SecureRandom
+  ): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
   /**
-   * Returns true if the specified `BitVector` has the same contents as this vector.
-   * @group collection
-   */
+    * Returns true if the specified `BitVector` has the same contents as this vector.
+    * @group collection
+    */
   final def ===(other: BitVector): Boolean = {
     val chunkSize = 8L * 1024 * 64
     @annotation.tailrec
-    def go(x: BitVector, y: BitVector): Boolean = {
+    def go(x: BitVector, y: BitVector): Boolean =
       if (x.isEmpty) y.isEmpty
       else {
         val chunkX = x.take(chunkSize)
@@ -1130,43 +1178,41 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
         chunkX.toByteVector === chunkY.toByteVector &&
         go(x.drop(chunkSize), y.drop(chunkSize))
       }
-    }
     go(this, other)
   }
 
   /**
-   * Returns true if the specified value is a `BitVector` with the same contents as this vector.
-   * @see [[BitVector.===]]
-   * @group collection
-   */
+    * Returns true if the specified value is a `BitVector` with the same contents as this vector.
+    * @see [[BitVector.===]]
+    * @group collection
+    */
   override final def equals(other: Any): Boolean = other match {
     case o: BitVector => this === o
-    case _ => false
+    case _            => false
   }
 
   /**
-   * Calculates the hash code of this vector. The result is cached.
-   * @group collection
-   */
+    * Calculates the hash code of this vector. The result is cached.
+    * @group collection
+    */
   override final lazy val hashCode = {
     // todo: this could be recomputed more efficiently using the tree structure
     // given an associative hash function
     import util.hashing.MurmurHash3._
     val chunkSize = 8L * 1024 * 64
     @annotation.tailrec
-    def go(bits: BitVector, h: Int, iter: Int): Int = {
+    def go(bits: BitVector, h: Int, iter: Int): Int =
       if (bits.isEmpty) finalizeHash(h, iter)
       else go(bits.drop(chunkSize), mix(h, bytesHash(bits.take(chunkSize).toByteArray)), iter + 1)
-    }
     go(this, stringHash("BitVector"), 1)
   }
 
   /**
-   * Display the size and bytes of this `BitVector`.
-   * For bit vectors beyond a certain size, only a hash of the
-   * contents are shown.
-   * @group collection
-   */
+    * Display the size and bytes of this `BitVector`.
+    * For bit vectors beyond a certain size, only a hash of the
+    * contents are shown.
+    * @group collection
+    */
   override final def toString =
     if (isEmpty) "BitVector(empty)"
     else if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
@@ -1181,189 +1227,197 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     throw new NoSuchElementException(s"invalid index: $n of $size")
 
   final protected def mapBytes(f: ByteVector => ByteVector): BitVector = this match {
-    case Bytes(bs, n) => toBytes(f(bs), n)
-    case Append(l,r) => Append(l.mapBytes(f), r.mapBytes(f))
-    case Drop(b,n) => Drop(b.mapBytes(f).compact, n)
-    case s@Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
-    case c: Chunks => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
+    case Bytes(bs, n)   => toBytes(f(bs), n)
+    case Append(l, r)   => Append(l.mapBytes(f), r.mapBytes(f))
+    case Drop(b, n)     => Drop(b.mapBytes(f).compact, n)
+    case s @ Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
+    case c: Chunks      => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
   }
 
-  private[bits] def cipher(ci: Cipher, key: Key, opmode: Int, aparams: Option[AlgorithmParameters] = None)(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
+  private[bits] def cipher(
+      ci: Cipher,
+      key: Key,
+      opmode: Int,
+      aparams: Option[AlgorithmParameters] = None
+  )(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
     bytes.cipher(ci, key, opmode, aparams)(sr).map { _.bits }
 
   /**
-   * Pretty print this `BitVector`.
-   */
+    * Pretty print this `BitVector`.
+    */
   private[bits] def internalPretty(prefix: String): String = this match {
-    case Append(l,r) => prefix + "append\n" +
-                        l.internalPretty(prefix + "  ") + "\n" +
-                        r.internalPretty(prefix + "  ")
+    case Append(l, r) =>
+      prefix + "append\n" +
+        l.internalPretty(prefix + "  ") + "\n" +
+        r.internalPretty(prefix + "  ")
     case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
-    case Drop(u, n) => prefix + s"drop ${n}\n" +
-                       u.internalPretty(prefix + "  ")
-    case s@Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
-    case c: Chunks => prefix + "chunks\n" +
-                      c.chunks.left.internalPretty("  ") + "\n" +
-                      c.chunks.right.internalPretty("  ")
+    case Drop(u, n) =>
+      prefix + s"drop ${n}\n" +
+        u.internalPretty(prefix + "  ")
+    case s @ Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
+    case c: Chunks =>
+      prefix + "chunks\n" +
+        c.chunks.left.internalPretty("  ") + "\n" +
+        c.chunks.right.internalPretty("  ")
   }
 
-  private def zipBytesWith(other: BitVector)(op: (Byte, Byte) => Int): BitVector = {
+  private def zipBytesWith(other: BitVector)(op: (Byte, Byte) => Int): BitVector =
     // todo: this has a much more efficient recursive algorithm -
     // only need to compact close to leaves of the tree
-    toBytes(this.compact.underlying.zipWithI(other.compact.underlying)(op), this.size min other.size)
-  }
+    toBytes(
+      this.compact.underlying.zipWithI(other.compact.underlying)(op),
+      this.size.min(other.size)
+    )
 
   protected final def writeReplace(): AnyRef = new SerializationProxy(toByteArray, size)
 }
 
 /**
- * Companion for [[BitVector]].
- *
- * @groupname constants Constants
- * @groupprio constants 0
- *
- * @groupname constructors Constructors
- * @groupprio constructors 1
- *
- * @groupname numeric Numeric Conversions
- * @groupprio numeric 2
- *
- * @groupname base Base Conversions
- * @groupprio base 3
- */
+  * Companion for [[BitVector]].
+  *
+  * @groupname constants Constants
+  * @groupprio constants 0
+  *
+  * @groupname constructors Constructors
+  * @groupprio constructors 1
+  *
+  * @groupname numeric Numeric Conversions
+  * @groupprio numeric 2
+  *
+  * @groupname base Base Conversions
+  * @groupprio base 3
+  */
 object BitVector {
 
   /**
-   * Empty bit vector.
-   * @group constants
-   */
+    * Empty bit vector.
+    * @group constants
+    */
   val empty: BitVector = toBytes(ByteVector.empty, 0)
 
   /**
-   * 1-bit vector with only bit set low.
-   * @group constants
-   */
+    * 1-bit vector with only bit set low.
+    * @group constants
+    */
   val zero: BitVector = toBytes(ByteVector(0), 1)
 
   /**
-   * 1-bit vector with only bit set high.
-   * @group constants
-   */
+    * 1-bit vector with only bit set high.
+    * @group constants
+    */
   val one: BitVector = toBytes(ByteVector(0xff), 1)
 
   /**
-   * 8-bit vector with all bits set low.
-   * @group constants
-   */
+    * 8-bit vector with all bits set low.
+    * @group constants
+    */
   val lowByte: BitVector = toBytes(ByteVector.low(1), 8)
 
   /**
-   * 8-bit vector with all bits set high.
-   * @group constants
-   */
+    * 8-bit vector with all bits set high.
+    * @group constants
+    */
   val highByte: BitVector = toBytes(ByteVector.high(1), 8)
 
   /**
-   * 1-bit vector with only bit set to specified value.
-   * @group constructors
-   */
+    * 1-bit vector with only bit set to specified value.
+    * @group constructors
+    */
   def bit(high: Boolean): BitVector = if (high) one else zero
 
   /**
-   * n-bit vector with bit at index `i` set to value of boolean at index `i` in specified iterable.
-   * @group constructors
-   */
+    * n-bit vector with bit at index `i` set to value of boolean at index `i` in specified iterable.
+    * @group constructors
+    */
   def bits(b: Iterable[Boolean]): BitVector =
-    b.iterator.zipWithIndex.foldLeft(low(b.size.toLong))((acc,b) =>
-      acc.update(b._2.toLong, b._1)
-    )
+    b.iterator.zipWithIndex.foldLeft(low(b.size.toLong))((acc, b) => acc.update(b._2.toLong, b._1))
 
   /**
-   * n-bit vector with all bits set high.
-   * @group constructors
-   */
+    * n-bit vector with all bits set high.
+    * @group constructors
+    */
   def high(n: Long): BitVector = fill(n)(true)
 
   /**
-   * n-bit vector with all bits set low.
-   * @group constructors
-   */
+    * n-bit vector with all bits set low.
+    * @group constructors
+    */
   def low(n: Long): BitVector = fill(n)(false)
 
   /**
-   * Constructs a `BitVector` from a `ByteVector`.
-   * This method has runtime O(1).
-   * @group constructors
-   */
+    * Constructs a `BitVector` from a `ByteVector`.
+    * This method has runtime O(1).
+    * @group constructors
+    */
   def apply(bs: ByteVector): BitVector = toBytes(bs, bs.size.toLong * 8)
 
   /**
-   * Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
-   * is copied to ensure the resulting `BitVector` is immutable.
-   * If this is not desired, use `BitVector.view`.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
+    * is copied to ensure the resulting `BitVector` is immutable.
+    * If this is not desired, use `BitVector.view`.
+    * @group constructors
+    */
   def apply(buffer: ByteBuffer): BitVector = apply(ByteVector(buffer))
 
   /**
-   * Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is
-   * is copied to ensure the resulting `BitVector` is immutable.
-   * If this is not desired, use `BitVector.view`.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is
+    * is copied to ensure the resulting `BitVector` is immutable.
+    * If this is not desired, use `BitVector.view`.
+    * @group constructors
+    */
   def apply(bs: Array[Byte]): BitVector = toBytes(ByteVector(bs), bs.size.toLong * 8)
 
   /**
-   * Constructs a `BitVector` from a collection of bytes.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from a collection of bytes.
+    * @group constructors
+    */
   def apply(bs: IterableOnce[Byte]): BitVector = apply(ByteVector(bs))
 
   /**
-   * Constructs a `BitVector` from a list of literal bytes. Only the least significant
-   * byte is used of each integral value.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from a list of literal bytes. Only the least significant
+    * byte is used of each integral value.
+    * @group constructors
+    */
   def apply[A: Integral](bytes: A*): BitVector = apply(ByteVector(bytes: _*))
 
   /**
-   * Constructs a `BitVector` from a `ByteBuffer` using the buffer limit * 8 as the size.
-   * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
-   * not to modify the contents of the buffer passed to this function.
-   * @group constructors
-   */
-  def view(buffer: ByteBuffer): BitVector = toBytes(ByteVector.view(buffer), buffer.limit().toLong * 8)
+    * Constructs a `BitVector` from a `ByteBuffer` using the buffer limit * 8 as the size.
+    * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
+    * not to modify the contents of the buffer passed to this function.
+    * @group constructors
+    */
+  def view(buffer: ByteBuffer): BitVector =
+    toBytes(ByteVector.view(buffer), buffer.limit().toLong * 8)
 
   /**
-   * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
-   * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
-   * not to modify the contents of the buffer passed to this function.
-   * @group constructors
-   */
-  def view(buffer: ByteBuffer, sizeInBits: Long): BitVector = {
+    * Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
+    * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
+    * not to modify the contents of the buffer passed to this function.
+    * @group constructors
+    */
+  def view(buffer: ByteBuffer, sizeInBits: Long): BitVector =
     toBytes(ByteVector.view(buffer), sizeInBits)
-  }
 
   /**
-   * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
-   * does not make a copy of the input array, so callers should take care
-   * not to modify the contents of the array passed to this function.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
+    * does not make a copy of the input array, so callers should take care
+    * not to modify the contents of the array passed to this function.
+    * @group constructors
+    */
   def view(bs: Array[Byte]): BitVector = view(bs, bs.size.toLong * 8)
 
   /**
-   * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
-   * does not make a copy of the input array, so callers should take care
-   * not to modify the contents of the array passed to this function.
-   * @group constructors
-   */
+    * Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
+    * does not make a copy of the input array, so callers should take care
+    * not to modify the contents of the array passed to this function.
+    * @group constructors
+    */
   def view(bs: Array[Byte], sizeInBits: Long): BitVector = toBytes(ByteVector.view(bs), sizeInBits)
 
   /**
-   * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
-   * @group constructors
-   */
+    * Constructs an `n`-bit `BitVector` where each bit is set to the specified value.
+    * @group constructors
+    */
   def fill(n: Long)(high: Boolean): BitVector = {
     val needed = bytesNeededForBits(n)
     val bs = ByteVector.fill(needed)(if (high) -1 else 0)
@@ -1371,24 +1425,28 @@ object BitVector {
   }
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified byte.
-   * @param s value to encode
-   * @param size size of vector (<= 8)
-   * @group numeric
-   */
+    * Constructs a bit vector with the 2's complement encoding of the specified byte.
+    * @param s value to encode
+    * @param size size of vector (<= 8)
+    * @group numeric
+    */
   def fromByte(b: Byte, size: Int = 8): BitVector = {
     require(size <= 8)
     (BitVector(b) << (8L - size)).take(size.toLong)
   }
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
-   * @param s value to encode
-   * @param size size of vector (<= 16)
-   * @param ordering byte ordering of vector
-   * @group numeric
-   */
-  def fromShort(s: Short, size: Int = 16, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    * Constructs a bit vector with the 2's complement encoding of the specified value.
+    * @param s value to encode
+    * @param size size of vector (<= 16)
+    * @param ordering byte ordering of vector
+    * @group numeric
+    */
+  def fromShort(
+      s: Short,
+      size: Int = 16,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BitVector = {
     require(size <= 16)
     val buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN).putShort(s)
     buffer.flip()
@@ -1397,13 +1455,17 @@ object BitVector {
   }
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
-   * @param i value to encode
-   * @param size size of vector (<= 32)
-   * @param ordering byte ordering of vector
-   * @group numeric
-   */
-  def fromInt(i: Int, size: Int = 32, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    * Constructs a bit vector with the 2's complement encoding of the specified value.
+    * @param i value to encode
+    * @param size size of vector (<= 32)
+    * @param ordering byte ordering of vector
+    * @group numeric
+    */
+  def fromInt(
+      i: Int,
+      size: Int = 32,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BitVector = {
     require(size <= 32)
     val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(i)
     buffer.flip()
@@ -1412,13 +1474,17 @@ object BitVector {
   }
 
   /**
-   * Constructs a bit vector with the 2's complement encoding of the specified value.
-   * @param i value to encode
-   * @param size size of vector (<= 64)
-   * @param ordering byte ordering of vector
-   * @group numeric
-   */
-  def fromLong(l: Long, size: Int = 64, ordering: ByteOrdering = ByteOrdering.BigEndian): BitVector = {
+    * Constructs a bit vector with the 2's complement encoding of the specified value.
+    * @param i value to encode
+    * @param size size of vector (<= 64)
+    * @param ordering byte ordering of vector
+    * @group numeric
+    */
+  def fromLong(
+      l: Long,
+      size: Int = 64,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BitVector = {
     require(size <= 64)
     val buffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(l)
     buffer.flip()
@@ -1442,69 +1508,89 @@ object BitVector {
   }
 
   /**
-   * Constructs a `BitVector` from a binary string or returns an error message if the string is not valid binary.
-   *
-   * The string may start with a `0b` and it may contain whitespace or underscore characters.
-   * @group base
-   */
-  def fromBinDescriptive(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Either[String, BitVector] =
-    ByteVector.fromBinInternal(str, alphabet).map { case (bytes, size) =>
-      val toDrop = size match {
-        case 0 => 0
-        case n if n % 8 == 0 => 0
-        case n => 8 - (n % 8)
-      }
-      bytes.toBitVector.drop(toDrop.toLong)
+    * Constructs a `BitVector` from a binary string or returns an error message if the string is not valid binary.
+    *
+    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+    * @group base
+    */
+  def fromBinDescriptive(
+      str: String,
+      alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
+  ): Either[String, BitVector] =
+    ByteVector.fromBinInternal(str, alphabet).map {
+      case (bytes, size) =>
+        val toDrop = size match {
+          case 0               => 0
+          case n if n % 8 == 0 => 0
+          case n               => 8 - (n % 8)
+        }
+        bytes.toBitVector.drop(toDrop.toLong)
     }
 
   /**
-   * Constructs a `BitVector` from a binary string or returns `None` if the string is not valid binary.
-   *
-   * The string may start with a `0b` and it may contain whitespace or underscore characters.
-   * @group base
-   */
-  def fromBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): Option[BitVector] = fromBinDescriptive(str, alphabet).toOption
+    * Constructs a `BitVector` from a binary string or returns `None` if the string is not valid binary.
+    *
+    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+    * @group base
+    */
+  def fromBin(
+      str: String,
+      alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
+  ): Option[BitVector] = fromBinDescriptive(str, alphabet).toOption
 
   /**
-   * Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
-   *
-   * The string may start with a `0b` and it may contain whitespace or underscore characters.
-   *
-   * @throws IllegalArgumentException if the string is not valid hexadecimal
-   * @group base
-   */
-  def fromValidBin(str: String, alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary): BitVector =
+    * Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
+    *
+    * The string may start with a `0b` and it may contain whitespace or underscore characters.
+    *
+    * @throws IllegalArgumentException if the string is not valid hexadecimal
+    * @group base
+    */
+  def fromValidBin(
+      str: String,
+      alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
+  ): BitVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
-   * Constructs a `BitVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   * @group base
-   */
-  def fromHexDescriptive(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Either[String, BitVector] =
-    ByteVector.fromHexInternal(str, alphabet).map { case (bytes, count) =>
-      val toDrop = if (count % 2 == 0) 0 else 4
-      bytes.toBitVector.drop(toDrop.toLong)
+    * Constructs a `BitVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
+    *
+    * The string may start with a `0x` and it may contain whitespace or underscore characters.
+    * @group base
+    */
+  def fromHexDescriptive(
+      str: String,
+      alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
+  ): Either[String, BitVector] =
+    ByteVector.fromHexInternal(str, alphabet).map {
+      case (bytes, count) =>
+        val toDrop = if (count % 2 == 0) 0 else 4
+        bytes.toBitVector.drop(toDrop.toLong)
     }
 
   /**
-   * Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   * @group base
-   */
-  def fromHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): Option[BitVector] = fromHexDescriptive(str, alphabet).toOption
+    * Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
+    *
+    * The string may start with a `0x` and it may contain whitespace or underscore characters.
+    * @group base
+    */
+  def fromHex(
+      str: String,
+      alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
+  ): Option[BitVector] = fromHexDescriptive(str, alphabet).toOption
 
   /**
-   * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
-   *
-   * The string may start with a `0x` and it may contain whitespace or underscore characters.
-   *
-   * @throws IllegalArgumentException if the string is not valid hexadecimal
-   * @group base
-   */
-  def fromValidHex(str: String, alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase): BitVector =
+    * Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
+    *
+    * The string may start with a `0x` and it may contain whitespace or underscore characters.
+    *
+    * @throws IllegalArgumentException if the string is not valid hexadecimal
+    * @group base
+    */
+  def fromValidHex(
+      str: String,
+      alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
+  ): BitVector =
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
@@ -1513,7 +1599,10 @@ object BitVector {
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
-  def fromBase58Descriptive(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Either[String, BitVector] =
+  def fromBase58Descriptive(
+      str: String,
+      alphabet: Bases.Alphabet = Bases.Alphabets.Base58
+  ): Either[String, BitVector] =
     ByteVector.fromBase58Descriptive(str, alphabet).map { _.toBitVector }
 
   /**
@@ -1522,7 +1611,10 @@ object BitVector {
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
-  def fromBase58(str: String,alphabet: Bases.Alphabet = Bases.Alphabets.Base58): Option[BitVector] = fromBase58Descriptive(str, alphabet).toOption
+  def fromBase58(
+      str: String,
+      alphabet: Bases.Alphabet = Bases.Alphabets.Base58
+  ): Option[BitVector] = fromBase58Descriptive(str, alphabet).toOption
 
   /**
     * Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
@@ -1533,101 +1625,120 @@ object BitVector {
     * @group base
     */
   def fromValidBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): BitVector =
-    fromBase58Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+    fromBase58Descriptive(str, alphabet)
+      .fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
-   * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
-   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   * @group base
-   */
-  def fromBase64Descriptive(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Either[String, BitVector] =
+    * Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
+    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase64Descriptive(
+      str: String,
+      alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
+  ): Either[String, BitVector] =
     ByteVector.fromBase64Descriptive(str, alphabet).map { _.toBitVector }
 
   /**
-   * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
-   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   * @group base
-   */
-  def fromBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): Option[BitVector] = fromBase64Descriptive(str, alphabet).toOption
+    * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
+    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase64(
+      str: String,
+      alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
+  ): Option[BitVector] = fromBase64Descriptive(str, alphabet).toOption
 
   /**
-   * Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
-   * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   *
-   * @throws IllegalArgumentException if the string is not valid base 64
-   * @group base
-   */
-  def fromValidBase64(str: String, alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64): BitVector =
-    fromBase64Descriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+    * Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
+    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 64
+    * @group base
+    */
+  def fromValidBase64(
+      str: String,
+      alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
+  ): BitVector =
+    fromBase64Descriptive(str, alphabet)
+      .fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
-   * Encodes the specified string to a `BitVector` using the implicitly available `Charset`.
-   *
-   * @group constructors
-   */
-  def encodeString(str: String)(implicit charset: Charset): Either[CharacterCodingException, BitVector] =
+    * Encodes the specified string to a `BitVector` using the implicitly available `Charset`.
+    *
+    * @group constructors
+    */
+  def encodeString(
+      str: String
+  )(implicit charset: Charset): Either[CharacterCodingException, BitVector] =
     ByteVector.encodeString(str)(charset).map { _.bits }
 
   /**
-   * Encodes the specified string to a `BitVector` using the UTF-8 charset.
-   *
-   * @group constructors
-   */
+    * Encodes the specified string to a `BitVector` using the UTF-8 charset.
+    *
+    * @group constructors
+    */
   def encodeUtf8(str: String): Either[CharacterCodingException, BitVector] =
     ByteVector.encodeUtf8(str).map { _.bits }
 
   /**
-   * Encodes the specified string to a `BitVector` using the US-ASCII charset.
-   *
-   * @group constructors
-   */
+    * Encodes the specified string to a `BitVector` using the US-ASCII charset.
+    *
+    * @group constructors
+    */
   def encodeAscii(str: String): Either[CharacterCodingException, BitVector] =
     ByteVector.encodeAscii(str).map { _.bits }
 
   /**
-   * Concatenates all the given `BitVector`s into a single instance.
-   *
-   * @group constructors
-   */
+    * Concatenates all the given `BitVector`s into a single instance.
+    *
+    * @group constructors
+    */
   def concat(bvs: IterableOnce[BitVector]): BitVector = bvs.foldLeft(BitVector.empty)(_ ++ _)
 
   /**
-   * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
-   * The returned `BitVector` will have the structure of a fully lazy
-   * right-associated cons list. Thus, `get`, `take`, and `drop` will
-   * be efficient when operating on the head of the list, but accessing
-   * later indices (for `takeRight`, say, or `get(size-1)` will require
-   * forcing the stream up to that point.
-   *
-   * Use `force` if you wish to convert the result to an in-memory strict
-   * `BitVector` backed by a balanced tree.
-   *
-   * @group constructors
-   */
+    * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
+    * The returned `BitVector` will have the structure of a fully lazy
+    * right-associated cons list. Thus, `get`, `take`, and `drop` will
+    * be efficient when operating on the head of the list, but accessing
+    * later indices (for `takeRight`, say, or `get(size-1)` will require
+    * forcing the stream up to that point.
+    *
+    * Use `force` if you wish to convert the result to an in-memory strict
+    * `BitVector` backed by a balanced tree.
+    *
+    * @group constructors
+    */
   def unfold[S](s: S)(f: S => Option[(BitVector, S)]): BitVector =
-    Suspend { () => f(s).map { case (h,t) => Append(h, unfold(t)(f)) }
-                        .getOrElse { BitVector.empty } }
+    Suspend { () =>
+      f(s)
+        .map { case (h, t) => Append(h, unfold(t)(f)) }
+        .getOrElse { BitVector.empty }
+    }
 
   /**
-   * Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
-   * to control the number of bytes read in each chunk (defaulting to 16MB).
-   * This simply calls [[scodec.bits.BitVector.unfold]] with a function to extract a series
-   * of flat byte arrays from the `InputStream`.
-   *
-   * This function does not handle closing the `InputStream` and has all the usual
-   * drawbacks of lazy I/O - `I/O` exceptions may be raised unexpectedly in pure code as
-   * chunks are forced, and it must memoize the results to prevent the underlying side
-   * effects from being observed. Streaming applications should take care to ensure
-   * that the head of the stream is not left on the stack, as this will cause the entire
-   * stream to be retained in memory.
-   *
-   * @param chunkSizeInBytes the number of bytes to read in each chunk
-   * @group constructors
-   */
-  def fromInputStream(in: java.io.InputStream, chunkSizeInBytes: Int = 1024 * 1000 * 16): BitVector =
+    * Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
+    * to control the number of bytes read in each chunk (defaulting to 16MB).
+    * This simply calls [[scodec.bits.BitVector.unfold]] with a function to extract a series
+    * of flat byte arrays from the `InputStream`.
+    *
+    * This function does not handle closing the `InputStream` and has all the usual
+    * drawbacks of lazy I/O - `I/O` exceptions may be raised unexpectedly in pure code as
+    * chunks are forced, and it must memoize the results to prevent the underlying side
+    * effects from being observed. Streaming applications should take care to ensure
+    * that the head of the stream is not left on the stack, as this will cause the entire
+    * stream to be retained in memory.
+    *
+    * @param chunkSizeInBytes the number of bytes to read in each chunk
+    * @group constructors
+    */
+  def fromInputStream(
+      in: java.io.InputStream,
+      chunkSizeInBytes: Int = 1024 * 1000 * 16
+  ): BitVector =
     unfold(in) { in =>
       val buf = new Array[Byte](chunkSizeInBytes)
       val nRead = in.read(buf)
@@ -1637,51 +1748,59 @@ object BitVector {
     }
 
   /**
-   * Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
-   * to control the number of bytes read in each chunk (defaulting to 16MB). This function
-   * does lazy I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct`
-   * parameter, if `true`, allows for (but does not enforce) using a 'direct' `java.nio.ByteBuffer`
-   * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
-   * 'view' rather than an in-memory array. This may be more efficient for some workloads. See
-   * `java.nio.ByteBuffer` for more information.
-   *
-   * @param chunkSizeInBytes the number of bytes to read in each chunk
-   * @param direct true if we should attempt to use a 'direct' `java.nio.ByteBuffer` for reads
-   * @group constructors
-   */
-  def fromChannel(in: java.nio.channels.ReadableByteChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16,
-                  direct: Boolean = false): BitVector =
+    * Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
+    * to control the number of bytes read in each chunk (defaulting to 16MB). This function
+    * does lazy I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct`
+    * parameter, if `true`, allows for (but does not enforce) using a 'direct' `java.nio.ByteBuffer`
+    * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
+    * 'view' rather than an in-memory array. This may be more efficient for some workloads. See
+    * `java.nio.ByteBuffer` for more information.
+    *
+    * @param chunkSizeInBytes the number of bytes to read in each chunk
+    * @param direct true if we should attempt to use a 'direct' `java.nio.ByteBuffer` for reads
+    * @group constructors
+    */
+  def fromChannel(
+      in: java.nio.channels.ReadableByteChannel,
+      chunkSizeInBytes: Int = 1024 * 1000 * 16,
+      direct: Boolean = false
+  ): BitVector =
     unfold(in) { in =>
-      val buf = if (direct) java.nio.ByteBuffer.allocateDirect(chunkSizeInBytes)
-                else        java.nio.ByteBuffer.allocate(chunkSizeInBytes)
+      val buf =
+        if (direct) java.nio.ByteBuffer.allocateDirect(chunkSizeInBytes)
+        else java.nio.ByteBuffer.allocate(chunkSizeInBytes)
       val nRead = in.read(buf)
       buf.flip
-      if (nRead != -1) Some((BitVector.view(buf, nRead.toLong*8), in))
+      if (nRead != -1) Some((BitVector.view(buf, nRead.toLong * 8), in))
       else None
     }
 
   /**
-   * Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes`
-   * to control the number of bytes read in each chunk (defaulting to 16MB). Unlike
-   * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
-   * them explicitly.
-   *
-   * Behavior is unspecified if this function is used concurrently with the underlying
-   * file being written.
-   *
-   * @param chunkSizeInBytes the number of bytes to read in each chunk
-   * @group constructors
-   */
-  def fromMmap(in: java.nio.channels.FileChannel, chunkSizeInBytes: Int = 1024 * 1000 * 16): BitVector =
-    unfold(in -> 0L) { case (in,pos) =>
-      if (pos == in.size) None
-      else {
-        require (pos < in.size)
-        val bytesToRead = (in.size - pos) min chunkSizeInBytes.toLong
-        val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
-        require(buf.limit() == bytesToRead)
-        Some((BitVector.view(buf), (in -> (pos + bytesToRead))))
-      }
+    * Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes`
+    * to control the number of bytes read in each chunk (defaulting to 16MB). Unlike
+    * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
+    * them explicitly.
+    *
+    * Behavior is unspecified if this function is used concurrently with the underlying
+    * file being written.
+    *
+    * @param chunkSizeInBytes the number of bytes to read in each chunk
+    * @group constructors
+    */
+  def fromMmap(
+      in: java.nio.channels.FileChannel,
+      chunkSizeInBytes: Int = 1024 * 1000 * 16
+  ): BitVector =
+    unfold(in -> 0L) {
+      case (in, pos) =>
+        if (pos == in.size) None
+        else {
+          require(pos < in.size)
+          val bytesToRead = (in.size - pos).min(chunkSizeInBytes.toLong)
+          val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
+          require(buf.limit() == bytesToRead)
+          Some((BitVector.view(buf), (in -> (pos + bytesToRead))))
+        }
     }
 
   /** Smart constructor for `Bytes`. */
@@ -1696,25 +1815,23 @@ object BitVector {
     private def invalidBits = 8 - validBitsInLastByte(size)
     def align = this
     def sizeLessThan(n: Long) = size < n
-    def take(n: Long): Bytes = toBytes(underlying, math.max(0L, math.min(size,n)))
-    def drop(n: Long): BitVector = {
+    def take(n: Long): Bytes = toBytes(underlying, math.max(0L, math.min(size, n)))
+    def drop(n: Long): BitVector =
       if (n >= size) BitVector.empty
       else if (n <= 0) this
       else if (n % 8 == 0) Bytes(underlying.drop(n / 8), size - n)
       else Drop(this, n)
-    }
     def get(n: Long): Boolean = {
       checkBounds(n)
       getBit(underlying(n / 8), (n % 8).toInt)
     }
-    def getByte(n: Long): Byte = {
-      if (n < underlying.size-1)
+    def getByte(n: Long): Byte =
+      if (n < underlying.size - 1)
         underlying(n)
       else { // last byte may have some garbage bits, clear these out
         val valid = 8 - invalidBits
         (underlying(n) & topNBits(valid.toInt)).toByte
       }
-    }
 
     def update(n: Long, high: Boolean): BitVector = {
       checkBounds(n)
@@ -1738,7 +1855,10 @@ object BitVector {
       } else {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
-        val lo = (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(size).toInt).toByte
+        val lo =
+          (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(
+            size
+          ).toInt).toByte
         val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
         val updatedOtherBytes = other.drop(invalidBits).toByteVector
         toBytes(updatedOurBytes ++ updatedOtherBytes, size + other.size)
@@ -1754,11 +1874,12 @@ object BitVector {
     def drop(n: Long): BitVector =
       if (n >= size) BitVector.empty
       else if (n <= 0) this
-      else { val nm = n+m
-             val d = Drop(underlying, nm)
-             if (nm > 32768 && nm % 8 == 0) d.interpretDrop // occasionally
-             else d
-           }
+      else {
+        val nm = n + m
+        val d = Drop(underlying, nm)
+        if (nm > 32768 && nm % 8 == 0) d.interpretDrop // occasionally
+        else d
+      }
     def take(n: Long): BitVector =
       if (n >= size) this
       else if (n <= 0) BitVector.empty
@@ -1767,12 +1888,12 @@ object BitVector {
     def get(n: Long): Boolean =
       underlying.get(m + n)
     def getByte(n: Long): Byte =
-      this.drop(n*8).take(8).align.getByte(0)
+      this.drop(n * 8).take(8).align.getByte(0)
     def update(n: Long, high: Boolean): BitVector =
       Drop(underlying.update(m + n, high).compact, m)
 
     def interpretDrop: Bytes = {
-      val low = m max 0
+      val low = m.max(0)
       val newSize = size
       if (newSize == 0) BitVector.empty.align
       else {
@@ -1783,31 +1904,34 @@ object BitVector {
         val newBytes = {
           if (bitsToShiftEachByte == 0) shiftedByWholeBytes
           else {
-            (shiftedByWholeBytes zipWithI (shiftedByWholeBytes.drop(1) :+ (0: Byte))) { case (a, b) =>
-              val hi = (a << bitsToShiftEachByte)
-              val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
-              hi | low
+            shiftedByWholeBytes.zipWithI(shiftedByWholeBytes.drop(1) :+ (0: Byte)) {
+              case (a, b) =>
+                val hi = (a << bitsToShiftEachByte)
+                val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
+                hi | low
             }
           }
         }
-        toBytes(if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes, newSize)
+        toBytes(
+          if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes,
+          newSize
+        )
       }
     }
   }
-  private[scodec] case class Append(left: BitVector,
-                                    right: BitVector) extends BitVector {
+  private[scodec] case class Append(left: BitVector, right: BitVector) extends BitVector {
 
     def get(n: Long): Boolean =
       if (n < left.size) left.get(n)
       else right.get(n - left.size)
     def getByte(n: Long): Byte =
-      if (n < left.size/8) left.getByte(n)
-      else if (left.size%8 == 0 && n > left.size/8) right.getByte(n - left.size/8)
-      else drop(n*8).take(8).align.getByte(0) // fall back to inefficient impl (todo: improve this)
+      if (n < left.size / 8) left.getByte(n)
+      else if (left.size % 8 == 0 && n > left.size / 8) right.getByte(n - left.size / 8)
+      else drop(n * 8).take(8).align.getByte(0) // fall back to inefficient impl (todo: improve this)
     def update(n: Long, high: Boolean): BitVector =
       if (n < left.size) Append(left.update(n, high), right)
       else Append(left, right.update(n - left.size, high))
-    def align = left.align combine right.align
+    def align = left.align.combine(right.align)
 
     @volatile var knownSize: Long = right match {
       case s: Suspend => -1L
@@ -1818,22 +1942,21 @@ object BitVector {
     }
     var sizeLowerBound = left.size
 
-    def size = {
+    def size =
       if (knownSize != -1L) knownSize
       else { // faster to just allow recomputation if there's contention
         @annotation.tailrec
         def go(rem: List[BitVector], acc: Long): Long = rem match {
-          case Nil => acc
-          case Append(x, y) :: t => go(x :: y :: t, acc)
+          case Nil                       => acc
+          case Append(x, y) :: t         => go(x :: y :: t, acc)
           case Chunks(Append(x, y)) :: t => go(x :: y :: t, acc)
-          case (s: Suspend) :: t => go(s.underlying :: t, acc)
-          case h :: t => go(t, acc + h.size)
+          case (s: Suspend) :: t         => go(s.underlying :: t, acc)
+          case h :: t                    => go(t, acc + h.size)
         }
         val sz = go(List(left, right), 0)
         knownSize = sz
         sz
       }
-    }
 
     def take(n: Long) = {
       // NB: not worth early termination in event that sizeLessThanOrEqual(n) is true -
@@ -1845,10 +1968,11 @@ object BitVector {
       else {
         @annotation.tailrec
         def go(accL: BitVector, cur: BitVector, n: Long): BitVector = cur match {
-          case Append(left, right) => if (n <= left.size) accL ++ left.take(n)
-                                      else go(accL ++ left, right, n - left.size)
+          case Append(left, right) =>
+            if (n <= left.size) accL ++ left.take(n)
+            else go(accL ++ left, right, n - left.size)
           case s: Suspend => go(accL, s.underlying, n)
-          case _ => accL ++ cur.take(n)
+          case _          => accL ++ cur.take(n)
         }
         go(left, right, npos - left.size)
       }
@@ -1860,24 +1984,27 @@ object BitVector {
       else {
         @annotation.tailrec
         def go(cur: BitVector, n: Long): BitVector = cur match {
-          case Append(left, right) => if (n >= left.size) go(right, n - left.size)
-                                      else Append(left.drop(n), right)
+          case Append(left, right) =>
+            if (n >= left.size) go(right, n - left.size)
+            else Append(left.drop(n), right)
           case s: Suspend => go(s.underlying, n)
-          case _ => cur.drop(n)
+          case _          => cur.drop(n)
         }
         if (npos >= left.size) go(right, npos - left.size)
         else Append(left.drop(npos), right)
       }
     }
 
-    def sizeLessThan(n: Long) = {
+    def sizeLessThan(n: Long) =
       if (knownSize != -1L) knownSize < n
       else if (sizeLowerBound >= n) false
       else {
         @annotation.tailrec
         def go(cur: BitVector, n: Long, seen: Long): Boolean = cur match {
-          case Append(l,r) => if (l.size >= n) { sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false }
-                              else go(r, n - l.size, seen + l.size)
+          case Append(l, r) =>
+            if (l.size >= n) {
+              sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false
+            } else go(r, n - l.size, seen + l.size)
           case s: Suspend => go(s.underlying, n, seen)
           case _ => {
             sizeLowerBound = math.max(seen, sizeLowerBound)
@@ -1886,7 +2013,6 @@ object BitVector {
         }
         go(this, n, 0)
       }
-    }
   }
   private[scodec] case class Suspend(thunk: () => BitVector) extends BitVector {
     lazy val underlying = thunk()
@@ -1901,10 +2027,10 @@ object BitVector {
   }
 
   /**
-   * A vector of chunks of exponentially decreasing size. Supports
-   * amortized constant time `++` and logarithmic time for all other
-   * operations.
-   */
+    * A vector of chunks of exponentially decreasing size. Supports
+    * amortized constant time `++` and logarithmic time for all other
+    * operations.
+    */
   private[scodec] case class Chunks(chunks: Append) extends BitVector {
 
     override def unchunk = Append(chunks.left, chunks.right.unchunk)
@@ -1920,18 +2046,19 @@ object BitVector {
         @annotation.tailrec
         def go(chunks: Append, last: BitVector): BitVector = {
           val lastN = last.size
-          if (lastN >= chunks.size || lastN*2 <= chunks.right.size)
+          if (lastN >= chunks.size || lastN * 2 <= chunks.right.size)
             Chunks(Append(chunks, last))
-          else chunks.left match {
-            case left: Append =>
-              val rN = chunks.right.size
-              val aligned = (lastN % 8) + (rN % 8) == 0
-              if (rN <= 256 && aligned)
-                go(left, chunks.right.align combine last.align)
-              else
-                go(left, Append(chunks.right, last))
-            case _ => Chunks(Append(chunks, last))
-          }
+          else
+            chunks.left match {
+              case left: Append =>
+                val rN = chunks.right.size
+                val aligned = (lastN % 8) + (rN % 8) == 0
+                if (rN <= 256 && aligned)
+                  go(left, chunks.right.align.combine(last.align))
+                else
+                  go(left, Append(chunks.right, last))
+              case _ => Chunks(Append(chunks, last))
+            }
         }
         go(chunks, b.unchunk)
       }
@@ -1978,38 +2105,262 @@ object BitVector {
     bitReversalTable(b & 0xff)
 
   private val bitReversalTable: Array[Byte] = Array(
-    0x00.toByte, 0x80.toByte, 0x40.toByte, 0xC0.toByte, 0x20.toByte, 0xA0.toByte, 0x60.toByte, 0xE0.toByte,
-    0x10.toByte, 0x90.toByte, 0x50.toByte, 0xD0.toByte, 0x30.toByte, 0xB0.toByte, 0x70.toByte, 0xF0.toByte,
-    0x08.toByte, 0x88.toByte, 0x48.toByte, 0xC8.toByte, 0x28.toByte, 0xA8.toByte, 0x68.toByte, 0xE8.toByte,
-    0x18.toByte, 0x98.toByte, 0x58.toByte, 0xD8.toByte, 0x38.toByte, 0xB8.toByte, 0x78.toByte, 0xF8.toByte,
-    0x04.toByte, 0x84.toByte, 0x44.toByte, 0xC4.toByte, 0x24.toByte, 0xA4.toByte, 0x64.toByte, 0xE4.toByte,
-    0x14.toByte, 0x94.toByte, 0x54.toByte, 0xD4.toByte, 0x34.toByte, 0xB4.toByte, 0x74.toByte, 0xF4.toByte,
-    0x0C.toByte, 0x8C.toByte, 0x4C.toByte, 0xCC.toByte, 0x2C.toByte, 0xAC.toByte, 0x6C.toByte, 0xEC.toByte,
-    0x1C.toByte, 0x9C.toByte, 0x5C.toByte, 0xDC.toByte, 0x3C.toByte, 0xBC.toByte, 0x7C.toByte, 0xFC.toByte,
-    0x02.toByte, 0x82.toByte, 0x42.toByte, 0xC2.toByte, 0x22.toByte, 0xA2.toByte, 0x62.toByte, 0xE2.toByte,
-    0x12.toByte, 0x92.toByte, 0x52.toByte, 0xD2.toByte, 0x32.toByte, 0xB2.toByte, 0x72.toByte, 0xF2.toByte,
-    0x0A.toByte, 0x8A.toByte, 0x4A.toByte, 0xCA.toByte, 0x2A.toByte, 0xAA.toByte, 0x6A.toByte, 0xEA.toByte,
-    0x1A.toByte, 0x9A.toByte, 0x5A.toByte, 0xDA.toByte, 0x3A.toByte, 0xBA.toByte, 0x7A.toByte, 0xFA.toByte,
-    0x06.toByte, 0x86.toByte, 0x46.toByte, 0xC6.toByte, 0x26.toByte, 0xA6.toByte, 0x66.toByte, 0xE6.toByte,
-    0x16.toByte, 0x96.toByte, 0x56.toByte, 0xD6.toByte, 0x36.toByte, 0xB6.toByte, 0x76.toByte, 0xF6.toByte,
-    0x0E.toByte, 0x8E.toByte, 0x4E.toByte, 0xCE.toByte, 0x2E.toByte, 0xAE.toByte, 0x6E.toByte, 0xEE.toByte,
-    0x1E.toByte, 0x9E.toByte, 0x5E.toByte, 0xDE.toByte, 0x3E.toByte, 0xBE.toByte, 0x7E.toByte, 0xFE.toByte,
-    0x01.toByte, 0x81.toByte, 0x41.toByte, 0xC1.toByte, 0x21.toByte, 0xA1.toByte, 0x61.toByte, 0xE1.toByte,
-    0x11.toByte, 0x91.toByte, 0x51.toByte, 0xD1.toByte, 0x31.toByte, 0xB1.toByte, 0x71.toByte, 0xF1.toByte,
-    0x09.toByte, 0x89.toByte, 0x49.toByte, 0xC9.toByte, 0x29.toByte, 0xA9.toByte, 0x69.toByte, 0xE9.toByte,
-    0x19.toByte, 0x99.toByte, 0x59.toByte, 0xD9.toByte, 0x39.toByte, 0xB9.toByte, 0x79.toByte, 0xF9.toByte,
-    0x05.toByte, 0x85.toByte, 0x45.toByte, 0xC5.toByte, 0x25.toByte, 0xA5.toByte, 0x65.toByte, 0xE5.toByte,
-    0x15.toByte, 0x95.toByte, 0x55.toByte, 0xD5.toByte, 0x35.toByte, 0xB5.toByte, 0x75.toByte, 0xF5.toByte,
-    0x0D.toByte, 0x8D.toByte, 0x4D.toByte, 0xCD.toByte, 0x2D.toByte, 0xAD.toByte, 0x6D.toByte, 0xED.toByte,
-    0x1D.toByte, 0x9D.toByte, 0x5D.toByte, 0xDD.toByte, 0x3D.toByte, 0xBD.toByte, 0x7D.toByte, 0xFD.toByte,
-    0x03.toByte, 0x83.toByte, 0x43.toByte, 0xC3.toByte, 0x23.toByte, 0xA3.toByte, 0x63.toByte, 0xE3.toByte,
-    0x13.toByte, 0x93.toByte, 0x53.toByte, 0xD3.toByte, 0x33.toByte, 0xB3.toByte, 0x73.toByte, 0xF3.toByte,
-    0x0B.toByte, 0x8B.toByte, 0x4B.toByte, 0xCB.toByte, 0x2B.toByte, 0xAB.toByte, 0x6B.toByte, 0xEB.toByte,
-    0x1B.toByte, 0x9B.toByte, 0x5B.toByte, 0xDB.toByte, 0x3B.toByte, 0xBB.toByte, 0x7B.toByte, 0xFB.toByte,
-    0x07.toByte, 0x87.toByte, 0x47.toByte, 0xC7.toByte, 0x27.toByte, 0xA7.toByte, 0x67.toByte, 0xE7.toByte,
-    0x17.toByte, 0x97.toByte, 0x57.toByte, 0xD7.toByte, 0x37.toByte, 0xB7.toByte, 0x77.toByte, 0xF7.toByte,
-    0x0F.toByte, 0x8F.toByte, 0x4F.toByte, 0xCF.toByte, 0x2F.toByte, 0xAF.toByte, 0x6F.toByte, 0xEF.toByte,
-    0x1F.toByte, 0x9F.toByte, 0x5F.toByte, 0xDF.toByte, 0x3F.toByte, 0xBF.toByte, 0x7F.toByte, 0xFF.toByte
+    0x00.toByte,
+    0x80.toByte,
+    0x40.toByte,
+    0xC0.toByte,
+    0x20.toByte,
+    0xA0.toByte,
+    0x60.toByte,
+    0xE0.toByte,
+    0x10.toByte,
+    0x90.toByte,
+    0x50.toByte,
+    0xD0.toByte,
+    0x30.toByte,
+    0xB0.toByte,
+    0x70.toByte,
+    0xF0.toByte,
+    0x08.toByte,
+    0x88.toByte,
+    0x48.toByte,
+    0xC8.toByte,
+    0x28.toByte,
+    0xA8.toByte,
+    0x68.toByte,
+    0xE8.toByte,
+    0x18.toByte,
+    0x98.toByte,
+    0x58.toByte,
+    0xD8.toByte,
+    0x38.toByte,
+    0xB8.toByte,
+    0x78.toByte,
+    0xF8.toByte,
+    0x04.toByte,
+    0x84.toByte,
+    0x44.toByte,
+    0xC4.toByte,
+    0x24.toByte,
+    0xA4.toByte,
+    0x64.toByte,
+    0xE4.toByte,
+    0x14.toByte,
+    0x94.toByte,
+    0x54.toByte,
+    0xD4.toByte,
+    0x34.toByte,
+    0xB4.toByte,
+    0x74.toByte,
+    0xF4.toByte,
+    0x0C.toByte,
+    0x8C.toByte,
+    0x4C.toByte,
+    0xCC.toByte,
+    0x2C.toByte,
+    0xAC.toByte,
+    0x6C.toByte,
+    0xEC.toByte,
+    0x1C.toByte,
+    0x9C.toByte,
+    0x5C.toByte,
+    0xDC.toByte,
+    0x3C.toByte,
+    0xBC.toByte,
+    0x7C.toByte,
+    0xFC.toByte,
+    0x02.toByte,
+    0x82.toByte,
+    0x42.toByte,
+    0xC2.toByte,
+    0x22.toByte,
+    0xA2.toByte,
+    0x62.toByte,
+    0xE2.toByte,
+    0x12.toByte,
+    0x92.toByte,
+    0x52.toByte,
+    0xD2.toByte,
+    0x32.toByte,
+    0xB2.toByte,
+    0x72.toByte,
+    0xF2.toByte,
+    0x0A.toByte,
+    0x8A.toByte,
+    0x4A.toByte,
+    0xCA.toByte,
+    0x2A.toByte,
+    0xAA.toByte,
+    0x6A.toByte,
+    0xEA.toByte,
+    0x1A.toByte,
+    0x9A.toByte,
+    0x5A.toByte,
+    0xDA.toByte,
+    0x3A.toByte,
+    0xBA.toByte,
+    0x7A.toByte,
+    0xFA.toByte,
+    0x06.toByte,
+    0x86.toByte,
+    0x46.toByte,
+    0xC6.toByte,
+    0x26.toByte,
+    0xA6.toByte,
+    0x66.toByte,
+    0xE6.toByte,
+    0x16.toByte,
+    0x96.toByte,
+    0x56.toByte,
+    0xD6.toByte,
+    0x36.toByte,
+    0xB6.toByte,
+    0x76.toByte,
+    0xF6.toByte,
+    0x0E.toByte,
+    0x8E.toByte,
+    0x4E.toByte,
+    0xCE.toByte,
+    0x2E.toByte,
+    0xAE.toByte,
+    0x6E.toByte,
+    0xEE.toByte,
+    0x1E.toByte,
+    0x9E.toByte,
+    0x5E.toByte,
+    0xDE.toByte,
+    0x3E.toByte,
+    0xBE.toByte,
+    0x7E.toByte,
+    0xFE.toByte,
+    0x01.toByte,
+    0x81.toByte,
+    0x41.toByte,
+    0xC1.toByte,
+    0x21.toByte,
+    0xA1.toByte,
+    0x61.toByte,
+    0xE1.toByte,
+    0x11.toByte,
+    0x91.toByte,
+    0x51.toByte,
+    0xD1.toByte,
+    0x31.toByte,
+    0xB1.toByte,
+    0x71.toByte,
+    0xF1.toByte,
+    0x09.toByte,
+    0x89.toByte,
+    0x49.toByte,
+    0xC9.toByte,
+    0x29.toByte,
+    0xA9.toByte,
+    0x69.toByte,
+    0xE9.toByte,
+    0x19.toByte,
+    0x99.toByte,
+    0x59.toByte,
+    0xD9.toByte,
+    0x39.toByte,
+    0xB9.toByte,
+    0x79.toByte,
+    0xF9.toByte,
+    0x05.toByte,
+    0x85.toByte,
+    0x45.toByte,
+    0xC5.toByte,
+    0x25.toByte,
+    0xA5.toByte,
+    0x65.toByte,
+    0xE5.toByte,
+    0x15.toByte,
+    0x95.toByte,
+    0x55.toByte,
+    0xD5.toByte,
+    0x35.toByte,
+    0xB5.toByte,
+    0x75.toByte,
+    0xF5.toByte,
+    0x0D.toByte,
+    0x8D.toByte,
+    0x4D.toByte,
+    0xCD.toByte,
+    0x2D.toByte,
+    0xAD.toByte,
+    0x6D.toByte,
+    0xED.toByte,
+    0x1D.toByte,
+    0x9D.toByte,
+    0x5D.toByte,
+    0xDD.toByte,
+    0x3D.toByte,
+    0xBD.toByte,
+    0x7D.toByte,
+    0xFD.toByte,
+    0x03.toByte,
+    0x83.toByte,
+    0x43.toByte,
+    0xC3.toByte,
+    0x23.toByte,
+    0xA3.toByte,
+    0x63.toByte,
+    0xE3.toByte,
+    0x13.toByte,
+    0x93.toByte,
+    0x53.toByte,
+    0xD3.toByte,
+    0x33.toByte,
+    0xB3.toByte,
+    0x73.toByte,
+    0xF3.toByte,
+    0x0B.toByte,
+    0x8B.toByte,
+    0x4B.toByte,
+    0xCB.toByte,
+    0x2B.toByte,
+    0xAB.toByte,
+    0x6B.toByte,
+    0xEB.toByte,
+    0x1B.toByte,
+    0x9B.toByte,
+    0x5B.toByte,
+    0xDB.toByte,
+    0x3B.toByte,
+    0xBB.toByte,
+    0x7B.toByte,
+    0xFB.toByte,
+    0x07.toByte,
+    0x87.toByte,
+    0x47.toByte,
+    0xC7.toByte,
+    0x27.toByte,
+    0xA7.toByte,
+    0x67.toByte,
+    0xE7.toByte,
+    0x17.toByte,
+    0x97.toByte,
+    0x57.toByte,
+    0xD7.toByte,
+    0x37.toByte,
+    0xB7.toByte,
+    0x77.toByte,
+    0xF7.toByte,
+    0x0F.toByte,
+    0x8F.toByte,
+    0x4F.toByte,
+    0xCF.toByte,
+    0x2F.toByte,
+    0xAF.toByte,
+    0x6F.toByte,
+    0xEF.toByte,
+    0x1F.toByte,
+    0x9F.toByte,
+    0x5F.toByte,
+    0xDF.toByte,
+    0x3F.toByte,
+    0xBF.toByte,
+    0x7F.toByte,
+    0xFF.toByte
   )
 
   /** Clears (sets to 0) any bits in the last byte that are not used for storing `size` bits. */
@@ -2025,39 +2376,41 @@ object BitVector {
   }
 
   /**
-   * Do a 'balanced' reduction of `v`. Provided `f` is associative, this
-   * returns the same result as `v.reduceLeft(f)`, but uses a balanced
-   * tree of concatenations, which is more efficient for operations that
-   * must copy both `A` values to combine them in `f`.
-   *
-   * Implementation uses a stack that combines the top two elements of the
-   * stack using `f` if the top element is more than half the size of the
-   * element below it.
-   */
-  private[bits] def reduceBalanced[A](v: Iterable[A])(size: A => Long)(
-                                      f: (A,A) => A): A = {
+    * Do a 'balanced' reduction of `v`. Provided `f` is associative, this
+    * returns the same result as `v.reduceLeft(f)`, but uses a balanced
+    * tree of concatenations, which is more efficient for operations that
+    * must copy both `A` values to combine them in `f`.
+    *
+    * Implementation uses a stack that combines the top two elements of the
+    * stack using `f` if the top element is more than half the size of the
+    * element below it.
+    */
+  private[bits] def reduceBalanced[A](v: Iterable[A])(size: A => Long)(f: (A, A) => A): A = {
     @annotation.tailrec
-    def fixup(stack: List[(A,Long)]): List[(A,Long)] = stack match {
+    def fixup(stack: List[(A, Long)]): List[(A, Long)] = stack match {
       // h actually appeared first in `v`, followed by `h2`, preserve this order
-      case (h2,n) :: (h,m) :: t if n > m/2 =>
-        fixup { (f(h, h2), m+n) :: t }
+      case (h2, n) :: (h, m) :: t if n > m / 2 =>
+        fixup { (f(h, h2), m + n) :: t }
       case _ => stack
     }
-    v.foldLeft(List[(A,Long)]())((stack,a) => fixup((a -> size(a)) :: stack))
-     .reverse.map(_._1)
-     .reduceLeft(f)
+    v.foldLeft(List[(A, Long)]())((stack, a) => fixup((a -> size(a)) :: stack))
+      .reverse
+      .map(_._1)
+      .reduceLeft(f)
   }
 
   @SerialVersionUID(1L)
-  private class SerializationProxy(private val bytes: Array[Byte], private val size: Long) extends Serializable {
+  private class SerializationProxy(private val bytes: Array[Byte], private val size: Long)
+      extends Serializable {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
 
   implicit class GroupedOp(val self: BitVector) extends AnyVal {
+
     /**
-     * Converts this vector in to a sequence of `n`-bit vectors.
-     * @group collection
-     */
+      * Converts this vector in to a sequence of `n`-bit vectors.
+      * @group collection
+      */
     final def grouped(n: Long): Iterator[BitVector] = self.groupedIterator(n)
   }
 

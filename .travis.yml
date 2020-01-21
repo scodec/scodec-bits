@@ -1,13 +1,3 @@
-sudo: required
-dist: trusty
-before_install:
-  - curl https://raw.githubusercontent.com/scala-native/scala-native/master/scripts/travis_setup.sh | bash -x
-
-cache:
-  directories:
-    - $HOME/.sbt
-    - $HOME/.ivy2/cache
-
 language: scala
 
 scala:
@@ -19,10 +9,19 @@ scala:
 jdk:
   - openjdk11
 
+sudo: required
+dist: trusty
+
+before_install:
+  - curl https://raw.githubusercontent.com/scala-native/scala-native/master/scripts/travis_setup.sh | bash -x
+
+cache:
+  directories:
+    - $HOME/.ivy2
+    - $HOME/.coursier
+    - $HOME/.sbt
+
 script:
+  - sbt ++$TRAVIS_SCALA_VERSION fmtCheck
   - sbt ++$TRAVIS_SCALA_VERSION test mimaReportBinaryIssues
 
-before_cache:
-  # Tricks to avoid unnecessary cache updates
-  - find $HOME/.sbt -name "*.lock" -exec rm {} +
-  - find $HOME/.ivy2 -name "ivydata-*.properties" -exec rm {} +

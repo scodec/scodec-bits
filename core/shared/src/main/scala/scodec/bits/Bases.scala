@@ -4,29 +4,31 @@ package scodec.bits
 object Bases {
 
   /**
-   * Partial mapping between characters and indices used in base conversions.
-   */
+    * Partial mapping between characters and indices used in base conversions.
+    */
   trait Alphabet {
+
     /**
-     * Converts the specified index to a character.
-     * @throws IndexOutOfBoundsException if the specified byte is not supported by this alphabet
-     */
+      * Converts the specified index to a character.
+      * @throws IndexOutOfBoundsException if the specified byte is not supported by this alphabet
+      */
     def toChar(index: Int): Char
 
     /**
-     * Converts the specified char to an index.
-     * @throws IllegalArgumentException if the specified char is not supported by this alphabet
-     */
+      * Converts the specified char to an index.
+      * @throws IllegalArgumentException if the specified char is not supported by this alphabet
+      */
     def toIndex(c: Char): Int
 
     /**
-     * Indicates whether the specified character should be ignored.
-     */
+      * Indicates whether the specified character should be ignored.
+      */
     def ignore(c: Char): Boolean
   }
 
   /** An alphabet that supports padding with a pad character. */
   trait PaddedAlphabet extends Alphabet {
+
     /** Padding character. */
     val pad: Char
   }
@@ -49,7 +51,7 @@ object Bases {
       def toIndex(c: Char) = c match {
         case '0' => 0
         case '1' => 1
-        case _ => throw new IllegalArgumentException
+        case _   => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -60,7 +62,7 @@ object Bases {
       def toIndex(c: Char) = c match {
         case 't' | 'T' => 0
         case 'f' | 'F' => 1
-        case _ => throw new IllegalArgumentException
+        case _         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -71,26 +73,30 @@ object Bases {
         case c if c >= '0' && c <= '9' => c - '0'
         case c if c >= 'a' && c <= 'f' => 10 + (c - 'a')
         case c if c >= 'A' && c <= 'F' => 10 + (c - 'A')
-        case c => throw new IllegalArgumentException
+        case c                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
     /** Base 16 alphabet that uses `{0-9, a-f}`. Whitespace and underscores are ignored. */
     object HexLowercase extends LenientHex {
-      private val Chars = Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
+      private val Chars =
+        Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
       def toChar(i: Int) = Chars(i)
     }
 
     /** Base 16 alphabet that uses `{0-9, A-F}`. Whitespace and underscores are ignored. */
     object HexUppercase extends LenientHex {
-      private val Chars = Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
+      private val Chars =
+        Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F')
       def toChar(i: Int) = Chars(i)
     }
 
     /** Base 58 alphabet as defined by [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses the same order */
     object Base58 extends Alphabet {
-      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z')).filterNot(c => List('O', 'I', 'l').exists(_ == c))
+      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z')).filterNot(c =>
+        List('O', 'I', 'l').exists(_ == c)
+      )
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = c match {
         case c if c >= '1' && c <= '9' => c - '1'
@@ -99,7 +105,7 @@ object Bases {
         case c if c >= 'P' && c <= 'Z' => c - 'P' + 9 + 8 + 5
         case c if c >= 'a' && c <= 'k' => c - 'a' + 9 + 8 + 5 + 11
         case c if c >= 'm' && c <= 'z' => c - 'm' + 9 + 8 + 5 + 11 + 11
-        case c => throw new IllegalArgumentException
+        case c                         => throw new IllegalArgumentException
       }
 
       def ignore(c: Char) = c.isWhitespace
@@ -114,9 +120,9 @@ object Bases {
         case c if c >= 'A' && c <= 'Z' => c - 'A'
         case c if c >= 'a' && c <= 'z' => c - 'a' + 26
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
-        case '+' => 62
-        case '/' => 63
-        case c => throw new IllegalArgumentException
+        case '+'                       => 62
+        case '/'                       => 63
+        case c                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace
     }
@@ -130,9 +136,9 @@ object Bases {
         case c if c >= 'A' && c <= 'Z' => c - 'A'
         case c if c >= 'a' && c <= 'z' => c - 'a' + 26
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
-        case '-' => 62
-        case '_' => 63
-        case c => throw new IllegalArgumentException
+        case '-'                       => 62
+        case '_'                       => 63
+        case c                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace
     }

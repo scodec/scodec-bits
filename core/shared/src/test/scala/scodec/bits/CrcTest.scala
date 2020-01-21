@@ -10,13 +10,34 @@ class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
   implicit val arbBitVector = Arbitrary(genBitVector())
 
-  def crcWith(poly: String, initial: String, reflectInput: Boolean, reflectOutput: Boolean, finalXor: String) =
-    crc(BitVector.fromValidHex(poly), BitVector.fromValidHex(initial), reflectInput, reflectOutput, BitVector.fromValidHex(finalXor))
+  def crcWith(
+      poly: String,
+      initial: String,
+      reflectInput: Boolean,
+      reflectOutput: Boolean,
+      finalXor: String
+  ) =
+    crc(
+      BitVector.fromValidHex(poly),
+      BitVector.fromValidHex(initial),
+      reflectInput,
+      reflectOutput,
+      BitVector.fromValidHex(finalXor)
+    )
 
   test("table based implementation should have the same result as bitwise implementation") {
     val poly = hex"04C11DB7".bits
     val table32 = crc(poly, hex"ffffffff".bits, false, false, hex"00000000".bits)
-    forAll { (bv: BitVector) => table32(bv) shouldBe crc.bitwise(poly, hex"ffffffff".bits, false, false, hex"00000000".bits, bv) }
+    forAll { (bv: BitVector) =>
+      table32(bv) shouldBe crc.bitwise(
+        poly,
+        hex"ffffffff".bits,
+        false,
+        false,
+        hex"00000000".bits,
+        bv
+      )
+    }
   }
 
   val checkBytes = BitVector("123456789".getBytes("US-ASCII"))
@@ -44,7 +65,8 @@ class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
   }
 
   test("CRC-5/ITU") {
-    val crc5itu = crc(hex"09".bits.drop(1), hex"00".bits.drop(1), false, false, hex"00".bits.drop(1))
+    val crc5itu =
+      crc(hex"09".bits.drop(1), hex"00".bits.drop(1), false, false, hex"00".bits.drop(1))
     crc5itu(checkBytes) shouldBe hex"75".bits.drop(1)
   }
 
@@ -80,7 +102,8 @@ class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       hex"000000000000000000000".bits.drop(6),
       true,
       true,
-      hex"000000000000000000000".bits.drop(6))
+      hex"000000000000000000000".bits.drop(6)
+    )
     crc82darc(checkBytes) shouldBe hex"09ea83f625023801fd612".bits.drop(6)
   }
 }

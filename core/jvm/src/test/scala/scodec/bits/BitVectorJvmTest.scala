@@ -10,25 +10,26 @@ class BitVectorJvmTest extends BitsSuite {
     Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
   }
 
-  test("sizeGreater/LessThan concurrent") { forAll { (x: BitVector) =>
-    val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
-    def t = new Thread {
-      override def start = {
-        (0 until x.size.toInt).foreach { i =>
-          ok.compareAndSet(true, x.sizeGreaterThan(i.toLong))
-          ()
-        }
+  test("sizeGreater/LessThan concurrent") {
+    forAll { (x: BitVector) =>
+      val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
+      def t = new Thread {
+        override def start =
+          (0 until x.size.toInt).foreach { i =>
+            ok.compareAndSet(true, x.sizeGreaterThan(i.toLong))
+            ()
+          }
       }
+      val t1 = t
+      val t2 = t
+      t1.start
+      t2.start
+      ok.compareAndSet(true, x.sizeLessThan(x.size + 1))
+      t1.join
+      t2.join
+      ok.get shouldBe true
     }
-    val t1 = t
-    val t2 = t
-    t1.start
-    t2.start
-    ok.compareAndSet(true, x.sizeLessThan(x.size+1))
-    t1.join
-    t2.join
-    ok.get shouldBe true
-  }}
+  }
 
   test("digest") {
     forAll { (x: BitVector) =>
@@ -38,7 +39,9 @@ class BitVectorJvmTest extends BitsSuite {
   }
 
   test("serialization") {
-    forAll { (x: BitVector) => serializationShouldRoundtrip(x) }
+    forAll { (x: BitVector) =>
+      serializationShouldRoundtrip(x)
+    }
   }
 
 }

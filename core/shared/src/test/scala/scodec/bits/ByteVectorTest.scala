@@ -11,13 +11,14 @@ import org.scalatest.matchers.should.Matchers._
 class ByteVectorTest extends BitsSuite {
 
   test("hashCode/equals") {
-    forAll (bytesWithIndex) { case (b, m) =>
-      (b.take(m) ++ b.drop(m)) shouldBe b
-      (b.take(m) ++ b.drop(m)).hashCode shouldBe b.hashCode
-      if (b.take(3) == b.drop(3).take(3)) {
-        // kind of weak, since this will only happen 1/8th of attempts on average
-        b.take(3).hashCode shouldBe b.drop(3).take(3).hashCode
-      }
+    forAll(bytesWithIndex) {
+      case (b, m) =>
+        (b.take(m) ++ b.drop(m)) shouldBe b
+        (b.take(m) ++ b.drop(m)).hashCode shouldBe b.hashCode
+        if (b.take(3) == b.drop(3).take(3)) {
+          // kind of weak, since this will only happen 1/8th of attempts on average
+          b.take(3).hashCode shouldBe b.drop(3).take(3).hashCode
+        }
     }
   }
 
@@ -39,21 +40,27 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("reverse.reverse == id") {
-    forAll { (b: ByteVector) => b.reverse.reverse shouldBe b }
+    forAll { (b: ByteVector) =>
+      b.reverse.reverse shouldBe b
+    }
   }
 
   test("foldRight/left") {
-    forAll { (b: ByteVector) => b.foldLeft(ByteVector.empty)(_ :+ _) shouldBe b }
-    forAll { (b: ByteVector) => b.foldRight(ByteVector.empty)(_ +: _) shouldBe b }
+    forAll { (b: ByteVector) =>
+      b.foldLeft(ByteVector.empty)(_ :+ _) shouldBe b
+    }
+    forAll { (b: ByteVector) =>
+      b.foldRight(ByteVector.empty)(_ +: _) shouldBe b
+    }
   }
 
   test("insert") {
     val b = ByteVector.empty
     b.insert(0, 1) shouldBe ByteVector(1)
-    ByteVector(1,2,3,4).insert(0, 0) shouldBe ByteVector(0,1,2,3,4)
-    ByteVector(1,2,3,4).insert(1, 0) shouldBe ByteVector(1,0,2,3,4)
+    ByteVector(1, 2, 3, 4).insert(0, 0) shouldBe ByteVector(0, 1, 2, 3, 4)
+    ByteVector(1, 2, 3, 4).insert(1, 0) shouldBe ByteVector(1, 0, 2, 3, 4)
     forAll { (b: ByteVector) =>
-      b.foldLeft(ByteVector.empty)((acc,b) => acc.insert(acc.size, b)) shouldBe b
+      b.foldLeft(ByteVector.empty)((acc, b) => acc.insert(acc.size, b)) shouldBe b
     }
   }
 
@@ -72,7 +79,7 @@ class ByteVectorTest extends BitsSuite {
     val b3 = ByteVector(2, 3, 4, 5)
     b1.zipWithI2(b2, b3)(_ + _ + _) shouldBe ByteVector(3, 6, 9, 12)
     forAll { (b: ByteVector) =>
-      b.zipWithI2(b, b)(_  + _ - _) shouldBe b
+      b.zipWithI2(b, b)(_ + _ - _) shouldBe b
     }
   }
 
@@ -88,26 +95,27 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("consistent with Array[Byte] implementations") {
-    forAll (bytesWithIndex) { case (b, ind) =>
-      val ba = b.toArray
-      b.take(ind).toArray shouldBe ba.take(ind.toInt)
-      b.drop(ind).toArray shouldBe ba.drop(ind.toInt)
-      b.lift(ind) shouldBe ba.lift(ind.toInt)
-      b.takeRight(ind).toArray shouldBe ba.takeRight(ind.toInt)
-      b.dropRight(ind).toArray shouldBe ba.dropRight(ind.toInt)
-      b.reverse.toArray shouldBe ba.reverse
-      b.partialCompact(ind).toArray shouldBe ba
-      b.lastOption shouldBe ba.lastOption
-      b.nonEmpty shouldBe ba.nonEmpty
-      if (b.nonEmpty) {
-        b.last shouldBe ba.last
-        b.init.toArray shouldBe ba.init
-      }
-      if (ind < b.size) {
-        val actual = b.update(ind,9).toArray
-        val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
-        actual shouldBe correct
-      }
+    forAll(bytesWithIndex) {
+      case (b, ind) =>
+        val ba = b.toArray
+        b.take(ind).toArray shouldBe ba.take(ind.toInt)
+        b.drop(ind).toArray shouldBe ba.drop(ind.toInt)
+        b.lift(ind) shouldBe ba.lift(ind.toInt)
+        b.takeRight(ind).toArray shouldBe ba.takeRight(ind.toInt)
+        b.dropRight(ind).toArray shouldBe ba.dropRight(ind.toInt)
+        b.reverse.toArray shouldBe ba.reverse
+        b.partialCompact(ind).toArray shouldBe ba
+        b.lastOption shouldBe ba.lastOption
+        b.nonEmpty shouldBe ba.nonEmpty
+        if (b.nonEmpty) {
+          b.last shouldBe ba.last
+          b.init.toArray shouldBe ba.init
+        }
+        if (ind < b.size) {
+          val actual = b.update(ind, 9).toArray
+          val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
+          actual shouldBe correct
+        }
 
     }
     forAll { (b1: ByteVector, b2: ByteVector) =>
@@ -134,8 +142,12 @@ class ByteVectorTest extends BitsSuite {
     ByteVector.fromHexDescriptive("0xdeadbee") shouldBe Right(ByteVector(0x0d, 0xea, 0xdb, 0xee))
     ByteVector.fromHexDescriptive("0xde_ad_be_e") shouldBe Right(ByteVector(0x0d, 0xea, 0xdb, 0xee))
 
-    ByteVector.fromHexDescriptive("garbage") shouldBe Left("Invalid hexadecimal character 'g' at index 0")
-    ByteVector.fromHexDescriptive("deadbefg") shouldBe Left("Invalid hexadecimal character 'g' at index 7")
+    ByteVector.fromHexDescriptive("garbage") shouldBe Left(
+      "Invalid hexadecimal character 'g' at index 0"
+    )
+    ByteVector.fromHexDescriptive("deadbefg") shouldBe Left(
+      "Invalid hexadecimal character 'g' at index 7"
+    )
   }
 
   test("toBin") {
@@ -147,9 +159,15 @@ class ByteVectorTest extends BitsSuite {
     ByteVector.fromBinDescriptive(deadbeef.toBin.grouped(4).mkString(" ")) shouldBe Right(deadbeef)
     ByteVector.fromBinDescriptive("0001 0011") shouldBe Right(ByteVector(0x13))
     ByteVector.fromBinDescriptive("0b 0001 0011 0111") shouldBe Right(ByteVector(0x01, 0x37))
-    ByteVector.fromBinDescriptive("1101a000") shouldBe Left("Invalid binary character 'a' at index 4")
-    ByteVector.fromBinDescriptive("0b1101a000") shouldBe Left("Invalid binary character 'a' at index 6")
-    ByteVector.fromBinDescriptive("0B1101a000") shouldBe Left("Invalid binary character 'a' at index 6")
+    ByteVector.fromBinDescriptive("1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 4"
+    )
+    ByteVector.fromBinDescriptive("0b1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 6"
+    )
+    ByteVector.fromBinDescriptive("0B1101a000") shouldBe Left(
+      "Invalid binary character 'a' at index 6"
+    )
   }
 
   test("fromValidBin") {
@@ -158,41 +176,45 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("toBase58") {
-    hex"".toBase58 shouldBe("")
-    hex"00".toBase58 shouldBe("1")
-    hex"61".toBase58 shouldBe("2g")
-    hex"626262".toBase58 shouldBe("a3gV")
-    hex"636363".toBase58 shouldBe("aPEr")
-    hex"73696d706c792061206c6f6e6720737472696e67".toBase58 shouldBe("2cFupjhnEsSn59qHXstmK2ffpLv2")
-    hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 shouldBe("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L")
-    hex"516b6fcd0f".toBase58 shouldBe("ABnLTmg")
-    hex"bf4f89001e670274dd".toBase58 shouldBe("3SEo3LWLoPntC")
-    hex"572e4794".toBase58 shouldBe("3EFU7m")
-    hex"ecac89cad93923c02321".toBase58 shouldBe("EJDM8drfXA6uyA")
-    hex"10c8511e".toBase58 shouldBe("Rt5zm")
-    hex"00000000000000000000".toBase58 shouldBe("1111111111")
+    hex"".toBase58 shouldBe ("")
+    hex"00".toBase58 shouldBe ("1")
+    hex"61".toBase58 shouldBe ("2g")
+    hex"626262".toBase58 shouldBe ("a3gV")
+    hex"636363".toBase58 shouldBe ("aPEr")
+    hex"73696d706c792061206c6f6e6720737472696e67".toBase58 shouldBe ("2cFupjhnEsSn59qHXstmK2ffpLv2")
+    hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 shouldBe ("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L")
+    hex"516b6fcd0f".toBase58 shouldBe ("ABnLTmg")
+    hex"bf4f89001e670274dd".toBase58 shouldBe ("3SEo3LWLoPntC")
+    hex"572e4794".toBase58 shouldBe ("3EFU7m")
+    hex"ecac89cad93923c02321".toBase58 shouldBe ("EJDM8drfXA6uyA")
+    hex"10c8511e".toBase58 shouldBe ("Rt5zm")
+    hex"00000000000000000000".toBase58 shouldBe ("1111111111")
   }
 
   test("fromValidBase58") {
     ByteVector.fromValidBase58("") shouldBe (ByteVector.empty)
     ByteVector.fromValidBase58("1") shouldBe hex"00"
-    ByteVector.fromValidBase58("2g") shouldBe(hex"61")
-    ByteVector.fromValidBase58("a3gV") shouldBe(hex"626262")
-    ByteVector.fromValidBase58("aPEr") shouldBe(hex"636363")
-    ByteVector.fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") shouldBe(hex"73696d706c792061206c6f6e6720737472696e67")
-    ByteVector.fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") shouldBe(hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
-    ByteVector.fromValidBase58("ABnLTmg") shouldBe(hex"516b6fcd0f")
-    ByteVector.fromValidBase58("3SEo3LWLoPntC") shouldBe(hex"bf4f89001e670274dd")
-    ByteVector.fromValidBase58("3EFU7m") shouldBe(hex"572e4794")
-    ByteVector.fromValidBase58("EJDM8drfXA6uyA") shouldBe(hex"ecac89cad93923c02321")
-    ByteVector.fromValidBase58("Rt5zm") shouldBe(hex"10c8511e")
-    ByteVector.fromValidBase58("1111111111") shouldBe(hex"00000000000000000000")
+    ByteVector.fromValidBase58("2g") shouldBe (hex"61")
+    ByteVector.fromValidBase58("a3gV") shouldBe (hex"626262")
+    ByteVector.fromValidBase58("aPEr") shouldBe (hex"636363")
+    ByteVector.fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") shouldBe (hex"73696d706c792061206c6f6e6720737472696e67")
+    ByteVector.fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") shouldBe (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+    ByteVector.fromValidBase58("ABnLTmg") shouldBe (hex"516b6fcd0f")
+    ByteVector.fromValidBase58("3SEo3LWLoPntC") shouldBe (hex"bf4f89001e670274dd")
+    ByteVector.fromValidBase58("3EFU7m") shouldBe (hex"572e4794")
+    ByteVector.fromValidBase58("EJDM8drfXA6uyA") shouldBe (hex"ecac89cad93923c02321")
+    ByteVector.fromValidBase58("Rt5zm") shouldBe (hex"10c8511e")
+    ByteVector.fromValidBase58("1111111111") shouldBe (hex"00000000000000000000")
   }
 
   test("fail due to illegal character fromBase58") {
-    ByteVector.fromBase58Descriptive("R3C0NFxN") shouldBe Left("Invalid base 58 character '0' at index 3")
-    ByteVector.fromBase58Descriptive("03CMNFxN") shouldBe Left("Invalid base 58 character '0' at index 0")
-    ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty shouldBe(true)
+    ByteVector.fromBase58Descriptive("R3C0NFxN") shouldBe Left(
+      "Invalid base 58 character '0' at index 3"
+    )
+    ByteVector.fromBase58Descriptive("03CMNFxN") shouldBe Left(
+      "Invalid base 58 character '0' at index 0"
+    )
+    ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty shouldBe (true)
   }
 
   test("base64 roundtrip") {
@@ -202,18 +224,17 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("base64 issue #45") {
-    val base64 = "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
+    val base64 =
+      "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
     BitVector.fromBase64Descriptive(base64).map { _.size } shouldBe Right(1408)
   }
 
   test("buffer :+") {
-    forAll { (b: ByteVector, bs: List[ByteVector], n: Int) => {
+    forAll { (b: ByteVector, bs: List[ByteVector], n: Int) =>
       val unbuf = bs.foldLeft(b)(_ ++ _)
-      val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))((acc,a) =>
-        a.foldLeft(acc)(_ :+ _)
-      )
+      val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))((acc, a) => a.foldLeft(acc)(_ :+ _))
       unbuf shouldBe buf
-    }}
+    }
   }
 
   test("buffer ++/take/drop") {
@@ -221,7 +242,7 @@ class ByteVectorTest extends BitsSuite {
       val unbuf = bs.foldLeft(b)(_ ++ _)
       val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))(_ ++ _)
       unbuf shouldBe buf
-      val ind = (n % (unbuf.size+1)).max(0) + 1
+      val ind = (n % (unbuf.size + 1)).max(0) + 1
       buf.take(ind) shouldBe unbuf.take(ind)
       buf.drop(ind) shouldBe unbuf.drop(ind)
     }
@@ -314,11 +335,13 @@ class ByteVectorTest extends BitsSuite {
   test("grouped + concatenate") {
     forAll { (bv: ByteVector) =>
       if (bv.isEmpty) {
-        bv.grouped(1).toList shouldBe Nil 
+        bv.grouped(1).toList shouldBe Nil
       } else if (bv.size < 3) {
         bv.grouped(bv.size).toList shouldBe List(bv)
       } else {
-        bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) => acc ++ b } shouldBe bv
+        bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) =>
+          acc ++ b
+        } shouldBe bv
       }
     }
   }
@@ -327,7 +350,7 @@ class ByteVectorTest extends BitsSuite {
     forAll { (bv: ByteVector, m0: Int, n0: Int) =>
       val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0
       val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
-      val slice = bv.slice(m min n, m max n)
+      val slice = bv.slice(m.min(n), m.max(n))
       val idx = bv.indexOfSlice(slice)
       idx shouldBe bv.toIndexedSeq.indexOfSlice(slice.toIndexedSeq)
       bv.containsSlice(slice) shouldBe true
@@ -363,21 +386,27 @@ class ByteVectorTest extends BitsSuite {
   test("short conversions") {
     forAll { (n: Short) =>
       ByteVector.fromShort(n).toShort() shouldBe n
-      ByteVector.fromShort(n, ordering = ByteOrdering.LittleEndian).toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
+      ByteVector
+        .fromShort(n, ordering = ByteOrdering.LittleEndian)
+        .toShort(ordering = ByteOrdering.LittleEndian) shouldBe n
     }
   }
 
   test("int conversions") {
     forAll { (n: Int) =>
       ByteVector.fromInt(n).toInt() shouldBe n
-      ByteVector.fromInt(n, ordering = ByteOrdering.LittleEndian).toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
+      ByteVector
+        .fromInt(n, ordering = ByteOrdering.LittleEndian)
+        .toInt(ordering = ByteOrdering.LittleEndian) shouldBe n
     }
   }
 
   test("long conversions") {
     forAll { (n: Long) =>
       ByteVector.fromLong(n).toLong() shouldBe n
-      ByteVector.fromLong(n, ordering = ByteOrdering.LittleEndian).toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
+      ByteVector
+        .fromLong(n, ordering = ByteOrdering.LittleEndian)
+        .toLong(ordering = ByteOrdering.LittleEndian) shouldBe n
     }
   }
 
@@ -387,7 +416,7 @@ class ByteVectorTest extends BitsSuite {
       ByteVector.fromUUID(u).toUUID shouldBe u
     }
     // "Invalid" conversions
-    val badlySizedByteVector: Gen[ByteVector] = byteVectors suchThat (_.length != 16)
+    val badlySizedByteVector: Gen[ByteVector] = byteVectors.suchThat(_.length != 16)
     forAll(badlySizedByteVector) { badlySizedByteVector =>
       an[IllegalArgumentException] should be thrownBy { badlySizedByteVector.toUUID }
     }
@@ -410,19 +439,22 @@ class ByteVectorTest extends BitsSuite {
       val xs = new Array[Byte](b.size.toInt)
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
-      xs shouldBe (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(startPlusSize.toInt)).toArray
+      xs shouldBe (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+        startPlusSize.toInt
+      )).toArray
     }
   }
 
   test("copyToBuffer") {
     forAll { (b: ByteVector, bufferSize0: Int, initialPosition0: Int, direct: Boolean) =>
       val bufferSize = (bufferSize0 % 1000000).abs
-      val buffer = if (direct) ByteBuffer.allocateDirect(bufferSize) else ByteBuffer.allocate(bufferSize)
+      val buffer =
+        if (direct) ByteBuffer.allocateDirect(bufferSize) else ByteBuffer.allocate(bufferSize)
       val initialPosition = if (bufferSize == 0) 0 else (initialPosition0 % bufferSize).abs
       buffer.position(initialPosition)
       val copied = b.copyToBuffer(buffer)
       buffer.flip()
-      copied shouldBe ((bufferSize.toLong - initialPosition) min b.size)
+      copied shouldBe ((bufferSize.toLong - initialPosition).min(b.size))
       ByteVector.view(buffer).drop(initialPosition.toLong) shouldBe b.take(copied.toLong)
     }
   }
@@ -445,13 +477,14 @@ class ByteVectorTest extends BitsSuite {
 
   test("dropWhile") {
     forAll { (x: ByteVector) =>
-      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, dropping), b) =>
-        if (dropping) {
-          if (b == 0) (acc :+ 0, false)
-          else (acc, true)
-        } else {
-          (acc :+ b, false)
-        }
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
+        case ((acc, dropping), b) =>
+          if (dropping) {
+            if (b == 0) (acc :+ 0, false)
+            else (acc, true)
+          } else {
+            (acc :+ b, false)
+          }
       }
       x.dropWhile(_ != 0.toByte) shouldBe expected
     }
@@ -459,13 +492,14 @@ class ByteVectorTest extends BitsSuite {
 
   test("takeWhile") {
     forAll { (x: ByteVector) =>
-      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, taking), b) =>
-        if (taking) {
-          if (b == 0) (acc, false)
-          else (acc :+ b, true)
-        } else {
-          (acc, false)
-        }
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
+        case ((acc, taking), b) =>
+          if (taking) {
+            if (b == 0) (acc, false)
+            else (acc :+ b, true)
+          } else {
+            (acc, false)
+          }
       }
       x.takeWhile(_ != 0.toByte) shouldBe expected
     }

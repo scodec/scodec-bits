@@ -11,7 +11,12 @@ abstract class BitsSuite extends AnyFunSuite with ScalaCheckPropertyChecks {
     PropertyCheckConfiguration(minSuccessful = 100, workers = 4)
 
   protected def serializationShouldRoundtrip[A](x: A): Unit = {
-    import java.io.{ ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream }
+    import java.io.{
+      ByteArrayInputStream,
+      ByteArrayOutputStream,
+      ObjectInputStream,
+      ObjectOutputStream
+    }
     val bout = new ByteArrayOutputStream
     val out = new ObjectOutputStream(bout)
     out.writeObject(x)
