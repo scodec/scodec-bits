@@ -128,7 +128,21 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       List("1.1.12").map { pv =>
         organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
       }.toSet
-    }
+    },
+    mimaBinaryIssueFilters ++= Seq(
+      ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.grouped"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$GroupedOp"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$GroupedOp$"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.GroupedOp"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector$GroupedOp"),
+      ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector.grouped"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitVector$GroupedOp"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitVector$GroupedOp$"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.GroupedOp"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector$GroupedOp"),
+      ProblemFilters.exclude[IncompatibleTemplateDefProblem]("scodec.bits.ScalaVersionSpecific"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific$")
+    )
   )
 
 lazy val coreJVM = core.jvm.settings(

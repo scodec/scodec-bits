@@ -1,3 +1,3 @@
 package scodec.bits
 
-private[bits] object ScalaVersionSpecific
+private[bits] trait ScalaVersionSpecific
