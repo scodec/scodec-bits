@@ -13,8 +13,6 @@ import java.util.UUID
 import java.util.zip.{DataFormatException, Deflater}
 import javax.crypto.Cipher
 
-import ScalaVersionSpecific._
-
 /**
   * Persistent vector of bits, stored as bytes.
   *
@@ -365,14 +363,13 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     */
   final def containsSlice(slice: BitVector): Boolean = indexOfSlice(slice) >= 0
 
-  // This was public before version 1.1.8 so it must stay here for bincompat
-  // The public grouped method is adding via an extension method defined in the companion
-  private[bits] final def grouped(n: Long): Stream[BitVector] =
-    groupedIterator(n).toStream
-
-  private final def groupedIterator(n: Long): Iterator[BitVector] =
+  /**
+    * Converts this vector in to a sequence of `n`-bit vectors.
+    * @group collection
+    */
+  final def grouped(n: Long): Iterator[BitVector] =
     if (isEmpty) Iterator.empty
-    else Iterator(take(n)) ++ drop(n).groupedIterator(n)
+    else Iterator(take(n)) ++ drop(n).grouped(n)
 
   /**
     * Returns the first bit of this vector or throws if vector is emtpy.
@@ -655,7 +652,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     intSize
       .map { n =>
         new IndexedSeq[Boolean] {
-          def length = BitVector.this.size.toInt
+          def length = n
           def apply(idx: Int): Boolean = BitVector.this.get(idx.toLong)
         }
       }
@@ -737,7 +734,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     size % 8 match {
       case 0           => full
       case n if n <= 4 => full.init
-      case other       => full
+      case _           => full
     }
   }
 
@@ -1697,7 +1694,8 @@ object BitVector {
     *
     * @group constructors
     */
-  def concat(bvs: IterableOnce[BitVector]): BitVector = bvs.foldLeft(BitVector.empty)(_ ++ _)
+  def concat(bvs: IterableOnce[BitVector]): BitVector =
+    bvs.iterator.foldLeft(BitVector.empty)(_ ++ _)
 
   /**
     * Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
@@ -1934,7 +1932,7 @@ object BitVector {
     def align = left.align.combine(right.align)
 
     @volatile var knownSize: Long = right match {
-      case s: Suspend => -1L
+      case _: Suspend => -1L
       case _ => { // eagerly compute the size if we're strict
         val sz = left.size + right.size
         sz
@@ -2404,14 +2402,4 @@ object BitVector {
       extends Serializable {
     def readResolve: AnyRef = BitVector.view(bytes, size)
   }
-
-  implicit class GroupedOp(val self: BitVector) extends AnyVal {
-
-    /**
-      * Converts this vector in to a sequence of `n`-bit vectors.
-      * @group collection
-      */
-    final def grouped(n: Long): Iterator[BitVector] = self.groupedIterator(n)
-  }
-
 }

@@ -20,8 +20,6 @@ import javax.crypto.Cipher
 
 import scala.annotation.tailrec
 
-import ScalaVersionSpecific._
-
 /**
   * An immutable vector of bytes, backed by a balanced binary tree of
   * chunks. Most operations are logarithmic in the depth of this tree,
@@ -437,15 +435,14 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     */
   final def containsSlice(slice: ByteVector): Boolean = indexOfSlice(slice) >= 0
 
-  // This was public before version 1.1.8 so it must stay here for bincompat
-  // The public grouped method is adding via an extension method defined in the companion
-  private[bits] final def grouped(chunkSize: Long): Stream[ByteVector] =
-    groupedIterator(chunkSize).toStream
-
-  private final def groupedIterator(chunkSize: Long): Iterator[ByteVector] =
+  /**
+    * Converts this vector in to a sequence of `chunkSize`-byte vectors.
+    * @group collection
+    */
+  final def grouped(chunkSize: Long): Iterator[ByteVector] =
     if (isEmpty) Iterator.empty
     else if (size <= chunkSize) Iterator(this)
-    else Iterator(take(chunkSize)) ++ drop(chunkSize).groupedIterator(chunkSize)
+    else Iterator(take(chunkSize)) ++ drop(chunkSize).grouped(chunkSize)
 
   /**
     * Returns the first byte of this vector or throws if vector is emtpy.
@@ -1274,7 +1271,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     */
   override def equals(other: Any) = other match {
     case that: ByteVector => this === that
-    case other            => false
+    case _                => false
   }
 
   /**
@@ -1563,7 +1560,7 @@ object ByteVector {
     * @group constructors
     */
   def apply(bs: IterableOnce[Byte]): ByteVector =
-    view(bs.toArray[Byte])
+    view(bs.iterator.toArray[Byte])
 
   /**
     * Constructs a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
@@ -1739,7 +1736,7 @@ object ByteVector {
           }
           count += 1
         } catch {
-          case e: IllegalArgumentException =>
+          case _: IllegalArgumentException =>
             err = s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         }
       }
@@ -1812,7 +1809,7 @@ object ByteVector {
           bits += 1
           count += 1
         } catch {
-          case e: IllegalArgumentException =>
+          case _: IllegalArgumentException =>
             err = s"Invalid binary character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         }
       }
@@ -1884,7 +1881,7 @@ object ByteVector {
         try {
           a * RADIX + BigInt(alphabet.toIndex(c))
         } catch {
-          case e: IllegalArgumentException =>
+          case _: IllegalArgumentException =>
             val idx = trim.takeWhile(_ != c).length
             throw new IllegalArgumentException(s"Invalid base 58 character '$c' at index $idx")
         }
@@ -1958,7 +1955,7 @@ object ByteVector {
               } else {
                 try alphabet.toIndex(c)
                 catch {
-                  case e: IllegalArgumentException =>
+                  case _: IllegalArgumentException =>
                     return Left(s"Invalid base 64 character '$c' at index $idx")
                 }
               }
@@ -2082,7 +2079,7 @@ object ByteVector {
     * @group constructors
     */
   def concat(bvs: IterableOnce[ByteVector]): ByteVector =
-    bvs.foldLeft(ByteVector.empty)(_ ++ _).unbuffer
+    bvs.iterator.foldLeft(ByteVector.empty)(_ ++ _).unbuffer
 
   @SerialVersionUID(1L)
   private class SerializationProxy(private val bytes: Array[Byte]) extends Serializable {
@@ -2219,13 +2216,4 @@ object ByteVector {
     * @group constructors
     */
   def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
-
-  implicit class GroupedOp(val self: ByteVector) extends AnyVal {
-
-    /**
-      * Converts this vector in to a sequence of `chunkSize`-byte vectors.
-      * @group collection
-      */
-    final def grouped(chunkSize: Long): Iterator[ByteVector] = self.groupedIterator(chunkSize)
-  }
 }

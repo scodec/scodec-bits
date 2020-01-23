@@ -7,7 +7,7 @@ import scala.language.experimental.macros
   *
   * @see [[BitVector]] and [[ByteVector]]
   */
-package object bits {
+package object bits extends ScalaVersionSpecific {
 
   /**
     * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
