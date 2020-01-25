@@ -1,18 +1,16 @@
 package scodec.bits
 
-import org.scalatest.matchers.should.Matchers._
-
 import Arbitraries._
 
 class CrcJvmTest extends BitsSuite {
 
   test("crc32 is consistent with java.util.zip.CRC32") {
     forAll { (b: ByteVector) =>
-      crc.crc32(b.bits).bytes shouldBe {
+      assert(crc.crc32(b.bits).bytes == {
         val c = new java.util.zip.CRC32
         c.update(b.toArray)
         ByteVector.fromLong(c.getValue, size = 4)
-      }
+      })
     }
   }
 

@@ -2,7 +2,6 @@ package scodec.bits
 
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitrary.arbitrary
-import org.scalatest.matchers.should.Matchers._
 import Arbitraries._
 
 class ByteVectorJvmTest extends BitsSuite {
@@ -10,51 +9,51 @@ class ByteVectorJvmTest extends BitsSuite {
   test("toBase64") {
     forAll { (b: ByteVector) =>
       val guavaB64 = com.google.common.io.BaseEncoding.base64
-      ByteVector.view(guavaB64.decode(b.toBase64)) shouldBe b
+      assert(ByteVector.view(guavaB64.decode(b.toBase64)) == b)
     }
   }
 
   test("fromBase64") {
     forAll { (b: ByteVector) =>
       val guavaB64 = com.google.common.io.BaseEncoding.base64
-      ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) shouldBe b
+      assert(ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) == b)
     }
   }
 
   test("fromBase64 - digit count non-divisble by 4") {
-    ByteVector.fromBase64Descriptive("A") shouldBe Left(
+    assert(ByteVector.fromBase64Descriptive("A") == Left(
       "Final base 64 quantum had only 1 digit - must have at least 2 digits"
-    )
-    ByteVector.fromBase64Descriptive("AB") shouldBe Right(hex"00")
-    ByteVector.fromBase64Descriptive("ABC") shouldBe Right(hex"0010")
-    ByteVector.fromBase64Descriptive("ABCD") shouldBe Right(hex"001083")
-    ByteVector.fromBase64Descriptive("ABCDA") shouldBe Left(
+    ))
+    assert(ByteVector.fromBase64Descriptive("AB") == Right(hex"00"))
+    assert(ByteVector.fromBase64Descriptive("ABC") == Right(hex"0010"))
+    assert(ByteVector.fromBase64Descriptive("ABCD") == Right(hex"001083"))
+    assert(ByteVector.fromBase64Descriptive("ABCDA") == Left(
       "Final base 64 quantum had only 1 digit - must have at least 2 digits"
-    )
-    ByteVector.fromBase64Descriptive("ABCDAB") shouldBe Right(hex"00108300")
+    ))
+    assert(ByteVector.fromBase64Descriptive("ABCDAB") == Right(hex"00108300"))
   }
 
   test("fromBase64 - padding") {
-    ByteVector.fromBase64Descriptive("AB==") shouldBe Right(hex"00")
+    assert(ByteVector.fromBase64Descriptive("AB==") == Right(hex"00"))
     val paddingError = Left(
       "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
     )
-    ByteVector.fromBase64Descriptive("A=") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("A==") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("A===") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("A====") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("AB=") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("AB===") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("ABC==") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("=") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("==") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("===") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("====") shouldBe paddingError
-    ByteVector.fromBase64Descriptive("=====") shouldBe paddingError
+    assert(ByteVector.fromBase64Descriptive("A=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A====") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("AB=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("AB===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("ABC==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("====") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("=====") == paddingError)
   }
 
   test("fromBase64 - empty input string") {
-    ByteVector.fromBase64Descriptive("") shouldBe Right(ByteVector.empty)
+    assert(ByteVector.fromBase64Descriptive("") == Right(ByteVector.empty))
   }
 
   test("buffer concurrency") {
@@ -69,8 +68,8 @@ class ByteVectorJvmTest extends BitsSuite {
       val b1b3 = new Callable[ByteVector] { def call = b1b ++ b3 }
       val rb1b2 = pool.submit(b1b2)
       val rb1b3 = pool.submit(b1b3)
-      rb1b2.get shouldBe (b1 ++ b2)
-      rb1b3.get shouldBe (b1 ++ b3)
+      assert(rb1b2.get == (b1 ++ b2))
+      assert(rb1b3.get == (b1 ++ b3))
     }
     pool.shutdown
   }
@@ -78,13 +77,13 @@ class ByteVectorJvmTest extends BitsSuite {
   test("digest") {
     forAll { (x: ByteVector) =>
       val sha256 = java.security.MessageDigest.getInstance("SHA-256")
-      x.digest("SHA-256") shouldBe ByteVector.view(sha256.digest(x.toArray))
+      assert(x.digest("SHA-256") == ByteVector.view(sha256.digest(x.toArray)))
     }
   }
 
   test("gzip") {
     forAll { (x: ByteVector) =>
-      x.deflate().inflate() shouldBe Right(x)
+      assert(x.deflate().inflate() == Right(x))
     }
 
     val deflatableByteVectors = for {
@@ -92,7 +91,7 @@ class ByteVectorJvmTest extends BitsSuite {
       sz <- Gen.chooseNum(1L, 8192L)
     } yield ByteVector.fill(sz)(b)
     forAll(deflatableByteVectors) { (x: ByteVector) =>
-      if (x.size > 11) x.deflate().size shouldBe <(x.size)
+      if (x.size > 11) assert(x.deflate().size < x.size)
     }
   }
 
