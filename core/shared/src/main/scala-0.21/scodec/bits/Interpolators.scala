@@ -3,6 +3,14 @@ package scodec.bits
 import scala.quoted._
 import scala.quoted.matching._
 
+/**
+  * Provides the `hex` string interpolator, which returns `ByteVector` instances from hexadecimal strings.
+  * 
+  * @example {{{
+  * scala> val b = hex"deadbeef"
+  * val b: scodec.bits.ByteVector = ByteVector(4 bytes, 0xdeadbeef)
+  * }}}
+  */
 inline def (ctx: StringContext) hex (args: => ByteVector*): ByteVector =
   ${hexInterpolator('ctx, 'args)}
 
@@ -26,6 +34,14 @@ private def hexInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[
   }
 }
 
+/**
+  * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
+  * 
+  * @example {{{
+  * scala> val b = bin"1010101010"
+  * val b: scodec.bits.BitVector = BitVector(10 bits, 0xaa8)
+  * }}}
+  */
 inline def (ctx: StringContext) bin (args: => BitVector*): BitVector =
   ${binInterpolator('ctx, 'args)}
 
