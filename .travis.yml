@@ -3,6 +3,7 @@ language: scala
 scala:
   - "2.12.10"
   - "2.13.1"
+  - "0.21.0-RC1"
 
 jdk:
   - openjdk11

@@ -3,9 +3,6 @@ package scodec.bits
 /** Macros that support binary and hexadecimal literals. */
 object LiteralSyntaxMacros {
 
-  @deprecated("Provides compile time compatibility between 2.10 and 2.11", "1.0.6")
-  object blackbox { type Context = scala.reflect.macros.Context }
-
   def binStringInterpolator(c: blackbox.Context)(args: c.Expr[BitVector]*): c.Expr[BitVector] = {
     import c.universe._
 

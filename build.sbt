@@ -36,10 +36,13 @@ lazy val commonSettings = Seq(
         List("-Xlint", "-Ywarn-unused")
       case v if v.startsWith("2.12") =>
         Nil
+      case v if v.startsWith("0.") =>
+        Nil
       case other => sys.error(s"Unsupported scala version: $other")
     }),
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
   releaseCrossBuild := true
+  // scalacOptions ++= { if (isDotty.value) Seq("-language:Scala2Compat") else Nil }
 ) ++ publishingSettings
 
 lazy val publishingSettings = Seq(
@@ -94,11 +97,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
+    libraryDependencies ++= {
+      if (scalaVersion.value.startsWith("2.12")) Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided") else Nil },
     libraryDependencies ++= Seq(
-      "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-      "org.scalacheck" %%% "scalacheck" % "1.14.3" % "test",
-      "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
-      "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
+      ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value),
+      ("org.scalatest" %%% "scalatest" % "3.1.0" % "test").withDottyCompat(scalaVersion.value),
+      ("org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test").withDottyCompat(scalaVersion.value)
     ),
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
