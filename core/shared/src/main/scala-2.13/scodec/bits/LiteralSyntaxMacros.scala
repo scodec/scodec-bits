@@ -1,9 +1,11 @@
 package scodec.bits
 
+import scala.reflect.macros.blackbox.Context
+
 /** Macros that support binary and hexadecimal literals. */
 object LiteralSyntaxMacros {
 
-  def binStringInterpolator(c: blackbox.Context)(args: c.Expr[BitVector]*): c.Expr[BitVector] = {
+  def binStringInterpolator(c: Context)(args: c.Expr[BitVector]*): c.Expr[BitVector] = {
     import c.universe._
 
     val Apply(_, List(Apply(_, parts))) = c.prefix.tree
@@ -25,7 +27,7 @@ object LiteralSyntaxMacros {
     reify { BitVector.fromValidBin(stringBuilder.splice.toString) }
   }
 
-  def hexStringInterpolator(c: blackbox.Context)(args: c.Expr[ByteVector]*): c.Expr[ByteVector] = {
+  def hexStringInterpolator(c: Context)(args: c.Expr[ByteVector]*): c.Expr[ByteVector] = {
     import c.universe._
 
     val Apply(_, List(Apply(_, parts))) = c.prefix.tree

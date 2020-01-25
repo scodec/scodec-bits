@@ -98,7 +98,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(
     name := "scodec-bits",
     libraryDependencies ++= {
-      if (scalaVersion.value.startsWith("2.12")) Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided") else Nil },
+      if (scalaVersion.value.startsWith("2.")) Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided") else Nil },
     libraryDependencies ++= Seq(
       ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value),
       ("org.scalatest" %%% "scalatest" % "3.1.0" % "test").withDottyCompat(scalaVersion.value),
