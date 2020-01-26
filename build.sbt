@@ -42,7 +42,6 @@ lazy val commonSettings = Seq(
     }),
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
   releaseCrossBuild := true
-  // scalacOptions ++= { if (isDotty.value) Seq("-language:Scala2Compat") else Nil }
 ) ++ publishingSettings
 
 lazy val publishingSettings = Seq(
