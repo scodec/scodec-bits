@@ -21,15 +21,19 @@ class ByteVectorJvmTest extends BitsSuite {
   }
 
   test("fromBase64 - digit count non-divisble by 4") {
-    assert(ByteVector.fromBase64Descriptive("A") == Left(
-      "Final base 64 quantum had only 1 digit - must have at least 2 digits"
-    ))
+    assert(
+      ByteVector.fromBase64Descriptive("A") == Left(
+        "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+      )
+    )
     assert(ByteVector.fromBase64Descriptive("AB") == Right(hex"00"))
     assert(ByteVector.fromBase64Descriptive("ABC") == Right(hex"0010"))
     assert(ByteVector.fromBase64Descriptive("ABCD") == Right(hex"001083"))
-    assert(ByteVector.fromBase64Descriptive("ABCDA") == Left(
-      "Final base 64 quantum had only 1 digit - must have at least 2 digits"
-    ))
+    assert(
+      ByteVector.fromBase64Descriptive("ABCDA") == Left(
+        "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+      )
+    )
     assert(ByteVector.fromBase64Descriptive("ABCDAB") == Right(hex"00108300"))
   }
 

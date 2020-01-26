@@ -28,14 +28,16 @@ class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
     val poly = hex"04C11DB7".bits
     val table32 = crc(poly, hex"ffffffff".bits, false, false, hex"00000000".bits)
     forAll { (bv: BitVector) =>
-      assert(table32(bv) == crc.bitwise(
-        poly,
-        hex"ffffffff".bits,
-        false,
-        false,
-        hex"00000000".bits,
-        bv
-      ))
+      assert(
+        table32(bv) == crc.bitwise(
+          poly,
+          hex"ffffffff".bits,
+          false,
+          false,
+          hex"00000000".bits,
+          bv
+        )
+      )
     }
   }
 

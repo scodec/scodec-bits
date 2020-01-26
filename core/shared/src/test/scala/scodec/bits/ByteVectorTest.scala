@@ -140,10 +140,18 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromHexDescriptive("0xde_ad_be_ef") == Right(deadbeef))
 
     assert(ByteVector.fromHexDescriptive("0xdeadbee") == Right(ByteVector(0x0d, 0xea, 0xdb, 0xee)))
-    assert(ByteVector.fromHexDescriptive("0xde_ad_be_e") == Right(ByteVector(0x0d, 0xea, 0xdb, 0xee)))
+    assert(
+      ByteVector.fromHexDescriptive("0xde_ad_be_e") == Right(ByteVector(0x0d, 0xea, 0xdb, 0xee))
+    )
 
-    assert(ByteVector.fromHexDescriptive("garbage") == Left("Invalid hexadecimal character 'g' at index 0"))
-    assert(ByteVector.fromHexDescriptive("deadbefg") == Left("Invalid hexadecimal character 'g' at index 7"))
+    assert(
+      ByteVector
+        .fromHexDescriptive("garbage") == Left("Invalid hexadecimal character 'g' at index 0")
+    )
+    assert(
+      ByteVector
+        .fromHexDescriptive("deadbefg") == Left("Invalid hexadecimal character 'g' at index 7")
+    )
   }
 
   test("toBin") {
@@ -152,12 +160,20 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromBinDescriptive") {
     assert(ByteVector.fromBinDescriptive(deadbeef.toBin) == Right(deadbeef))
-    assert(ByteVector.fromBinDescriptive(deadbeef.toBin.grouped(4).mkString(" ")) == Right(deadbeef))
+    assert(
+      ByteVector.fromBinDescriptive(deadbeef.toBin.grouped(4).mkString(" ")) == Right(deadbeef)
+    )
     assert(ByteVector.fromBinDescriptive("0001 0011") == Right(ByteVector(0x13)))
     assert(ByteVector.fromBinDescriptive("0b 0001 0011 0111") == Right(ByteVector(0x01, 0x37)))
-    assert(ByteVector.fromBinDescriptive("1101a000") == Left("Invalid binary character 'a' at index 4"))
-    assert(ByteVector.fromBinDescriptive("0b1101a000") == Left("Invalid binary character 'a' at index 6"))
-    assert(ByteVector.fromBinDescriptive("0B1101a000") == Left("Invalid binary character 'a' at index 6"))
+    assert(
+      ByteVector.fromBinDescriptive("1101a000") == Left("Invalid binary character 'a' at index 4")
+    )
+    assert(
+      ByteVector.fromBinDescriptive("0b1101a000") == Left("Invalid binary character 'a' at index 6")
+    )
+    assert(
+      ByteVector.fromBinDescriptive("0B1101a000") == Left("Invalid binary character 'a' at index 6")
+    )
   }
 
   test("fromValidBin") {
@@ -171,8 +187,12 @@ class ByteVectorTest extends BitsSuite {
     assert(hex"61".toBase58 == ("2g"))
     assert(hex"626262".toBase58 == ("a3gV"))
     assert(hex"636363".toBase58 == ("aPEr"))
-    assert(hex"73696d706c792061206c6f6e6720737472696e67".toBase58 == ("2cFupjhnEsSn59qHXstmK2ffpLv2"))
-    assert(hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 == ("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"))
+    assert(
+      hex"73696d706c792061206c6f6e6720737472696e67".toBase58 == ("2cFupjhnEsSn59qHXstmK2ffpLv2")
+    )
+    assert(
+      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 == ("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L")
+    )
     assert(hex"516b6fcd0f".toBase58 == ("ABnLTmg"))
     assert(hex"bf4f89001e670274dd".toBase58 == ("3SEo3LWLoPntC"))
     assert(hex"572e4794".toBase58 == ("3EFU7m"))
@@ -187,8 +207,14 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromValidBase58("2g") == (hex"61"))
     assert(ByteVector.fromValidBase58("a3gV") == (hex"626262"))
     assert(ByteVector.fromValidBase58("aPEr") == (hex"636363"))
-    assert(ByteVector.fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") == (hex"73696d706c792061206c6f6e6720737472696e67"))
-    assert(ByteVector.fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647"))
+    assert(
+      ByteVector
+        .fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") == (hex"73696d706c792061206c6f6e6720737472696e67")
+    )
+    assert(
+      ByteVector
+        .fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+    )
     assert(ByteVector.fromValidBase58("ABnLTmg") == (hex"516b6fcd0f"))
     assert(ByteVector.fromValidBase58("3SEo3LWLoPntC") == (hex"bf4f89001e670274dd"))
     assert(ByteVector.fromValidBase58("3EFU7m") == (hex"572e4794"))
@@ -198,8 +224,14 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fail due to illegal character fromBase58") {
-    assert(ByteVector.fromBase58Descriptive("R3C0NFxN") == Left("Invalid base 58 character '0' at index 3"))
-    assert(ByteVector.fromBase58Descriptive("03CMNFxN") == Left("Invalid base 58 character '0' at index 0"))
+    assert(
+      ByteVector
+        .fromBase58Descriptive("R3C0NFxN") == Left("Invalid base 58 character '0' at index 3")
+    )
+    assert(
+      ByteVector
+        .fromBase58Descriptive("03CMNFxN") == Left("Invalid base 58 character '0' at index 0")
+    )
     assert(ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty)
   }
 
@@ -372,27 +404,33 @@ class ByteVectorTest extends BitsSuite {
   test("short conversions") {
     forAll { (n: Short) =>
       assert(ByteVector.fromShort(n).toShort() == n)
-      assert(ByteVector
-        .fromShort(n, ordering = ByteOrdering.LittleEndian)
-        .toShort(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        ByteVector
+          .fromShort(n, ordering = ByteOrdering.LittleEndian)
+          .toShort(ordering = ByteOrdering.LittleEndian) == n
+      )
     }
   }
 
   test("int conversions") {
     forAll { (n: Int) =>
       assert(ByteVector.fromInt(n).toInt() == n)
-      assert(ByteVector
-        .fromInt(n, ordering = ByteOrdering.LittleEndian)
-        .toInt(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        ByteVector
+          .fromInt(n, ordering = ByteOrdering.LittleEndian)
+          .toInt(ordering = ByteOrdering.LittleEndian) == n
+      )
     }
   }
 
   test("long conversions") {
     forAll { (n: Long) =>
       assert(ByteVector.fromLong(n).toLong() == n)
-      assert(ByteVector
-        .fromLong(n, ordering = ByteOrdering.LittleEndian)
-        .toLong(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        ByteVector
+          .fromLong(n, ordering = ByteOrdering.LittleEndian)
+          .toLong(ordering = ByteOrdering.LittleEndian) == n
+      )
     }
   }
 
@@ -425,9 +463,11 @@ class ByteVectorTest extends BitsSuite {
       val xs = new Array[Byte](b.size.toInt)
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
-      assert(xs === (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
-        startPlusSize.toInt
-      )).toArray)
+      assert(
+        xs === (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+          startPlusSize.toInt
+        )).toArray
+      )
     }
   }
 

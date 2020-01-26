@@ -179,10 +179,12 @@ class BitVectorTest extends BitsSuite {
       assert(x.take(m + n).compact.take(n) == x.take(n))
       assert(x.drop(m + n).compact == x.drop(m).compact.drop(n))
       assert(x.drop(n).take(m) == x.drop(n).take(m))
-      assert(x.drop(n).take(m).toIndexedSeq == BitVector
-        .bits(x.drop(n).toIndexedSeq)
-        .take(m)
-        .toIndexedSeq)
+      assert(
+        x.drop(n).take(m).toIndexedSeq == BitVector
+          .bits(x.drop(n).toIndexedSeq)
+          .take(m)
+          .toIndexedSeq
+      )
     }
   }
 
@@ -225,21 +227,26 @@ class BitVectorTest extends BitsSuite {
     assert((BitVector.high(8) ++ BitVector.high(8)).toByteVector == ByteVector(-1: Byte, -1: Byte))
     assert((BitVector.high(4) ++ BitVector.low(4)).toByteVector == ByteVector(0xf0))
     assert((BitVector.high(4) ++ BitVector.high(4)).toByteVector == ByteVector(-1: Byte))
-    assert((BitVector.high(4) ++ BitVector.high(5)).toByteVector == ByteVector(-1.toByte.toInt, 0x80))
+    assert(
+      (BitVector.high(4) ++ BitVector.high(5)).toByteVector == ByteVector(-1.toByte.toInt, 0x80)
+    )
     assert((BitVector.low(2) ++ BitVector.high(4)).toByteVector == ByteVector(0x3c))
-    assert((BitVector.low(2) ++ BitVector.high(4) ++ BitVector.low(2)).toByteVector == ByteVector(0x3c))
+    assert(
+      (BitVector.low(2) ++ BitVector.high(4) ++ BitVector.low(2)).toByteVector == ByteVector(0x3c)
+    )
     forAll { (x: BitVector, y: BitVector) =>
       assert((x ++ y).compact.toIndexedSeq == (x.toIndexedSeq ++ y.toIndexedSeq))
     }
   }
 
   test("b.take(n).drop(n) == b") {
-    forAll(Arbitrary.arbitrary[List[Boolean]], Gen.choose[Int](0, 10000), Gen.choose[Int](0, 10000)) { (xs: List[Boolean], n0: Int, m0: Int) =>
-      whenever(xs.nonEmpty) {
-        val n = n0.abs % xs.size
-        val m = m0.abs % xs.size
-        assert(xs.drop(m).take(n) == xs.take(m + n).drop(m))
-      }
+    forAll(Arbitrary.arbitrary[List[Boolean]], Gen.choose[Int](0, 10000), Gen.choose[Int](0, 10000)) {
+      (xs: List[Boolean], n0: Int, m0: Int) =>
+        whenever(xs.nonEmpty) {
+          val n = n0.abs % xs.size
+          val m = m0.abs % xs.size
+          assert(xs.drop(m).take(n) == xs.take(m + n).drop(m))
+        }
     }
     forAll { (xs: BitVector, n0: Long) =>
       val m = if (xs.nonEmpty) n0 % xs.size else 0
@@ -350,7 +357,9 @@ class BitVectorTest extends BitsSuite {
 
   test("fromHexDescriptive") {
     assert(BitVector.fromHexDescriptive("0x012") == Right(BitVector(0x01, 0x20).take(12)))
-    assert(BitVector.fromHexDescriptive("0x01gg") == Left("Invalid hexadecimal character 'g' at index 4"))
+    assert(
+      BitVector.fromHexDescriptive("0x01gg") == Left("Invalid hexadecimal character 'g' at index 4")
+    )
     forAll { (bv: BitVector) =>
       val x = bv.padTo((bv.size + 3) / 4 * 4)
       assert(BitVector.fromValidHex(x.toHex) == x)
@@ -481,20 +490,28 @@ class BitVectorTest extends BitsSuite {
   test("short conversions") {
     forAll { (n: Short) =>
       assert(BitVector.fromShort(n).toShort() == n)
-      assert(BitVector
-        .fromShort(n, ordering = ByteOrdering.LittleEndian)
-        .toShort(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        BitVector
+          .fromShort(n, ordering = ByteOrdering.LittleEndian)
+          .toShort(ordering = ByteOrdering.LittleEndian) == n
+      )
       assert(BitVector.fromShort(n).sliceToShort(0, 16) == n)
       assert(BitVector.fromShort(n).sliceToShort(4, 12) == BitVector.fromShort(n).drop(4).toShort())
-      assert(BitVector.fromShort(n).sliceToShort(4, 12, ordering = ByteOrdering.LittleEndian) ==
-        BitVector.fromShort(n).drop(4).toShort(ordering = ByteOrdering.LittleEndian))
+      assert(
+        BitVector.fromShort(n).sliceToShort(4, 12, ordering = ByteOrdering.LittleEndian) ==
+          BitVector.fromShort(n).drop(4).toShort(ordering = ByteOrdering.LittleEndian)
+      )
       if (n >= 0 && n < 16384) {
-        assert(BitVector
-          .fromShort(n, size = 15, ordering = ByteOrdering.BigEndian)
-          .toShort(ordering = ByteOrdering.BigEndian) == n)
-        assert(BitVector
-          .fromShort(n, size = 15, ordering = ByteOrdering.LittleEndian)
-          .toShort(ordering = ByteOrdering.LittleEndian) == n)
+        assert(
+          BitVector
+            .fromShort(n, size = 15, ordering = ByteOrdering.BigEndian)
+            .toShort(ordering = ByteOrdering.BigEndian) == n
+        )
+        assert(
+          BitVector
+            .fromShort(n, size = 15, ordering = ByteOrdering.LittleEndian)
+            .toShort(ordering = ByteOrdering.LittleEndian) == n
+        )
       }
     }
     assert(bin"11".toShort() == -1)
@@ -504,20 +521,28 @@ class BitVectorTest extends BitsSuite {
   test("int conversions") {
     forAll { (n: Int) =>
       assert(BitVector.fromInt(n).toInt() == n)
-      assert(BitVector
-        .fromInt(n, ordering = ByteOrdering.LittleEndian)
-        .toInt(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        BitVector
+          .fromInt(n, ordering = ByteOrdering.LittleEndian)
+          .toInt(ordering = ByteOrdering.LittleEndian) == n
+      )
       assert(BitVector.fromInt(n).sliceToInt(0, 32) == n)
       assert(BitVector.fromInt(n).sliceToInt(10, 22) == BitVector.fromInt(n).drop(10).toInt())
-      assert(BitVector.fromInt(n).sliceToInt(10, 22, ordering = ByteOrdering.LittleEndian) ==
-        BitVector.fromInt(n).drop(10).toInt(ordering = ByteOrdering.LittleEndian))
+      assert(
+        BitVector.fromInt(n).sliceToInt(10, 22, ordering = ByteOrdering.LittleEndian) ==
+          BitVector.fromInt(n).drop(10).toInt(ordering = ByteOrdering.LittleEndian)
+      )
       if (n >= -16383 && n < 16384) {
-        assert(BitVector
-          .fromInt(n, size = 15, ordering = ByteOrdering.BigEndian)
-          .toInt(ordering = ByteOrdering.BigEndian) == n)
-        assert(BitVector
-          .fromInt(n, size = 15, ordering = ByteOrdering.LittleEndian)
-          .toInt(ordering = ByteOrdering.LittleEndian) == n)
+        assert(
+          BitVector
+            .fromInt(n, size = 15, ordering = ByteOrdering.BigEndian)
+            .toInt(ordering = ByteOrdering.BigEndian) == n
+        )
+        assert(
+          BitVector
+            .fromInt(n, size = 15, ordering = ByteOrdering.LittleEndian)
+            .toInt(ordering = ByteOrdering.LittleEndian) == n
+        )
       }
     }
   }
@@ -525,29 +550,41 @@ class BitVectorTest extends BitsSuite {
   test("long conversions") {
     forAll { (n: Long) =>
       assert(BitVector.fromLong(n).toLong() == n)
-      assert(BitVector
-        .fromLong(n, ordering = ByteOrdering.LittleEndian)
-        .toLong(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        BitVector
+          .fromLong(n, ordering = ByteOrdering.LittleEndian)
+          .toLong(ordering = ByteOrdering.LittleEndian) == n
+      )
       assert(BitVector.fromLong(n).sliceToLong(10, 54) == BitVector.fromLong(n).drop(10).toLong())
-      assert(BitVector.fromLong(n).sliceToLong(10, 54, ordering = ByteOrdering.LittleEndian) ==
-        BitVector.fromLong(n).drop(10).toLong(ordering = ByteOrdering.LittleEndian))
+      assert(
+        BitVector.fromLong(n).sliceToLong(10, 54, ordering = ByteOrdering.LittleEndian) ==
+          BitVector.fromLong(n).drop(10).toLong(ordering = ByteOrdering.LittleEndian)
+      )
       if (n >= -16383 && n < 16384) {
-        assert(BitVector
-          .fromLong(n, size = 15, ordering = ByteOrdering.BigEndian)
-          .toLong(ordering = ByteOrdering.BigEndian) == n)
-        assert(BitVector
-          .fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian)
-          .toLong(ordering = ByteOrdering.LittleEndian) == n)
+        assert(
+          BitVector
+            .fromLong(n, size = 15, ordering = ByteOrdering.BigEndian)
+            .toLong(ordering = ByteOrdering.BigEndian) == n
+        )
+        assert(
+          BitVector
+            .fromLong(n, size = 15, ordering = ByteOrdering.LittleEndian)
+            .toLong(ordering = ByteOrdering.LittleEndian) == n
+        )
       }
     }
 
     forAll(Gen.choose(Long.MinValue >> 8, Long.MinValue >> 16)) { (n: Long) =>
-      assert(BitVector
-        .fromLong(n, size = 56, ordering = ByteOrdering.BigEndian)
-        .toLong(ordering = ByteOrdering.BigEndian) == n)
-      assert(BitVector
-        .fromLong(n, size = 56, ordering = ByteOrdering.LittleEndian)
-        .toLong(ordering = ByteOrdering.LittleEndian) == n)
+      assert(
+        BitVector
+          .fromLong(n, size = 56, ordering = ByteOrdering.BigEndian)
+          .toLong(ordering = ByteOrdering.BigEndian) == n
+      )
+      assert(
+        BitVector
+          .fromLong(n, size = 56, ordering = ByteOrdering.LittleEndian)
+          .toLong(ordering = ByteOrdering.LittleEndian) == n
+      )
     }
   }
 
@@ -618,7 +655,9 @@ class BitVectorTest extends BitsSuite {
     forAll { (x: BitVector, offset0: Long, sliceSize0: Int) =>
       val offset = if (x.nonEmpty) (offset0 % x.size).abs else 0
       val sliceSize = (sliceSize0 % 9).abs.min((x.size - offset).toInt)
-      assert(x.sliceToByte(offset, sliceSize).toInt == x.drop(offset).take(sliceSize.toLong).toInt())
+      assert(
+        x.sliceToByte(offset, sliceSize).toInt == x.drop(offset).take(sliceSize.toLong).toInt()
+      )
     }
   }
 
