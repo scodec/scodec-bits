@@ -23,4 +23,5 @@ script:
       sbt ++$TRAVIS_SCALA_VERSION coreJVM/test;
     else
       sbt ++$TRAVIS_SCALA_VERSION fmtCheck test mimaReportBinaryIssues;
+    fi
 
