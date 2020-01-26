@@ -141,7 +141,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.GroupedOp"),
       ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector$GroupedOp"),
       ProblemFilters.exclude[IncompatibleTemplateDefProblem]("scodec.bits.ScalaVersionSpecific"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific$")
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific$"),
+      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.package.EitherOps"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps$")
     )
   )
 
