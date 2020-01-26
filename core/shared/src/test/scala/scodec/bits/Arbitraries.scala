@@ -51,7 +51,7 @@ object Arbitraries {
     }
 
   def genConcatBits(g: Gen[BitVector]) =
-    genBitVector(2000, 7).map { b =>
+    g.map { b =>
       b.toIndexedSeq.foldLeft(BitVector.empty)((acc, high) => acc ++ BitVector.bit(high))
     }
 

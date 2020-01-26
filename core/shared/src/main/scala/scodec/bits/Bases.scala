@@ -73,7 +73,7 @@ object Bases {
         case c if c >= '0' && c <= '9' => c - '0'
         case c if c >= 'a' && c <= 'f' => 10 + (c - 'a')
         case c if c >= 'A' && c <= 'F' => 10 + (c - 'A')
-        case c                         => throw new IllegalArgumentException
+        case _                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -105,7 +105,7 @@ object Bases {
         case c if c >= 'P' && c <= 'Z' => c - 'P' + 9 + 8 + 5
         case c if c >= 'a' && c <= 'k' => c - 'a' + 9 + 8 + 5 + 11
         case c if c >= 'm' && c <= 'z' => c - 'm' + 9 + 8 + 5 + 11 + 11
-        case c                         => throw new IllegalArgumentException
+        case _                         => throw new IllegalArgumentException
       }
 
       def ignore(c: Char) = c.isWhitespace
@@ -122,7 +122,7 @@ object Bases {
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
         case '+'                       => 62
         case '/'                       => 63
-        case c                         => throw new IllegalArgumentException
+        case _                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace
     }
@@ -138,7 +138,7 @@ object Bases {
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
         case '-'                       => 62
         case '_'                       => 63
-        case c                         => throw new IllegalArgumentException
+        case _                         => throw new IllegalArgumentException
       }
       def ignore(c: Char) = c.isWhitespace
     }

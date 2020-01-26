@@ -33,9 +33,9 @@ class CrcJvmTest extends BitsSuite {
 
   private def time[A](f: => A, iterations: Int = 100000): Long = {
     var result: A = f
-    for (i <- 0 until iterations) result = f
+    for (_ <- 0 until iterations) result = f
     val start = System.nanoTime
-    for (i <- 0 until iterations) result = f
+    for (_ <- 0 until iterations) result = f
     System.nanoTime - start
   }
 }
