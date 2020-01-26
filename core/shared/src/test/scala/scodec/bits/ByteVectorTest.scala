@@ -162,7 +162,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromValidBin") {
     assert(ByteVector.fromValidBin(deadbeef.toBin) == deadbeef)
-    an[IllegalArgumentException] should be thrownBy { ByteVector.fromValidBin("1101a000"); () }
+    assertThrows[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
   }
 
   test("toBase58") {
@@ -270,7 +270,7 @@ class ByteVectorTest extends BitsSuite {
     assert(hex"deadbeef" == deadbeef)
     val x = ByteVector.fromValidHex("be")
     assert(hex"dead${x}ef" == deadbeef)
-    """hex"deadgg"""" shouldNot compile
+    assertDoesNotCompile("""hex"deadgg"""")
   }
 
   test("toIterable roundtrip") {
@@ -404,7 +404,7 @@ class ByteVectorTest extends BitsSuite {
     // "Invalid" conversions
     val badlySizedByteVector: Gen[ByteVector] = byteVectors.suchThat(_.length != 16)
     forAll(badlySizedByteVector) { badlySizedByteVector =>
-      an[IllegalArgumentException] should be thrownBy { badlySizedByteVector.toUUID }
+      assertThrows[IllegalArgumentException] { badlySizedByteVector.toUUID }
     }
   }
 

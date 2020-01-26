@@ -69,7 +69,7 @@ object Arbitraries {
   def genSplitBytes(g: Gen[ByteVector]) =
     for {
       b <- g
-      n <- Gen.choose(0, b.size + 1)
+      n <- Gen.choose[Long](0, b.size + 1)
     } yield {
       b.take(n) ++ b.drop(n)
     }

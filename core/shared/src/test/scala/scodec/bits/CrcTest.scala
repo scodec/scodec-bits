@@ -7,7 +7,7 @@ import Arbitraries._
 
 class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
 
-  implicit val arbBitVector = Arbitrary(genBitVector())
+  implicit val arbBitVector: Arbitrary[BitVector] = Arbitrary(genBitVector())
 
   def crcWith(
       poly: String,

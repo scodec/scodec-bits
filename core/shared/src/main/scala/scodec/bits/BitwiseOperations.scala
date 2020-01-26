@@ -70,7 +70,7 @@ trait BitwiseOperations[Repr <: BitwiseOperations[Repr, Idx], Idx] {
     *
     * @group bitwise
     */
-  final def unary_~(): Repr = not
+  final def unary_~ : Repr = not
 
   /**
     * Returns a bitwise complement of this $bitwiseOperationsReprDescription.

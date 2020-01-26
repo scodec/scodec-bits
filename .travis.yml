@@ -1,9 +1,9 @@
 language: scala
 
 scala:
+  - "0.22.0-bin-20200123-9982f0d-NIGHTLY"
   - "2.12.10"
   - "2.13.1"
-  - "0.21.0-RC1"
 
 jdk:
   - openjdk11
@@ -18,6 +18,9 @@ cache:
     - $HOME/.sbt
 
 script:
-  - sbt ++$TRAVIS_SCALA_VERSION fmtCheck
-  - sbt ++$TRAVIS_SCALA_VERSION test mimaReportBinaryIssues
+  - if [[ "$TRAVIS_SCALA_VERSION" == 0.* ]];
+    then
+      sbt ++$TRAVIS_SCALA_VERSION coreJVM/test;
+    else
+      sbt ++$TRAVIS_SCALA_VERSION fmtCheck test mimaReportBinaryIssues;
 

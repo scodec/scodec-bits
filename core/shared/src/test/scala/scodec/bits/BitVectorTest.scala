@@ -67,7 +67,7 @@ class BitVectorTest extends BitsSuite {
     def check(bits: BitVector, n: Long): Unit = {
       val b = bits.acquire(n)
       b match {
-        case Left(_)   => bits.size should be < n
+        case Left(_)   => assert(bits.size < n)
         case Right(hd) => assert(hd == bits.take(n))
       }
       assert(bits.acquireThen(n)(Left(_), Right(_)) == b)
@@ -108,22 +108,22 @@ class BitVectorTest extends BitsSuite {
 
   test("apply") {
     val vec = BitVector(ByteVector(0xf0, 0x0f))
-    vec(0) should be(true)
-    vec(1) should be(true)
-    vec(2) should be(true)
-    vec(3) should be(true)
-    vec(4) should be(false)
-    vec(5) should be(false)
-    vec(6) should be(false)
-    vec(7) should be(false)
-    vec(8) should be(false)
-    vec(9) should be(false)
-    vec(10) should be(false)
-    vec(11) should be(false)
-    vec(12) should be(true)
-    vec(13) should be(true)
-    vec(14) should be(true)
-    vec(15) should be(true)
+    assert(vec(0))
+    assert(vec(1))
+    assert(vec(2))
+    assert(vec(3))
+    assert(!vec(4))
+    assert(!vec(5))
+    assert(!vec(6))
+    assert(!vec(7))
+    assert(!vec(8))
+    assert(!vec(9))
+    assert(!vec(10))
+    assert(!vec(11))
+    assert(vec(12))
+    assert(vec(13))
+    assert(vec(14))
+    assert(vec(15))
   }
 
   test("getByte") {
@@ -139,9 +139,9 @@ class BitVectorTest extends BitsSuite {
 
   test("updated") {
     val vec = BitVector.low(16)
-    vec.set(6).get(6) should be(true)
-    vec.set(10).get(10) should be(true)
-    vec.set(10).clear(10).get(10) should be(false)
+    assert(vec.set(6).get(6))
+    assert(vec.set(10).get(10))
+    assert(!vec.set(10).clear(10).get(10))
   }
 
   test("drop") {
@@ -172,7 +172,7 @@ class BitVectorTest extends BitsSuite {
     assert(BitVector.high(4).take(100).toByteVector == ByteVector(0xf0))
     assert(BitVector.high(12).take(-100) == BitVector.empty)
     forAll { (x: BitVector, n0: Long, m0: Long) =>
-      x.depth should be <= 18
+      assert(x.depth <= 18)
       val m = if (x.nonEmpty) (m0 % x.size).abs else 0
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       assert((x.take(m) ++ x.drop(m)).compact == x)
@@ -209,7 +209,7 @@ class BitVectorTest extends BitsSuite {
   test("compact") {
     forAll { (x: BitVector) =>
       assert(x.compact == x)
-      x.force.depth should be < 36
+      assert(x.force.depth < 36)
     }
   }
 
@@ -217,7 +217,7 @@ class BitVectorTest extends BitsSuite {
     // check that building a million byte vector via repeated snocs leads to balanced tree
     val N = 1000000
     val bits = (0 until N).map(n => BitVector(n)).foldLeft(BitVector.empty)(_ ++ _)
-    bits.depth should be < 36
+    assert(bits.depth < 36)
   }
 
   test("++") {
@@ -234,8 +234,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   test("b.take(n).drop(n) == b") {
-    implicit val intGen = Arbitrary(Gen.choose(0, 10000))
-    forAll { (xs: List[Boolean], n0: Int, m0: Int) =>
+    forAll(Arbitrary.arbitrary[List[Boolean]], Gen.choose[Int](0, 10000), Gen.choose[Int](0, 10000)) { (xs: List[Boolean], n0: Int, m0: Int) =>
       whenever(xs.nonEmpty) {
         val n = n0.abs % xs.size
         val m = m0.abs % xs.size
@@ -361,7 +360,7 @@ class BitVectorTest extends BitsSuite {
 
   test("fromValidHex") {
     assert(BitVector.fromValidHex("0x012") == BitVector(0x01, 0x20).take(12))
-    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidHex("0x01gg"); () }
+    assertThrows[IllegalArgumentException] { BitVector.fromValidHex("0x01gg") }
   }
 
   test("toBin") {
@@ -384,14 +383,14 @@ class BitVectorTest extends BitsSuite {
     forAll { (bv: BitVector) =>
       assert(BitVector.fromValidBin(bv.toBin) == bv)
     }
-    an[IllegalArgumentException] should be thrownBy { BitVector.fromValidBin("0x0102"); () }
+    assertThrows[IllegalArgumentException] { BitVector.fromValidBin("0x0102") }
   }
 
   test("bin string interpolator") {
     assert(bin"0010" == BitVector(0x20).take(4))
     val x = BitVector.fromValidBin("10")
     assert(bin"00$x" == BitVector(0x20).take(4))
-    """bin"asdf"""" shouldNot compile
+    assertDoesNotCompile("""bin"asdf"""")
   }
 
   test("grouped + concatenate") {
@@ -560,12 +559,12 @@ class BitVectorTest extends BitsSuite {
     // "Invalid" conversions
     val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary.suchThat(_.length != 128)
     forAll(badlySizedBitVector) { badlySizedBitVector =>
-      an[IllegalArgumentException] should be thrownBy { badlySizedBitVector.toUUID }
+      assertThrows[IllegalArgumentException] { badlySizedBitVector.toUUID }
     }
   }
 
   test("buffering") {
-    implicit val longs = Arbitrary(Gen.choose(-1L, 50L))
+    implicit val longs: Arbitrary[Long] = Arbitrary(Gen.choose(-1L, 50L))
 
     def check(h: BitVector, xs: List[BitVector], delta: Long): Unit = {
       val unbuffered =
