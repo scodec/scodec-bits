@@ -1323,7 +1323,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   * @groupname base Base Conversions
   * @groupprio base 3
   */
-object ByteVector {
+object ByteVector extends ByteVectorPlatform {
 
   // various specialized function types
 
