@@ -14,28 +14,25 @@ trait ByteVectorPlatform {
 
   given FromDigits {
     override inline def fromDigits(digits: String): ByteVector =
-      ${ByteVectorFromDigits('digits, Expr(10))}
+      ${digitsToByteVector('digits, Expr(10))}
     override inline def fromDigits(digits: String, radix: Int): ByteVector =
-      ${ByteVectorFromDigits('digits, 'radix)}
+      ${digitsToByteVector('digits, 'radix)}
   }
 }
 
 
-object ByteVectorFromDigits {
-
-  def apply(digits: Expr[String], radix: Expr[Int])(given qctx: QuoteContext): Expr[ByteVector] =
-    (digits, radix) match {
-      case (Const(ds), Const(r)) =>
-        if (r == 16) {
-          '{ByteVector.fromValidHex($digits.tail)}
-        } else {
-          qctx.error(s"unsupported radix $r", radix)
-          '{ByteVector.empty}
-        }
-      case other =>
-        '{
-            if ($radix == 16) ByteVector.fromValidHex($digits.tail)
-            else throw FromDigits.MalformedNumber("unsupported radix")
-        }
-    }
-}
+def digitsToByteVector(digits: Expr[String], radix: Expr[Int])(given qctx: QuoteContext): Expr[ByteVector] =
+  (digits, radix) match {
+    case (Const(ds), Const(r)) =>
+      if (r == 16) {
+        '{ByteVector.fromValidHex($digits.tail)}
+      } else {
+        qctx.error(s"unsupported radix $r", radix)
+        '{ByteVector.empty}
+      }
+    case other =>
+      '{
+          if ($radix == 16) ByteVector.fromValidHex($digits.tail)
+          else throw FromDigits.MalformedNumber("unsupported radix")
+      }
+  }
