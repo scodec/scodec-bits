@@ -46,7 +46,7 @@ import scala.annotation.tailrec
   * @groupprio crypto 4
   *
   * @define bitwiseOperationsReprDescription bit vector
-  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
+  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] to generate a new strict vector.
   */
 sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] with Serializable {
 
