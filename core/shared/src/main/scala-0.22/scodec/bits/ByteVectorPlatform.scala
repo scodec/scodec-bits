@@ -7,7 +7,7 @@ import scala.util.FromDigits
 // TODO: as of 0.22, making this private[bits] results in errors like the following at call sites:
 // scala> val b: ByteVector = 0x00112233_44556677_8899aabb_ccddeeff_fedba098
 // trait ByteVectorPlatform cannot be accessed as a member of scodec.bits from module class rs$line$2$.
-private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
+trait ByteVectorPlatform { self: ByteVector.type =>
 
   class FromDigits extends FromDigits.WithRadix[ByteVector] {
     def fromDigits(digits: String, radix: Int): ByteVector =
