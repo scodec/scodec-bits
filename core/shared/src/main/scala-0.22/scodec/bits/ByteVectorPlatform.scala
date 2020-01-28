@@ -10,16 +10,16 @@ private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
 
 private[bits] object ByteVectorFromDigits {
 
-  private def digitsToByteVector(digits: String, radix: Int): ByteVector =
-    if (radix == 16) ByteVector.fromValidHex(digits.tail)
-    else throw FromDigits.MalformedNumber(s"unsupported radix $radix")
-
-  private[bits] class Base extends FromDigits.WithRadix[ByteVector] {
+  class Base extends FromDigits.WithRadix[ByteVector] {
     def fromDigits(digits: String, radix: Int): ByteVector =
       digitsToByteVector(digits, radix)
   }
 
-  private[bits] object Instance extends Base {
+  private def digitsToByteVector(digits: String, radix: Int): ByteVector =
+    if (radix == 16) ByteVector.fromValidHex(digits.tail)
+    else throw FromDigits.MalformedNumber(s"unsupported radix $radix")
+
+  object Instance extends Base {
     override inline def fromDigits(digits: String): ByteVector =
       ${digitsToByteVectorMacro('digits, Expr(10))}
     override inline def fromDigits(digits: String, radix: Int): ByteVector =
