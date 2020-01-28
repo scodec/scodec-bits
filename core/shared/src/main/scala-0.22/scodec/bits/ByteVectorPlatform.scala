@@ -8,7 +8,7 @@ private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
   given as FromDigits.WithRadix[ByteVector] = ByteVectorFromDigits.Instance
 }
 
-object ByteVectorFromDigits {
+private[bits] object ByteVectorFromDigits {
 
   private def digitsToByteVector(digits: String, radix: Int): ByteVector =
     if (radix == 16) ByteVector.fromValidHex(digits.tail)
