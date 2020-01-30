@@ -1284,7 +1284,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   * @groupname base Base Conversions
   * @groupprio base 3
   */
-object BitVector {
+object BitVector extends BitVectorPlatform {
 
   /**
     * Empty bit vector.
