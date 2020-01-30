@@ -157,8 +157,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.package.EitherOps"),
       ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps"),
       ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps$"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.LiteralSyntaxMacros.hexStringInterpolator"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.LiteralSyntaxMacros.binStringInterpolator")
+      ProblemFilters.exclude[IncompatibleMethTypeProblem](
+        "scodec.bits.LiteralSyntaxMacros.hexStringInterpolator"
+      ),
+      ProblemFilters.exclude[IncompatibleMethTypeProblem](
+        "scodec.bits.LiteralSyntaxMacros.binStringInterpolator"
+      )
     )
   )
 
