@@ -163,9 +163,9 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       ProblemFilters.exclude[IncompatibleMethTypeProblem](
         "scodec.bits.LiteralSyntaxMacros.binStringInterpolator"
       ),
-ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
-ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
-ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific")
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
+      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific")
     )
   )
 
