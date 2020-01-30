@@ -2,7 +2,6 @@ package scodec.bits
 
 import org.scalacheck.{Arbitrary, Gen}
 import Arbitraries._
-import org.scalatest.matchers.should.Matchers._
 import org.scalacheck._
 import java.util.UUID
 

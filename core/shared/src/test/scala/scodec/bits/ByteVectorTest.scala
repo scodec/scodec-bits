@@ -6,7 +6,6 @@ import java.util.UUID
 
 import Arbitraries._
 import org.scalacheck._
-import org.scalatest.matchers.should.Matchers._
 
 class ByteVectorTest extends BitsSuite {
 

@@ -23,7 +23,7 @@ object StreamingBitVectorTest extends App {
     result
   }
 
-  def printMemoryStats: Unit = {
+  def printMemoryStats(): Unit = {
     val R = java.lang.Runtime.getRuntime
     println(s"Max memory:   ${R.maxMemory.toDouble / 1e6} MB")
     println(s"Total memory: ${R.totalMemory.toDouble / 1e6} MB")
@@ -70,33 +70,33 @@ object StreamingBitVectorTest extends App {
           // reachable!
           val N = countBits(BitVector.fromInputStream(in), 0, touchBytes)
           println(s"finished processing ${N.toDouble / 1e6} MB")
-          printMemoryStats
+          printMemoryStats()
         }
         println
         time("BitVector.fromChannel(chunkSize=64kB)", size) {
           val N =
             countBits(BitVector.fromChannel(nioIn1, chunkSizeInBytes = 1024 * 64), 0, touchBytes)
           println(s"finished processing ${N.toDouble / 1e6} MB")
-          printMemoryStats
+          printMemoryStats()
         }
         println
         time("BitVector.fromChannel(direct=true, chunkSizeInBytes=64k)", size) {
           val N = countBits(BitVector.fromChannel(nioIn3, 64 * 1024, direct = true), 0, touchBytes)
           println(s"finished processing ${N.toDouble / 1e6} MB")
-          printMemoryStats
+          printMemoryStats()
         }
         println
         time("BitVector.fromChannel(direct=true, chunkSize=16MB)", size) {
           val N =
             countBits(BitVector.fromChannel(nioIn2, 16 * 1024 * 1000, direct = true), 0, touchBytes)
           println(s"finished processing ${N.toDouble / 1e6} MB")
-          printMemoryStats
+          printMemoryStats()
         }
         println
         time("BitVector.fromMmap", size) {
           val N = countBits(BitVector.fromMmap(nioIn4), 0, touchBytes)
           println(s"finished processing ${N.toDouble / 1e6} MB")
-          printMemoryStats
+          printMemoryStats()
         }
       } finally {
         print("closing files... ")
