@@ -16,7 +16,10 @@ jobs:
     - name: Format Check
       if: matrix.scala == '2.13.1'
       run: sbt ++${{matrix.scala}} fmtCheck
-    - name: Tests
-      run: sbt ++${{matrix.scala}} test
+    - name: JVM
+      run: sbt ++${{matrix.scala}} coreJVM/test
+    - name: JS
+      if: matrix.scala == '2.13.1' || matrix.scala == '2.12.10'
+      run: sbt ++${{matrix.scala}} coreJS/test      
     - name: Mima
       run: sbt ++${{matrix.scala}} mimaReportBinaryIssues
