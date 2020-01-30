@@ -12,7 +12,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: olafurpg/setup-scala@v5
       with:
-        java-version: adopt@1.11
+        java-version: openjdk@1.11.0
     - name: Format Check
       if: matrix.scala == '2.13.1'
       run: sbt ++${{matrix.scala}} fmtCheck
