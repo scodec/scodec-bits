@@ -7,7 +7,13 @@ import scala.language.experimental.macros
   *
   * @see [[BitVector]] and [[ByteVector]]
   */
-package object bits extends ScalaVersionSpecific {
+package object bits {
+
+  private[bits] type IterableOnce[+A] = collection.GenTraversableOnce[A]
+
+  private[bits] implicit class IterableOnceOps[A](private val self: IterableOnce[A]) {
+    def iterator: Iterator[A] = self.toIterator
+  }
 
   /**
     * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.

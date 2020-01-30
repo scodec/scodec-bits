@@ -1,7 +1,5 @@
 package scodec.bits
 
-import ByteVector._
-
 import java.io.OutputStream
 import java.nio.{ByteBuffer, CharBuffer}
 import java.nio.charset.{CharacterCodingException, Charset}
@@ -48,9 +46,11 @@ import scala.annotation.tailrec
   * @groupprio crypto 4
   *
   * @define bitwiseOperationsReprDescription bit vector
-  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
+  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] to generate a new strict vector.
   */
 sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] with Serializable {
+
+  import ByteVector._
 
   /**
     * Returns the number of bytes in this vector.
@@ -1323,7 +1323,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   * @groupname base Base Conversions
   * @groupprio base 3
   */
-object ByteVector {
+object ByteVector extends ByteVectorPlatform {
 
   // various specialized function types
 

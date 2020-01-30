@@ -23,7 +23,7 @@ object StreamingBitVectorTest extends App {
     result
   }
 
-  def printMemoryStats(): Unit = {
+  def printMemoryStats: Unit = {
     val R = java.lang.Runtime.getRuntime
     println(s"Max memory:   ${R.maxMemory.toDouble / 1e6} MB")
     println(s"Total memory: ${R.totalMemory.toDouble / 1e6} MB")
