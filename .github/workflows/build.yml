@@ -22,4 +22,5 @@ jobs:
       if: matrix.scala == '2.13.1' || matrix.scala == '2.12.10'
       run: sbt ++${{matrix.scala}} coreJS/test      
     - name: Mima
+      if: matrix.scala == '2.13.1' || matrix.scala == '2.12.10'
       run: sbt ++${{matrix.scala}} mimaReportBinaryIssues
