@@ -115,20 +115,23 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
+    publishArtifact in (Compile, packageDoc) := !isDotty.value,
     scalacOptions in (Compile, doc) := {
       val tagOrBranch = {
         if (version.value.endsWith("SNAPSHOT")) gitCurrentBranch.value
         else ("v" + version.value)
       }
-      Seq(
-        "-groups",
-        "-implicits",
-        "-implicits-show-all",
-        "-sourcepath",
-        new File(baseDirectory.value, "../..").getCanonicalPath,
-        "-doc-source-url",
-        "https://github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
-      )
+      if (isDotty.value) Nil
+      else
+        Seq(
+          "-groups",
+          "-implicits",
+          "-implicits-show-all",
+          "-sourcepath",
+          new File(baseDirectory.value, "../..").getCanonicalPath,
+          "-doc-source-url",
+          "https://github.com/scodec/scodec-bits/tree/" + tagOrBranch + "€{FILE_PATH}.scala"
+        )
     },
     scalacOptions in (Compile, console) ~= {
       _.filterNot { o =>
