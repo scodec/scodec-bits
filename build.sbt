@@ -135,6 +135,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         o == "-Ywarn-unused" || o == "-Xfatal-warnings"
       }
     },
+    publishArtifact in (Compile, packageDoc) := !isDotty.value,
+    publishArtifact in packageDoc := !isDotty.value,
     scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
     mimaPreviousArtifacts := {
       List("1.1.12").map { pv =>
