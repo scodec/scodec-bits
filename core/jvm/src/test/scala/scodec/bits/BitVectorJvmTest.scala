@@ -1,16 +1,12 @@
 package scodec.bits
 
 import java.security.MessageDigest
-import org.scalacheck.{Arbitrary, Gen}
-import Arbitraries._
+import Generators._
 
 class BitVectorJvmTest extends BitsSuite {
-  implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
-    Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
-  }
 
   test("sizeGreater/LessThan concurrent") {
-    forAll { (x: BitVector) =>
+    genBitVector.forAll.map { x =>
       val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
       def t = new Thread {
         override def start =
@@ -26,21 +22,18 @@ class BitVectorJvmTest extends BitsSuite {
       ok.compareAndSet(true, x.sizeLessThan(x.size + 1))
       t1.join
       t2.join
-      assert(ok.get == true)
+      assert(ok.get)
     }
   }
 
   test("digest") {
-    forAll { (x: BitVector) =>
+    genBitVector.forAll.map { x =>
       val sha256 = MessageDigest.getInstance("SHA-256")
-      assert(x.digest("SHA-256") == BitVector(ByteVector(sha256.digest(x.toByteArray))))
+      assertEquals(x.digest("SHA-256"), BitVector(ByteVector(sha256.digest(x.toByteArray))))
     }
   }
 
   test("serialization") {
-    forAll { (x: BitVector) =>
-      serializationShouldRoundtrip(x)
-    }
+    genBitVector.forAll.map { x => serializationShouldRoundtrip(x) }
   }
-
 }

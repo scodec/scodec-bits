@@ -96,6 +96,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
+    libraryDependencies ++= List(
+      "org.scalameta" %%% "munit" % "0.5.2" % "test",
+      "qa.hedgehog" %% "hedgehog-runner" % "7bd29241fababd9a3e954fd38083ed280fc9e4e8"),
+resolvers += "bintray-scala-hedgehog" at "https://dl.bintray.com/hedgehogqa/scala-hedgehog",
+    testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= {
       if (isDotty.value)
         Seq(

@@ -1,15 +1,8 @@
 package scodec.bits
 
-import org.scalatest.Assertion
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+abstract class BitsSuite extends PropertySuite {
 
-abstract class BitsSuite extends AnyFunSuite with ScalaCheckPropertyChecks {
-
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
-    PropertyCheckConfiguration(minSuccessful = 100, workers = 4)
-
-  protected def serializationShouldRoundtrip[A](x: A): Assertion = {
+  protected def serializationShouldRoundtrip[A](x: A): Unit = {
     import java.io.{
       ByteArrayInputStream,
       ByteArrayOutputStream,

@@ -4,20 +4,22 @@ import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.UUID
 
-import Arbitraries._
-import org.scalacheck._
+import hedgehog.{Gen, Range}
+import Generators._
 
 class ByteVectorTest extends BitsSuite {
 
-  test("hashCode/equals") {
-    forAll(bytesWithIndex) {
-      case (b, m) =>
-        assert((b.take(m) ++ b.drop(m)) == b)
-        assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
-        if (b.take(3) == b.drop(3).take(3)) {
-          // kind of weak, since this will only happen 1/8th of attempts on average
-          assert(b.take(3).hashCode == b.drop(3).take(3).hashCode)
-        }
+  property("hashCode/equals") {
+    for {
+      b <- genByteVector.forAll
+      m <- Gen.int(Range.linear(0, b.size.toInt)).forAll
+    } yield {
+      assertEquals((b.take(m) ++ b.drop(m)), b)
+      assertEquals((b.take(m) ++ b.drop(m)).hashCode, b.hashCode)
+      if (b.take(3) == b.drop(3).take(3)) {
+        // kind of weak, since this will only happen 1/8th of attempts on average
+        assertEquals(b.take(3).hashCode, b.drop(3).take(3).hashCode)
+      }
     }
   }
 
@@ -27,10 +29,11 @@ class ByteVectorTest extends BitsSuite {
     assert((x === y) == false)
   }
 
-  test("=== consistent with ==") {
-    forAll { (b: ByteVector, b2: ByteVector) =>
-      assert((b == b2) == (b === b2))
-    }
+  property("=== consistent with ==") {
+    for {
+      b <- genByteVector.forAll
+      b2 <- genByteVector.forAll
+    } yield assert((b == b2) == (b === b2))
   }
 
   test("compact is a no-op for already compact byte vectors") {
@@ -38,88 +41,102 @@ class ByteVectorTest extends BitsSuite {
     assert((b.compact eq b.compact) == true)
   }
 
-  test("reverse.reverse == id") {
-    forAll { (b: ByteVector) =>
-      assert(b.reverse.reverse == b)
-    }
+  property("reverse.reverse == id") {
+    genByteVector.forAll.map(b => assert(b.reverse.reverse == b))
   }
 
-  test("foldRight/left") {
-    forAll { (b: ByteVector) =>
-      assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b)
-    }
-    forAll { (b: ByteVector) =>
-      assert(b.foldRight(ByteVector.empty)(_ +: _) == b)
-    }
+  property("foldLeft") {
+    genByteVector.forAll.map(b => assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b))
+  }
+  
+  property("foldRight") {
+    genByteVector.forAll.map(b => assert(b.foldRight(ByteVector.empty)(_ +: _) == b))
   }
 
-  test("insert") {
+  test("insert (1)") {
     val b = ByteVector.empty
     assert(b.insert(0, 1) == ByteVector(1))
     assert(ByteVector(1, 2, 3, 4).insert(0, 0) == ByteVector(0, 1, 2, 3, 4))
     assert(ByteVector(1, 2, 3, 4).insert(1, 0) == ByteVector(1, 0, 2, 3, 4))
-    forAll { (b: ByteVector) =>
+  }
+
+  property("insert (2)") {
+    genByteVector.forAll.map { b =>
       assert(b.foldLeft(ByteVector.empty)((acc, b) => acc.insert(acc.size, b)) == b)
     }
   }
 
-  test("zipWith") {
+  test("zipWith (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     assert(b1.zipWithI(b2)(_ + _) == ByteVector(1, 3, 5, 7))
-    forAll { (b: ByteVector) =>
+  }
+
+  property("zipWith (2)") {
+    genByteVector.forAll.map { b =>
       assert(b.zipWithI(b)(_ - _) == ByteVector.fill(b.size)(0))
     }
   }
 
-  test("zipWith2") {
+  test("zipWithI2 (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     val b3 = ByteVector(2, 3, 4, 5)
     assert(b1.zipWithI2(b2, b3)(_ + _ + _) == ByteVector(3, 6, 9, 12))
-    forAll { (b: ByteVector) =>
+  }
+
+  property("zipWithI2 (2)") {
+    genByteVector.forAll.map { b =>
       assert(b.zipWithI2(b, b)(_ + _ - _) == b)
     }
   }
 
-  test("zipWith3") {
+  test("zipWithI3 (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     val b3 = ByteVector(2, 3, 4, 5)
     val b4 = ByteVector(3, 4, 5, 6)
     assert(b1.zipWithI3(b2, b3, b4)(_ + _ + _ + _) == ByteVector(6, 10, 14, 18))
-    forAll { (b: ByteVector) =>
+  }
+
+  property("zipWithI3 (2)") {
+    genByteVector.forAll.map { b =>
       assert(b.zipWithI3(b, b, b)(_ + _ - _ - _) == ByteVector.fill(b.size)(0))
     }
   }
 
-  test("consistent with Array[Byte] implementations") {
-    forAll(bytesWithIndex) {
-      case (b, ind) =>
-        val ba = b.toArray
-        assert(b.take(ind).toArray === ba.take(ind.toInt))
-        assert(b.drop(ind).toArray === ba.drop(ind.toInt))
-        assert(b.lift(ind) == ba.lift(ind.toInt))
-        assert(b.takeRight(ind).toArray === ba.takeRight(ind.toInt))
-        assert(b.dropRight(ind).toArray === ba.dropRight(ind.toInt))
-        assert(b.reverse.toArray === ba.reverse)
-        assert(b.partialCompact(ind).toArray === ba)
-        assert(b.lastOption == ba.lastOption)
-        assert(b.nonEmpty == ba.nonEmpty)
-        if (b.nonEmpty) {
-          assert(b.last == ba.last)
-          assert(b.init.toArray === ba.init)
-        }
-        if (ind < b.size) {
-          val actual = b.update(ind, 9).toArray
-          val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
-          assert(actual === correct)
-        }
+  property("consistent with Array[Byte] implementations (1)") {
+    for {
+      b <- genByteVector.forAll
+      ind <- Gen.int(Range.linear(0, b.size.toInt)).forAll
+    } yield {
+      val ba = b.toArray
+      assert(java.util.Arrays.equals(b.take(ind).toArray, ba.take(ind.toInt)))
+      assert(java.util.Arrays.equals(b.drop(ind).toArray, ba.drop(ind.toInt)))
+      assert(b.lift(ind) == ba.lift(ind.toInt))
+      assert(java.util.Arrays.equals(b.takeRight(ind).toArray, ba.takeRight(ind.toInt)))
+      assert(java.util.Arrays.equals(b.dropRight(ind).toArray, ba.dropRight(ind.toInt)))
+      assert(java.util.Arrays.equals(b.reverse.toArray, ba.reverse))
+      assert(java.util.Arrays.equals(b.partialCompact(ind).toArray, ba))
+      assert(b.lastOption == ba.lastOption)
+      assert(b.nonEmpty == ba.nonEmpty)
+      if (b.nonEmpty) {
+        assert(b.last == ba.last)
+        assert(java.util.Arrays.equals(b.init.toArray, ba.init))
+      }
+      if (ind < b.size) {
+        val actual = b.update(ind, 9).toArray
+        val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
+        assert(java.util.Arrays.equals(actual, correct))
+      }
+    }
+  }
 
-    }
-    forAll { (b1: ByteVector, b2: ByteVector) =>
-      assert((b1 ++ b2).toArray === (b1.toArray ++ b2.toArray))
-    }
+  property("consistent with Array[Byte] implementations (2)") {
+    for {
+      b1 <- genByteVector.forAll
+      b2 <- genByteVector.forAll
+    } yield assert(java.util.Arrays.equals((b1 ++ b2).toArray, (b1.toArray ++ b2.toArray)))
   }
 
   val deadbeef = ByteVector(0xde, 0xad, 0xbe, 0xef)
@@ -177,7 +194,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromValidBin") {
     assert(ByteVector.fromValidBin(deadbeef.toBin) == deadbeef)
-    assertThrows[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
+    intercept[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
   }
 
   test("toBase58") {
