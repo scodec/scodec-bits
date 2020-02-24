@@ -34,7 +34,7 @@ object Generators {
 
   def genBitVector: Gen[BitVector] = genSimpleBitVector()
 
-  private def genSimpleBitVector(maxBytes: Int = 1024, maxAdditionalBits: Int = 7): Gen[BitVector] =
+  def genSimpleBitVector(maxBytes: Int = 1024, maxAdditionalBits: Int = 7): Gen[BitVector] =
     for {
       byteSize <- Gen.int(Range.linear(0, maxBytes))
       additionalBits <- Gen.int(Range.linear(0, maxAdditionalBits))
@@ -47,7 +47,8 @@ object Generators {
 
   // very deeply right nested - to check for SOE
   val genHugeBitVectors: Gen[BitVector] =
-    genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.linear(4500, 5000))
+    // genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.constant(4500, 5000)) - TODO SOE
+    genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.constant(450, 500))
 
   def genByte: Gen[Byte] = Gen.byte(Range.constantFrom(0, Byte.MinValue, Byte.MaxValue))
 

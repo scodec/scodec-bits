@@ -62,7 +62,6 @@ class ByteVectorJvmTest extends BitsSuite {
   property("buffer concurrency") {
     import java.util.concurrent.Callable
     val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
-
     // Concurrently append b1.buffer ++ b2 and b1.buffer ++ b3
     // making sure this gives same results as unbuffered appends
     for {
@@ -80,7 +79,7 @@ class ByteVectorJvmTest extends BitsSuite {
       assertEquals(rb1b3.get, (b1 ++ b3))
     }
     // TODO
-    // pool.shutdown
+    // pool.shutdownNow
   }
 
   property("digest") {
