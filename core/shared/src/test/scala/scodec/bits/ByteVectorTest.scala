@@ -2,7 +2,6 @@ package scodec.bits
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.UUID
 
 import hedgehog.{Gen, Range}
 import Generators._
@@ -251,10 +250,8 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty)
   }
 
-  test("base64 roundtrip") {
-    forAll { (b: ByteVector) =>
-      assert(ByteVector.fromValidBase64(b.toBase64) == b)
-    }
+  property("base64 roundtrip") {
+    genByteVector.forAll.map(b => assert(ByteVector.fromValidBase64(b.toBase64) == b))
   }
 
   test("base64 issue #45") {
@@ -263,18 +260,26 @@ class ByteVectorTest extends BitsSuite {
     assert(BitVector.fromBase64Descriptive(base64).map { _.size } == Right(1408))
   }
 
-  test("buffer :+") {
-    forAll { (b: ByteVector, bs: List[ByteVector], n: Int) =>
+  property("buffer :+") {
+    for {
+      b <- genByteVector.forAll
+      bs <- Gen.list(genByteVector, Range.linear(0, 10)).forAll
+      n <- Gen.int(Range.linear(0, 50)).forAll
+    } yield {
       val unbuf = bs.foldLeft(b)(_ ++ _)
-      val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))((acc, a) => a.foldLeft(acc)(_ :+ _))
+      val buf = bs.foldLeft(b.bufferBy(n + 1))((acc, a) => a.foldLeft(acc)(_ :+ _))
       assert(unbuf == buf)
     }
   }
 
-  test("buffer ++/take/drop") {
-    forAll { (b: ByteVector, bs: List[ByteVector], n: Int) =>
+  property("buffer ++/take/drop") {
+    for {
+      b <- genByteVector.forAll
+      bs <- Gen.list(genByteVector, Range.linear(0, 10)).forAll
+      n <- Gen.int(Range.linear(0, 50)).forAll
+    } yield {
       val unbuf = bs.foldLeft(b)(_ ++ _)
-      val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))(_ ++ _)
+      val buf = bs.foldLeft(b.bufferBy(n + 1))(_ ++ _)
       assert(unbuf == buf)
       val ind = (n % (unbuf.size + 1)).max(0) + 1
       assert(buf.take(ind) == unbuf.take(ind))
@@ -282,9 +287,13 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("buffer rebuffering") {
-    forAll { (b1: ByteVector, b2: ByteVector, b3: ByteVector, n: Int) =>
-      val chunkSize = (n % 50).max(0) + 1
+  property("buffer rebuffering") {
+    for {
+      b1 <- genByteVector.forAll
+      b2 <- genByteVector.forAll
+      b3 <- genByteVector.forAll
+      chunkSize <- Gen.int(Range.linear(1, 50)).forAll
+    } yield {
       val b1b = b1.bufferBy(chunkSize)
       val b1b2b3 = (b1b ++ b2).bufferBy(chunkSize + 1) ++ b3
       assert(b1b2b3 == (b1 ++ b2 ++ b3))
@@ -305,8 +314,11 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector(0xaa, 0xaa, 0xaa) >>> 1 == ByteVector(0x55, 0x55, 0x55))
   }
 
-  test("rotations") {
-    forAll { (b: ByteVector, n: Long) =>
+  property("rotations") {
+    for {
+      b <- genByteVector.forAll
+      n <- Gen.long(Range.linear(Long.MinValue, Long.MaxValue)).forAll
+    } yield {
       assert(b.rotateLeft(b.size * 8) == b)
       assert(b.rotateRight(b.size * 8) == b)
       assert(b.rotateRight(n).rotateLeft(n) == b)
@@ -318,19 +330,19 @@ class ByteVectorTest extends BitsSuite {
     assert(hex"deadbeef" == deadbeef)
     val x = ByteVector.fromValidHex("be")
     assert(hex"dead${x}ef" == deadbeef)
-    assertDoesNotCompile("""hex"deadgg"""")
+    compileErrors("""hex"deadgg"""")
   }
 
-  test("toIterable roundtrip") {
-    forAll { (b: ByteVector) =>
+  property("toIterable roundtrip") {
+    genByteVector.forAll.map { b =>
       val fromIter = ByteVector(b.toIterable)
       assert(b == fromIter)
       assert(fromIter == b)
     }
   }
 
-  test("toArray roundtrip") {
-    forAll { (b: ByteVector) =>
+  property("toArray roundtrip") {
+    genByteVector.forAll.map { b =>
       val fromArr = ByteVector(b.toArray)
       assert(b == fromArr)
       assert(fromArr == b)
@@ -340,8 +352,8 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("copyToStream roundtrip") {
-    forAll { (b: ByteVector) =>
+  property("copyToStream roundtrip") {
+    genByteVector.forAll.map { b =>
       val os = new ByteArrayOutputStream()
       b.copyToStream(os)
       val fromArr = ByteVector(os.toByteArray)
@@ -350,24 +362,26 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("toByteBuffer roundtrip") {
-    forAll { (b: ByteVector) =>
+  property("toByteBuffer roundtrip") {
+    genByteVector.forAll.map { b =>
       val fromBuffer = ByteVector(b.toByteBuffer)
       assert(b == fromBuffer)
       assert(fromBuffer == b)
     }
   }
 
-  test("dropping from a view is consistent with dropping from a strict vector") {
-    forAll { (b: ByteVector, n0: Long) =>
+  property("dropping from a view is consistent with dropping from a strict vector") {
+    for {
+      b <- genByteVector.forAll
+      n <- Gen.long(Range.linear(0L, Long.MaxValue)).forAll
+    } yield {
       val view = ByteVector.view(b.toArray)
-      val n = n0.abs
       assert(b.drop(n) == view.drop(n))
     }
   }
 
-  test("grouped + concatenate") {
-    forAll { (bv: ByteVector) =>
+  property("grouped + concatenate") {
+    genByteVector.forAll.map { bv =>
       if (bv.isEmpty) {
         assert(bv.grouped(1).toList == Nil)
       } else if (bv.size < 3) {
@@ -380,10 +394,12 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("indexOfSlice/containsSlice/startsWith") {
-    forAll { (bv: ByteVector, m0: Int, n0: Int) =>
-      val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0
-      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
+  property("indexOfSlice/containsSlice/startsWith") {
+    for {
+      bv <- genByteVector.forAll
+      m <- Gen.long(Range.linear(0, bv.size)).forAll
+      n <- Gen.long(Range.linear(0, bv.size)).forAll
+    } yield {
       val slice = bv.slice(m.min(n), m.max(n))
       val idx = bv.indexOfSlice(slice)
       assert(idx == bv.toIndexedSeq.indexOfSlice(slice.toIndexedSeq))
@@ -392,33 +408,41 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("endsWith") {
-    forAll { (bv: ByteVector, n0: Int) =>
-      val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
+  property("endsWith") {
+    for {
+      bv <- genByteVector.forAll
+      n <- Gen.long(Range.linear(0, bv.size)).forAll
+    } yield {
       val slice = bv.takeRight(n)
       assert(bv.endsWith(slice) == true)
       if (slice.nonEmpty) assert(bv.endsWith(~slice) == false)
     }
   }
 
-  test("splice") {
-    forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
-      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
+  property("splice") {
+    for {
+      x <- genByteVector.forAll
+      y <- genByteVector.forAll
+      n <- Gen.long(Range.linear(0, x.size)).forAll
+    } yield {
       assert(x.splice(n, ByteVector.empty) == x)
       assert(x.splice(n, y) == (x.take(n) ++ y ++ x.drop(n)))
     }
   }
 
-  test("patch") {
-    forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
-      val n = if (x.nonEmpty) (n0 % x.size).abs else 0
+  property("patch") {
+    for {
+      x <- genByteVector.forAll
+      y <- genByteVector.forAll
+      n <- Gen.long(Range.linear(0, x.size)).forAll
+    } yield {
       assert(x.patch(n, x.slice(n, n)) == x)
       assert(x.patch(n, y) == (x.take(n) ++ y ++ x.drop(n + y.size)))
     }
   }
 
-  test("short conversions") {
-    forAll { (n: Short) =>
+  property("short conversions") {
+    Gen.short(Range.linear(Short.MinValue, Short.MaxValue)).forAll.map { n =>
       assert(ByteVector.fromShort(n).toShort() == n)
       assert(
         ByteVector
@@ -428,8 +452,8 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("int conversions") {
-    forAll { (n: Int) =>
+  property("int conversions") {
+    Gen.int(Range.linear(Int.MinValue, Int.MaxValue)).forAll.map { n =>
       assert(ByteVector.fromInt(n).toInt() == n)
       assert(
         ByteVector
@@ -439,8 +463,8 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("long conversions") {
-    forAll { (n: Long) =>
+  property("long conversions") {
+    Gen.long(Range.linear(Long.MinValue, Long.MaxValue)).forAll.map { n =>
       assert(ByteVector.fromLong(n).toLong() == n)
       assert(
         ByteVector
@@ -450,20 +474,20 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("UUID conversions") {
-    // Valid conversions
-    forAll { (u: UUID) =>
-      assert(ByteVector.fromUUID(u).toUUID == u)
-    }
-    // "Invalid" conversions
-    val badlySizedByteVector: Gen[ByteVector] = byteVectors.suchThat(_.length != 16)
-    forAll(badlySizedByteVector) { badlySizedByteVector =>
-      assertThrows[IllegalArgumentException] { badlySizedByteVector.toUUID }
+  property("UUID conversions - valid conversions") {
+    genUUID.forAll.map(u => assert(ByteVector.fromUUID(u).toUUID == u))
+  }
+
+  property("UUID conversions - invalid conversions") {
+    val badlySizedByteVector: Gen[ByteVector] = genByteVector.filter(_.length != 16)
+    badlySizedByteVector.forAll.map { badlySizedByteVector =>
+      intercept[IllegalArgumentException] { badlySizedByteVector.toUUID }
+      ()
     }
   }
 
-  test("concat") {
-    forAll { (bvs: List[ByteVector]) =>
+  property("concat") {
+    Gen.list(genByteVector, Range.linear(0, 10)).forAll.map { bvs =>
       val c = ByteVector.concat(bvs)
       assert(c.size == bvs.map(_.size).foldLeft(0L)(_ + _))
       bvs.headOption.foreach(h => c.startsWith(h))
@@ -471,8 +495,8 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("copyToArray with offset/size") {
-    forAll { (b: ByteVector) =>
+  property("copyToArray with offset/size") {
+    genByteVector.forAll.map { b =>
       val size = b.size / 3
       val start = b.size / 4
       val offset = b.size / 5
@@ -480,19 +504,22 @@ class ByteVectorTest extends BitsSuite {
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
       assert(
-        xs === (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+        java.util.Arrays.equals(xs, (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
           startPlusSize.toInt
-        )).toArray
+        )).toArray)
       )
     }
   }
 
-  test("copyToBuffer") {
-    forAll { (b: ByteVector, bufferSize0: Int, initialPosition0: Int, direct: Boolean) =>
-      val bufferSize = (bufferSize0 % 1000000).abs
+  property("copyToBuffer") {
+    for {
+      b <- genByteVector.forAll
+      bufferSize <- Gen.int(Range.linear(0, 1000000)).forAll
+      initialPosition <- Gen.int(Range.linear(0, bufferSize)).forAll
+      direct <- Gen.boolean.forAll
+    } yield {
       val buffer =
         if (direct) ByteBuffer.allocateDirect(bufferSize) else ByteBuffer.allocate(bufferSize)
-      val initialPosition = if (bufferSize == 0) 0 else (initialPosition0 % bufferSize).abs
       buffer.position(initialPosition)
       val copied = b.copyToBuffer(buffer)
       buffer.flip()
@@ -501,24 +528,25 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("viewing ByteBuffer with non-zero positoin") {
-    forAll { (b: Array[Byte], position0: Int, sliceSize0: Int, direct: Boolean) =>
+  property("viewing ByteBuffer with non-zero position") {
+    for {
+      b <- genByteArray(100).forAll
+      position <- Gen.int(Range.linear(0, b.size)).forAll
+      sliceSize <- Gen.int(Range.linear(0, b.size - position)).forAll
+      direct <- Gen.boolean.forAll
+    } yield {
       val buffer = if (direct) ByteBuffer.allocateDirect(b.size) else ByteBuffer.allocate(b.size)
-      val position = if (b.size == 0) 0 else (position0 % b.size).abs
-      val remaining = b.size - position
-      val sliceSize = if (remaining == 0) 0 else (sliceSize0 % (b.size - position)).abs
-
       buffer.position(position).limit(position + sliceSize)
       val slice = buffer.slice()
       buffer.position(position).limit(position + sliceSize)
       assert(ByteVector.view(buffer) == ByteVector.view(slice))
-
       buffer.position(position)
+      ()
     }
   }
 
-  test("dropWhile") {
-    forAll { (x: ByteVector) =>
+  property("dropWhile") {
+    genByteVector.forAll.map { x =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, dropping), b) =>
           if (dropping) {
@@ -532,8 +560,8 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("takeWhile") {
-    forAll { (x: ByteVector) =>
+  property("takeWhile") {
+    genByteVector.forAll.map { x =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, taking), b) =>
           if (taking) {
@@ -571,8 +599,12 @@ class ByteVectorTest extends BitsSuite {
     assert(hex"001122334455".slice(-21, -4) == hex"")
   }
 
-  test("slice is consistent with array slice") {
-    forAll { (b: ByteVector, from: Int, until: Int) =>
+  property("slice is consistent with array slice") {
+    for {
+      b <- genByteVector.forAll
+      from <- Gen.int(Range.linear(0, Int.MaxValue)).forAll
+      until <- Gen.int(Range.linear(0, Int.MaxValue)).forAll
+    } yield {
       assert(b.slice(from.toLong, until.toLong) == ByteVector.view(b.toArray.slice(from, until)))
     }
   }

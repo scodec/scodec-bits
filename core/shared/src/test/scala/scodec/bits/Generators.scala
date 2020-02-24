@@ -1,7 +1,9 @@
 package scodec.bits
 
 import hedgehog._
+
 import java.nio.ByteBuffer
+import java.util.UUID
 
 object Generators {
 //   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
@@ -49,7 +51,7 @@ object Generators {
 
   def genByte: Gen[Byte] = Gen.byte(Range.constantFrom(0, Byte.MinValue, Byte.MaxValue))
 
-  private def genByteArray(maxSize: Int): Gen[Array[Byte]] = Gen.list(genByte, Range.linear(0, maxSize)).map(_.toArray)
+  def genByteArray(maxSize: Int): Gen[Array[Byte]] = Gen.list(genByte, Range.linear(0, maxSize)).map(_.toArray)
 
   def genByteVector: Gen[ByteVector] = Gen.choice1(
     genByteVectorArrayView(100),
@@ -83,4 +85,10 @@ object Generators {
 
   def genVeryLargeByteVectors: Gen[ByteVector] =
     genByte.map(b => ByteVector.fill(Int.MaxValue.toLong + 1)(b))
+
+  def genUUID: Gen[UUID] =
+    for {
+      upper <- Gen.long(Range.constantFrom(0, Long.MinValue, Long.MaxValue))
+      lower <- Gen.long(Range.constantFrom(0, Long.MinValue, Long.MaxValue))
+    } yield new UUID(upper, lower)
 }
