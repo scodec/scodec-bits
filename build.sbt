@@ -99,8 +99,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies ++= {
       if (isDotty.value)
         Seq(
-          "dev.travisbrown" %%% "scalatest" % "3.1.0-20200123-9982f0d-NIGHTLY",
-          "dev.travisbrown" %%% "scalacheck-1-14" % "3.1.0.1-20200123-9982f0d-NIGHTLY"
+          "dev.travisbrown" %%% "scalatest" % "3.1.0-20200201-c4c847f-NIGHTLY" % "test",
+          "dev.travisbrown" %%% "scalacheck-1-14" % "3.1.0.1-20200201-c4c847f-NIGHTLY" % "test"
         )
       else
         Seq(
@@ -138,6 +138,8 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         o == "-Ywarn-unused" || o == "-Xfatal-warnings"
       }
     },
+    publishArtifact in (Compile, packageDoc) := !isDotty.value,
+    publishArtifact in packageDoc := !isDotty.value,
     scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
     mimaPreviousArtifacts := {
       List("1.1.12").map { pv =>
