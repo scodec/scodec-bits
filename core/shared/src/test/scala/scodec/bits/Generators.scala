@@ -6,33 +6,21 @@ import java.nio.ByteBuffer
 import java.util.UUID
 
 object Generators {
-//   implicit val arbitraryBitVector: Arbitrary[BitVector] = Arbitrary {
-//     Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
-//   }
-//   val flatBytes = genBitVector(500, 7) // regular flat bit vectors
-//   val balancedTrees = genConcatBits(genBitVector(2000, 7)) // balanced trees of concatenations
-//   val splitVectors = genSplitBits(5000) // split bit vectors: b.take(m) ++ b.drop(m)
-//   val concatSplitVectors = genConcatBits(genSplitBits(5000)) // concatenated split bit vectors
 
-//   val chunk = Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors)
-//   val bitStreams = genBitStream(chunk, Gen.choose(0, 5)) // streams of chunks
-
-//   def genSplitBits(maxSize: Long) =
-//     for {
-//       n <- Gen.choose(0L, maxSize)
-//       b <- genBitVector(15, 7)
-//     } yield {
-//       val m = if (b.nonEmpty) (n % b.size).abs else 0
-//       b.take(m) ++ b.drop(m)
-//     }
-
-//   def genConcatBits(g: Gen[BitVector]) =
-//     g.map { b =>
-//       b.toIndexedSeq.foldLeft(BitVector.empty)((acc, high) => acc ++ BitVector.bit(high))
-//     }
-
-
-  def genBitVector: Gen[BitVector] = genSimpleBitVector()
+  def genBitVector: Gen[BitVector] = 
+    Gen.choice1(
+      genSimpleBitVector(500, 7),
+      genConcatBitVector(genSimpleBitVector(2000, 7)),
+      genSplitBitVector,
+      genConcatBitVector(genSplitBitVector),
+      genUnfoldedBitVector(Gen.choice1(
+        genSimpleBitVector(500, 7),
+        genConcatBitVector(genSimpleBitVector(2000, 7)),
+        genSplitBitVector,
+        genConcatBitVector(genSplitBitVector),
+      ), Range.linear(0, 5))
+    )
+  genSimpleBitVector()
 
   def genSimpleBitVector(maxBytes: Int = 1024, maxAdditionalBits: Int = 7): Gen[BitVector] =
     for {
@@ -42,12 +30,21 @@ object Generators {
       bytes <- genByteVectorArrayView((size + 7) / 8)
     } yield BitVector(bytes).take(size.toLong)
 
-  def genUnfoldedBitVector(g: Gen[BitVector], steps: Range[Int]): Gen[BitVector] =
+  private def genUnfoldedBitVector(g: Gen[BitVector], steps: Range[Int]): Gen[BitVector] =
     g.list(steps).map(chunks => BitVector.unfold(chunks)(s => s.headOption.map((_, s.tail))))
+
+  private def genConcatBitVector(g: Gen[BitVector]): Gen[BitVector] =
+    Gen.list(g, Range.linear(0, 10)).map(bs => bs.foldLeft(BitVector.empty)(_ ++ _))
+
+  private def genSplitBitVector: Gen[BitVector] =
+    for {
+      b <- genSimpleBitVector(15, 7)
+      n <- Gen.long(Range.linear(0, b.size))
+    } yield b.take(n) ++ b.drop(n)
 
   // very deeply right nested - to check for SOE
   val genHugeBitVectors: Gen[BitVector] =
-    // genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.constant(4500, 5000)) - TODO SOE
+    // genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.constant(4500, 5000)) - TODO SOE - https://github.com/hedgehogqa/scala-hedgehog/issues/47
     genUnfoldedBitVector(genSimpleBitVector(30, 7), Range.constant(450, 500))
 
   def genByte: Gen[Byte] = Gen.byte(Range.constantFrom(0, Byte.MinValue, Byte.MaxValue))
