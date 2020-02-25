@@ -29,6 +29,7 @@ lazy val commonSettings = Seq(
     "UTF-8",
     "-deprecation",
     "-feature",
+    "-language:implicitConversions",
     "-unchecked"
   ) ++
     (scalaBinaryVersion.value match {
@@ -96,27 +97,16 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
+    resolvers += "bintray-scala-hedgehog" at "https://dl.bintray.com/hedgehogqa/scala-hedgehog",
     libraryDependencies ++= List(
       "org.scalameta" %%% "munit" % "0.5.2" % "test",
-      "qa.hedgehog" %% "hedgehog-runner" % "7bd29241fababd9a3e954fd38083ed280fc9e4e8"),
-resolvers += "bintray-scala-hedgehog" at "https://dl.bintray.com/hedgehogqa/scala-hedgehog",
+      ("qa.hedgehog" %% "hedgehog-runner" % "7bd29241fababd9a3e954fd38083ed280fc9e4e8" % "test").withDottyCompat(scalaVersion.value)
+    ),
     testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= {
-      if (isDotty.value)
-        Seq(
-          "dev.travisbrown" %%% "scalatest" % "3.1.0-20200201-c4c847f-NIGHTLY" % "test",
-          "dev.travisbrown" %%% "scalacheck-1-14" % "3.1.0.1-20200201-c4c847f-NIGHTLY" % "test"
-        )
-      else
-        Seq(
-          "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-          "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
-          "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
-        )
+      if (isDotty.value) Nil
+      else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
     },
-    libraryDependencies ++= Seq(
-      ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value)
-    ),
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
