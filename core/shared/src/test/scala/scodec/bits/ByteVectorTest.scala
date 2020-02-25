@@ -47,7 +47,7 @@ class ByteVectorTest extends BitsSuite {
   property("foldLeft") {
     genByteVector.forAll.map(b => assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b))
   }
-  
+
   property("foldRight") {
     genByteVector.forAll.map(b => assert(b.foldRight(ByteVector.empty)(_ +: _) == b))
   }
@@ -504,9 +504,12 @@ class ByteVectorTest extends BitsSuite {
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
       assert(
-        java.util.Arrays.equals(xs, (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
-          startPlusSize.toInt
-        )).toArray)
+        java.util.Arrays.equals(
+          xs,
+          (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+            startPlusSize.toInt
+          )).toArray
+        )
       )
     }
   }

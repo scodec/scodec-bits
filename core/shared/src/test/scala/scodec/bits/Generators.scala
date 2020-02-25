@@ -7,18 +7,21 @@ import java.util.UUID
 
 object Generators {
 
-  def genBitVector: Gen[BitVector] = 
+  def genBitVector: Gen[BitVector] =
     Gen.choice1(
       genSimpleBitVector(500, 7),
       genConcatBitVector(genSimpleBitVector(2000, 7)),
       genSplitBitVector,
       genConcatBitVector(genSplitBitVector),
-      genUnfoldedBitVector(Gen.choice1(
-        genSimpleBitVector(500, 7),
-        genConcatBitVector(genSimpleBitVector(2000, 7)),
-        genSplitBitVector,
-        genConcatBitVector(genSplitBitVector),
-      ), Range.linear(0, 5))
+      genUnfoldedBitVector(
+        Gen.choice1(
+          genSimpleBitVector(500, 7),
+          genConcatBitVector(genSimpleBitVector(2000, 7)),
+          genSplitBitVector,
+          genConcatBitVector(genSplitBitVector)
+        ),
+        Range.linear(0, 5)
+      )
     )
   genSimpleBitVector()
 
@@ -49,7 +52,8 @@ object Generators {
 
   def genByte: Gen[Byte] = Gen.byte(Range.constantFrom(0, Byte.MinValue, Byte.MaxValue))
 
-  def genByteArray(maxSize: Int): Gen[Array[Byte]] = Gen.list(genByte, Range.linear(0, maxSize)).map(_.toArray)
+  def genByteArray(maxSize: Int): Gen[Array[Byte]] =
+    Gen.list(genByte, Range.linear(0, maxSize)).map(_.toArray)
 
   def genByteVector: Gen[ByteVector] = Gen.choice1(
     genByteVectorArrayView(100),

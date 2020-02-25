@@ -367,13 +367,17 @@ class BitVectorTest extends BitsSuite {
     assert(BitVector(0x00, 0x01).reverseByteOrder == BitVector(0x01, 0x00))
   }
 
-  property("reverseByteOrder (2) - double reversing should yield original if size is divisible by 8") {
+  property(
+    "reverseByteOrder (2) - double reversing should yield original if size is divisible by 8"
+  ) {
     genSimpleBitVector(500, 0).forAll.map { bv =>
       assert(bv.reverseByteOrder.reverseByteOrder == bv)
     }
   }
 
-  property("reverseByteOrder (3) - double reversing should yield original if size is divisible by 8") {
+  property(
+    "reverseByteOrder (3) - double reversing should yield original if size is divisible by 8"
+  ) {
     genBitVector.forAll.map { bv =>
       assert(bv.reverseByteOrder.invertReverseByteOrder == bv)
     }

@@ -34,6 +34,8 @@ class BitVectorJvmTest extends BitsSuite {
   }
 
   test("serialization") {
-    genBitVector.forAll.map { x => serializationShouldRoundtrip(x) }
+    genBitVector.forAll.map { x =>
+      serializationShouldRoundtrip(x)
+    }
   }
 }

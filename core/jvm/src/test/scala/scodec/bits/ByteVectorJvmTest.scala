@@ -107,6 +107,8 @@ class ByteVectorJvmTest extends BitsSuite {
   }
 
   property("serialization") {
-    genByteVector.forAll.map { x => serializationShouldRoundtrip(x) }
+    genByteVector.forAll.map { x =>
+      serializationShouldRoundtrip(x)
+    }
   }
 }

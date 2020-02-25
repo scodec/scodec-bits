@@ -98,10 +98,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    resolvers += "bintray-scala-hedgehog" at "https://dl.bintray.com/hedgehogqa/scala-hedgehog",
+    resolvers += "bintray-scala-hedgehog".at("https://dl.bintray.com/hedgehogqa/scala-hedgehog"),
     libraryDependencies ++= List(
       "org.scalameta" %%% "munit" % "0.5.2" % "test",
-      ("qa.hedgehog" %% "hedgehog-runner" % "7bd29241fababd9a3e954fd38083ed280fc9e4e8" % "test").withDottyCompat(scalaVersion.value)
+      ("qa.hedgehog" %% "hedgehog-runner" % "7bd29241fababd9a3e954fd38083ed280fc9e4e8" % "test")
+        .withDottyCompat(scalaVersion.value)
     ),
     testFrameworks += new TestFramework("munit.Framework"),
     libraryDependencies ++= {

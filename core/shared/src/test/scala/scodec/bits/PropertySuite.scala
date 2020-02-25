@@ -11,17 +11,35 @@ trait PropertySuite extends FunSuite {
   lazy val propertyConfig: PropertyConfig = PropertyConfig.default
   lazy val propertySeed: Long = System.currentTimeMillis()
 
-  def property(options: TestOptions, config: PropertyConfig = propertyConfig, seed: Long = propertySeed)(prop: PropertyT[Result])(implicit loc: Location): Unit =
+  def property(
+      options: TestOptions,
+      config: PropertyConfig = propertyConfig,
+      seed: Long = propertySeed
+  )(prop: PropertyT[Result])(implicit loc: Location): Unit =
     test(options)(check(prop, config, seed))
 
-  def check(prop: PropertyT[Result], config: PropertyConfig = propertyConfig, seed: Long = propertySeed)(implicit loc: Location): Unit = {
+  def check(
+      prop: PropertyT[Result],
+      config: PropertyConfig = propertyConfig,
+      seed: Long = propertySeed
+  )(implicit loc: Location): Unit = {
     val report = Property.check(config, prop, Seed.fromLong(seed))
     val coverage = Test.renderCoverage(report.coverage, report.tests)
     report.status match {
       case Failed(shrinks, log) =>
-        Assertions.fail(render(s"Falsified after ${report.tests.value} passed tests and ${shrinks.value} shrinks using seed $seed", log.map(Test.renderLog) ++ coverage))
+        Assertions.fail(
+          render(
+            s"Falsified after ${report.tests.value} passed tests and ${shrinks.value} shrinks using seed $seed",
+            log.map(Test.renderLog) ++ coverage
+          )
+        )
       case GaveUp =>
-        Assertions.fail(render(s"Gave up after ${report.tests.value} passed tests using seed value $seed. ${report.discards.value} were discarded", coverage))
+        Assertions.fail(
+          render(
+            s"Gave up after ${report.tests.value} passed tests using seed value $seed. ${report.discards.value} were discarded",
+            coverage
+          )
+        )
       case OK =>
         ()
     }
