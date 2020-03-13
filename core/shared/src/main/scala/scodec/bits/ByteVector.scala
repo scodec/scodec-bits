@@ -803,6 +803,62 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
+    * Converts the contents of this vector to a base 32 string.
+    *
+    * @group conversions
+    */
+  final def toBase32: String = toBase32(Bases.Alphabets.Base32)
+
+  /** Selects at most 8 bits from a byte array as a right aligned byte */
+  private final def bitsAtOffset(bytes: Array[Byte], bitIndex: Long, length: Int): Int = {
+    val i = (bitIndex / 8).toInt
+    if (i >= bytes.length) 0
+    else {
+      val off = (bitIndex - (i * 8)).toInt
+      val mask = ((1 << length) - 1) << (8 - length)
+      val half = (bytes(i) << off) & mask
+      val full =
+        if (off + length <= 8 || i + 1 >= bytes.length) half
+        else half | ((bytes(i + 1) & ((mask << (8 - off)) & 0xFF)) >>> (8 - off))
+      full >>> (8 - length)
+    }
+  }
+
+  /**
+    * Converts the contents of this vector to a base 32 string using the specified alphabet.
+    *
+    * @group conversions
+    */
+  final def toBase32(alphabet: Bases.Base32Alphabet): String = {
+    val bitsPerChar = 5
+    val bytesPerGroup = 5
+    val charsPerGroup = bytesPerGroup * 8 / bitsPerChar
+
+    val bytes = toArray
+    val bldr = CharBuffer.allocate((bytes.length + bytesPerGroup - 1) / bytesPerGroup * charsPerGroup)
+
+    {
+      var bidx: Long = 0
+      while ((bidx / 8) < bytes.length) {
+        val char = alphabet.toChar(bitsAtOffset(bytes, bidx, bitsPerChar))
+        bldr.append(char)
+        bidx += bitsPerChar
+      }
+    }
+
+    if (alphabet.pad != 0.toChar) {
+      val padLen = (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+      var i = 0
+      while (i < padLen) {
+        bldr.append(alphabet.pad)
+        i += 1
+      }
+    }
+
+    bldr.flip.toString
+  }
+
+  /**
     * Converts the contents of this vector to a base 58 string.
     *
     * @group conversions
@@ -1856,6 +1912,94 @@ object ByteVector extends ByteVectorPlatform {
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
   ): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
+
+  /**
+    * Constructs a `ByteVector` from a base 32 string or returns an error message if the string is not valid base 32.
+    * An empty input string results in an empty ByteVector.
+    * The string may contain whitespace characters and hyphens which are ignored.
+    * @group base
+    */
+  def fromBase32Descriptive(
+      str: String,
+      alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
+  ): Either[String, ByteVector] = {
+    val bitsPerChar = 5
+    val bytesPerGroup = 5
+    val charsPerGroup = bytesPerGroup * 8 / bitsPerChar
+
+    val Pad = alphabet.pad
+    var idx, bidx, buffer, padding = 0
+    val acc = ByteBuffer.allocate((str.length + charsPerGroup - 1) / charsPerGroup * bytesPerGroup)
+    while (idx < str.length) {
+      val c = str(idx)
+
+      if (Pad != 0.toChar && c == Pad) {
+        padding += 1
+      } else if (!alphabet.ignore(c)) {
+        if (padding > 0) return Left(
+          s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
+        )
+
+        val index =
+          try {
+            alphabet.toIndex(c)
+          } catch {
+            case _: IllegalArgumentException =>
+              return Left(s"Invalid base 32 character '$c' at index $idx")
+          }
+
+        buffer |= (index << (8 - bitsPerChar) >>> bidx) & 0xFF
+        bidx += bitsPerChar
+
+        if (bidx >= 8) {
+          bidx -= 8
+          acc.put(buffer.toByte)
+          buffer = (index << (8 - bidx)) & 0xFF
+        }
+      }
+
+      idx += 1
+    }
+
+    if (bidx >= bitsPerChar)
+      acc.put(buffer.toByte)
+
+    acc.flip()
+    val bytes = ByteVector.view(acc)
+
+    val expectedPadding = (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+    if (padding != 0 && padding != expectedPadding) return Left(
+      "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
+    )
+
+    Right(bytes)
+  }
+
+  /**
+    * Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 32.
+    * Details pertaining to base 64 decoding can be found in the comment for fromBase32Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
+  def fromBase32(
+      str: String,
+      alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
+  ): Option[ByteVector] = fromBase32Descriptive(str, alphabet).toOption
+
+  /**
+    * Constructs a `ByteVector` from a base 32 string or throws an IllegalArgumentException if the string is not valid base 32.
+    * Details pertaining to base 32 decoding can be found in the comment for fromBase32Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 32
+    * @group base
+    */
+  def fromValidBase32(
+      str: String,
+      alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
+  ): ByteVector =
+    fromBase32Descriptive(str, alphabet)
+      .fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
     * Constructs a `ByteVector` from a base 58 string or returns an error message if the string is not valid base 58.
