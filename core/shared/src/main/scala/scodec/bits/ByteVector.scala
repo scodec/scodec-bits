@@ -1977,7 +1977,7 @@ object ByteVector extends ByteVectorPlatform {
 
   /**
     * Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 32.
-    * Details pertaining to base 64 decoding can be found in the comment for fromBase32Descriptive.
+    * Details pertaining to base 32 decoding can be found in the comment for fromBase32Descriptive.
     * The string may contain whitespace characters which are ignored.
     * @group base
     */
