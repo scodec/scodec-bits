@@ -96,22 +96,14 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies ++= {
-      if (isDotty.value)
-        Seq(
-          "dev.travisbrown" %%% "scalatest" % "3.1.0-20200201-c4c847f-NIGHTLY" % "test",
-          "dev.travisbrown" %%% "scalacheck-1-14" % "3.1.0.1-20200201-c4c847f-NIGHTLY" % "test"
-        )
-      else
-        Seq(
-          "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-          "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
-          "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
-        )
-    },
     libraryDependencies ++= Seq(
-      ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value)
+        "org.scalatest" %%% "scalatest" % "3.1.1" % "test",
+        (if (isDotty.value) "dev.travisbrown" else "org.scalatestplus") %%% "scalacheck-1-14" % "3.1.1.1" % "test",
+        ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value)
     ),
+    libraryDependencies ++= {
+      if (isDotty.value) Nil else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
+    },
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
