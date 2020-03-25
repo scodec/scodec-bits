@@ -21,7 +21,9 @@ lazy val commonSettings = Seq(
     ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
   ),
   Compile / unmanagedSourceDirectories ++= {
-    if (isDotty.value) List(baseDirectory.value / "scala-3", baseDirectory.value / "../shared/scala-3") else Nil
+    if (isDotty.value)
+      List(baseDirectory.value / "scala-3", baseDirectory.value / "../shared/scala-3")
+    else Nil
   },
   unmanagedResources in Compile ++= {
     val base = baseDirectory.value
