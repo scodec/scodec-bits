@@ -14,7 +14,7 @@ import scala.quoted.matching._
 inline def (ctx: StringContext).hex (inline args: ByteVector*): ByteVector =
   ${hexInterpolator('ctx, 'args)}
 
-private def hexInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[ByteVector]])(given qctx: QuoteContext): Expr[ByteVector] = {
+private def hexInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[ByteVector]])(using qctx: QuoteContext): Expr[ByteVector] = {
   (strCtxExpr, argsExpr) match {
     case ('{ StringContext(${ExprSeq(parts)}: _*) }, ExprSeq(args)) =>
       val partValues: Seq[String] = parts.map { case p @ Const(part) =>
@@ -45,7 +45,7 @@ private def hexInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[
 inline def (ctx: StringContext).bin (inline args: BitVector*): BitVector =
   ${binInterpolator('ctx, 'args)}
 
-private def binInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[BitVector]])(given qctx: QuoteContext): Expr[BitVector] = {
+private def binInterpolator(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[BitVector]])(using qctx: QuoteContext): Expr[BitVector] = {
   (strCtxExpr, argsExpr) match {
     case ('{ StringContext(${ExprSeq(parts)}: _*) }, ExprSeq(args)) =>
       val partValues: Seq[String] = parts.map { case p @ Const(part) =>
