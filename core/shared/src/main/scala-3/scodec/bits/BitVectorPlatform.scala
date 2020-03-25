@@ -26,7 +26,7 @@ private[bits] object BitVectorFromDigits {
       ${digitsToBitVectorMacro('digits, 'radix)}
   }
 
-  private def digitsToBitVectorMacro(digits: Expr[String], radix: Expr[Int])(given qctx: QuoteContext): Expr[BitVector] =
+  private def digitsToBitVectorMacro(digits: Expr[String], radix: Expr[Int])(using qctx: QuoteContext): Expr[BitVector] =
     (digits, radix) match {
       case (Const(ds), Const(r)) =>
         if (r == 16) {
