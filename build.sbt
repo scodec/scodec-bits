@@ -22,7 +22,9 @@ lazy val commonSettings = Seq(
   ),
   Compile / unmanagedSourceDirectories ++= {
     if (isDotty.value)
-      List(baseDirectory.value / "scala-3", baseDirectory.value / "../shared/scala-3")
+      List(CrossType.Pure, CrossType.Full).flatMap(
+        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-3"))
+      )
     else Nil
   },
   unmanagedResources in Compile ++= {
