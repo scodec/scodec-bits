@@ -15,7 +15,7 @@ private[bits] object BitVectorFromDigits {
       digitsToBitVector(digits, radix)
   }
 
-  private def digitsToBitVector(digits: String, radix: Int): BitVector =
+  def digitsToBitVector(digits: String, radix: Int): BitVector =
     if (radix == 16) ByteVector.fromValidHex(digits.tail).bits
     else throw FromDigits.MalformedNumber(s"unsupported radix $radix")
 
@@ -25,17 +25,4 @@ private[bits] object BitVectorFromDigits {
     override inline def fromDigits(digits: String, radix: Int): BitVector =
       ${digitsToBitVectorMacro('digits, 'radix)}
   }
-
-  private def digitsToBitVectorMacro(digits: Expr[String], radix: Expr[Int])(using qctx: QuoteContext): Expr[BitVector] =
-    (digits, radix) match {
-      case (Const(ds), Const(r)) =>
-        if (r == 16) {
-          '{ByteVector.fromValidHex($digits.tail).bits}
-        } else {
-          qctx.error(s"unsupported radix $r", radix)
-          '{BitVector.empty}
-        }
-      case other =>
-        '{digitsToBitVector($digits, $radix)}
-    }
 }
