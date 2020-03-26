@@ -1,7 +1,5 @@
 package scodec.bits
 
-import scala.quoted._
-import scala.quoted.matching._
 import scala.util.FromDigits
 
 private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
