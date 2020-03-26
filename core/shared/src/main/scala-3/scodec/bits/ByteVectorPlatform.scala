@@ -5,24 +5,10 @@ import scala.quoted.matching._
 import scala.util.FromDigits
 
 private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
-  given as FromDigits.WithRadix[ByteVector] = ByteVectorFromDigits.Instance
-}
-
-private[bits] object ByteVectorFromDigits {
-
-  class Base extends FromDigits.WithRadix[ByteVector] {
-    def fromDigits(digits: String, radix: Int): ByteVector =
-      digitsToByteVector(digits, radix)
-  }
-
-  def digitsToByteVector(digits: String, radix: Int): ByteVector =
-    if (radix == 16) ByteVector.fromValidHex(digits.tail)
-    else throw FromDigits.MalformedNumber(s"unsupported radix $radix")
-
-  object Instance extends Base {
-    override inline def fromDigits(digits: String): ByteVector =
-      ${digitsToByteVectorMacro('digits, Expr(10))}
-    override inline def fromDigits(digits: String, radix: Int): ByteVector =
-      ${digitsToByteVectorMacro('digits, 'radix)}
+  given as FromDigits.WithRadix[ByteVector] {
+    def fromDigits(digits: String, radix: Int): ByteVector = radix match {
+      case 16 => ByteVector.fromValidHex(digits)
+      case _ => ByteVector.fromValidHex(new java.math.BigInteger(digits, radix).toString(16))
+    }
   }
 }
