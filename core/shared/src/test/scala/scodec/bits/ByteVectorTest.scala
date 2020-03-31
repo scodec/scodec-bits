@@ -299,8 +299,6 @@ class ByteVectorTest extends BitsSuite {
 
   test("hex string interpolator") {
     assert(hex"deadbeef" == deadbeef)
-    val x = ByteVector.fromValidHex("be")
-    assert(hex"dead${x}ef" == deadbeef)
     assertDoesNotCompile("""hex"deadgg"""")
   }
 

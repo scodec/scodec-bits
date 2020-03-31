@@ -396,8 +396,6 @@ class BitVectorTest extends BitsSuite {
 
   test("bin string interpolator") {
     assert(bin"0010" == BitVector(0x20).take(4))
-    val x = BitVector.fromValidBin("10")
-    assert(bin"00$x" == BitVector(0x20).take(4))
     assertDoesNotCompile("""bin"asdf"""")
   }
 
