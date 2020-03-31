@@ -34,9 +34,9 @@ object Literals {
 
   def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] =
     strCtxExpr match {
-      case '{ StringContext(${ExprSeq(parts)}: _*) } =>
+      case '{ StringContext(${Varargs(parts)}: _*) } =>
         validate(validator, parts, argsExpr)
-      case '{ new StringContext(${ExprSeq(parts)}: _*) } =>
+      case '{ new StringContext(${Varargs(parts)}: _*) } =>
         validate(validator, parts, argsExpr)
     }
 

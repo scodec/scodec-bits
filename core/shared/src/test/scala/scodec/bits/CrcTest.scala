@@ -1,11 +1,11 @@
 package scodec.bits
 
+import munit.ScalaCheckSuite
 import org.scalacheck.Arbitrary
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import org.scalacheck.Prop.forAll
 import Arbitraries._
 
-class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
+class CrcTest extends ScalaCheckSuite {
 
   implicit val arbBitVector: Arbitrary[BitVector] = Arbitrary(genBitVector())
 
@@ -24,7 +24,7 @@ class CrcTest extends AnyFunSuite with ScalaCheckPropertyChecks {
       BitVector.fromValidHex(finalXor)
     )
 
-  test("table based implementation should have the same result as bitwise implementation") {
+  property("table based implementation should have the same result as bitwise implementation") {
     val poly = hex"04C11DB7".bits
     val table32 = crc(poly, hex"ffffffff".bits, false, false, hex"00000000".bits)
     forAll { (bv: BitVector) =>

@@ -47,7 +47,7 @@ lazy val commonSettings = Seq(
         Nil
       case other => sys.error(s"Unsupported scala version: $other")
     }),
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+  testFrameworks += new TestFramework("munit.Framework"),
   releaseCrossBuild := true
 ) ++ publishingSettings
 
@@ -103,13 +103,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies ++= Seq(
-      "org.scalatest" %%% "scalatest" % "3.1.1" % "test",
-      ("org.scalatestplus" %%% "scalacheck-1-14" % "3.1.1.1" % "test")
-        .intransitive()
-        .withDottyCompat(scalaVersion.value),
-      ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value)
-    ),
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.1" % "test",
     libraryDependencies ++= {
       if (isDotty.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")

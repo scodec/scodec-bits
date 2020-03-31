@@ -2,6 +2,7 @@ package scodec.bits
 
 import java.security.MessageDigest
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Prop.forAll
 import Arbitraries._
 
 class BitVectorJvmTest extends BitsSuite {
@@ -9,7 +10,7 @@ class BitVectorJvmTest extends BitsSuite {
     Gen.oneOf(flatBytes, balancedTrees, splitVectors, concatSplitVectors, bitStreams)
   }
 
-  test("sizeGreater/LessThan concurrent") {
+  property("sizeGreater/LessThan concurrent") {
     forAll { (x: BitVector) =>
       val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
       def t = new Thread {
@@ -30,14 +31,14 @@ class BitVectorJvmTest extends BitsSuite {
     }
   }
 
-  test("digest") {
+  property("digest") {
     forAll { (x: BitVector) =>
       val sha256 = MessageDigest.getInstance("SHA-256")
       assert(x.digest("SHA-256") == BitVector(ByteVector(sha256.digest(x.toByteArray))))
     }
   }
 
-  test("serialization") {
+  property("serialization") {
     forAll { (x: BitVector) =>
       serializationShouldRoundtrip(x)
     }

@@ -1,10 +1,11 @@
 package scodec.bits
 
+import org.scalacheck.Prop.forAll
 import Arbitraries._
 
 class CrcJvmTest extends BitsSuite {
 
-  test("crc32 is consistent with java.util.zip.CRC32") {
+  property("crc32 is consistent with java.util.zip.CRC32") {
     forAll { (b: ByteVector) =>
       assert(crc.crc32(b.bits).bytes == {
         val c = new java.util.zip.CRC32
@@ -24,9 +25,9 @@ class CrcJvmTest extends BitsSuite {
     }
     val ratio = timeJava.toDouble / timeTableBased.toDouble
     if (ratio < 1.0)
-      info(f"java.util.zip.CRC32 is ${1.0 / ratio}%.2f times faster than scodec.bits.crc.crc32")
+      println(f"java.util.zip.CRC32 is ${1.0 / ratio}%.2f times faster than scodec.bits.crc.crc32")
     else
-      info(f"scodec.bits.crc.crc32 is $ratio%.2f times faster than java.util.zip.CRC32")
+      println(f"scodec.bits.crc.crc32 is $ratio%.2f times faster than java.util.zip.CRC32")
   }
 
   private def time[A](f: => A, iterations: Int = 100000): Long = {
