@@ -39,9 +39,7 @@ class BitVectorJvmTest extends BitsSuite {
   }
 
   property("serialization") {
-    forAll { (x: BitVector) =>
-      serializationShouldRoundtrip(x)
-    }
+    forAll((x: BitVector) => serializationShouldRoundtrip(x))
   }
 
 }

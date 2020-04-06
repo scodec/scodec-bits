@@ -17,14 +17,14 @@ object LiteralSyntaxMacros {
     }
 
     val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
-    val initialStringBuilder = reify { new StringBuilder().append(headPart.splice) }
+    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
     val stringBuilder = args.zip(partLiterals.tail).foldLeft(initialStringBuilder) {
       case (sb, (arg, part)) =>
         val partExpr = c.Expr[String](Literal(Constant(part)))
-        reify { sb.splice.append(arg.splice.toBin).append(partExpr.splice) }
+        reify(sb.splice.append(arg.splice.toBin).append(partExpr.splice))
     }
 
-    reify { BitVector.fromValidBin(stringBuilder.splice.toString) }
+    reify(BitVector.fromValidBin(stringBuilder.splice.toString))
   }
 
   def hexStringInterpolator(c: Context)(args: c.Expr[ByteVector]*): c.Expr[ByteVector] = {
@@ -42,14 +42,14 @@ object LiteralSyntaxMacros {
     }
 
     val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
-    val initialStringBuilder = reify { new StringBuilder().append(headPart.splice) }
+    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
     val stringBuilder = args.zip(partLiterals.tail).foldLeft(initialStringBuilder) {
       case (sb, (arg, part)) =>
         val partExpr = c.Expr[String](Literal(Constant(part)))
-        reify { sb.splice.append(arg.splice.toHex).append(partExpr.splice) }
+        reify(sb.splice.append(arg.splice.toHex).append(partExpr.splice))
     }
 
-    reify { ByteVector.fromValidHex(stringBuilder.splice.toString) }
+    reify(ByteVector.fromValidHex(stringBuilder.splice.toString))
   }
 
 }

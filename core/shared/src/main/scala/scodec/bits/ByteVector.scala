@@ -320,7 +320,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     */
   final def foldLeft[A](z: A)(f: (A, Byte) => A): A = {
     var acc = z
-    foreachS { new F1BU { def apply(b: Byte) = acc = f(acc, b) } }
+    foreachS(new F1BU { def apply(b: Byte) = acc = f(acc, b) })
     acc
   }
 
@@ -523,7 +523,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     * @group collection
     */
   final def mapI(f: Byte => Int): ByteVector =
-    map(f.andThen { _.toByte })
+    map(f.andThen(_.toByte))
 
   private[scodec] final def mapS(f: F1B): ByteVector =
     ByteVector.view(new At { def apply(i: Long) = f(ByteVector.this(i)) }, size)
@@ -606,9 +606,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     */
   final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
-    foreachV { v =>
-      v.copyToArray(xs, i); i += toIntSize(v.size)
-    }
+    foreachV { v => v.copyToArray(xs, i); i += toIntSize(v.size) }
   }
 
   /**
@@ -851,7 +849,8 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     var idx = 0
     val mod = bytes.length % 3
     while (idx < bytes.length - mod) {
-      var buffer = ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+      var buffer =
+        ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
       val fourth = buffer & 0x3f
       buffer = buffer >> 6
       val third = buffer & 0x3f
@@ -985,7 +984,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   final def decodeAscii: Either[CharacterCodingException, String] =
     decodeString(Charset.forName("US-ASCII"))
 
-  final def not: ByteVector = mapS { new F1B { def apply(b: Byte) = (~b).toByte } }
+  final def not: ByteVector = mapS(new F1B { def apply(b: Byte) = (~b).toByte })
 
   final def or(other: ByteVector): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b | b2).toByte })
@@ -1175,9 +1174,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     * @group conversions
     */
   final def digest(digest: MessageDigest): ByteVector = {
-    foreachV { v =>
-      digest.update(v.toArray)
-    }
+    foreachV(v => digest.update(v.toArray))
     ByteVector.view(digest.digest)
   }
 
@@ -1217,9 +1214,7 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   )(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
     try {
       aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view =>
-        ci.update(view.toArrayUnsafe); ()
-      }
+      foreachV { view => ci.update(view.toArrayUnsafe); () }
       Right(ByteVector.view(ci.doFinal()))
     } catch {
       case e: GeneralSecurityException => Left(e)
@@ -1888,7 +1883,9 @@ object ByteVector extends ByteVectorPlatform {
       }
       if (trim.isEmpty) Right(zeroes)
       else
-        Right(zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))) //drop because toByteArray sometimes prepends a zero
+        Right(
+          zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))
+        ) //drop because toByteArray sometimes prepends a zero
     } catch {
       case e: IllegalArgumentException => Left(e.getMessage)
     }

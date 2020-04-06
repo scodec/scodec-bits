@@ -81,9 +81,7 @@ object Arbitraries {
     } yield ByteVector.view(ByteBuffer.wrap(bytes.map(_.toByte).toArray))
 
   def genConcatBytes(g: Gen[ByteVector]) =
-    g.map { b =>
-      b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _)
-    }
+    g.map(b => b.toIndexedSeq.foldLeft(ByteVector.empty)(_ :+ _))
 
   val genVeryLargeByteVectors: Gen[ByteVector] = for {
     b <- Gen.choose(0, 255)

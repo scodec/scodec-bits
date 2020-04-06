@@ -29,9 +29,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("=== consistent with ==") {
-    forAll { (b: ByteVector, b2: ByteVector) =>
-      assert((b == b2) == (b === b2))
-    }
+    forAll((b: ByteVector, b2: ByteVector) => assert((b == b2) == (b === b2)))
   }
 
   test("compact is a no-op for already compact byte vectors") {
@@ -40,21 +38,15 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("reverse.reverse == id") {
-    forAll { (b: ByteVector) =>
-      assert(b.reverse.reverse == b)
-    }
+    forAll((b: ByteVector) => assert(b.reverse.reverse == b))
   }
 
   property("foldLeft") {
-    forAll { (b: ByteVector) =>
-      assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b)
-    }
+    forAll((b: ByteVector) => assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b))
   }
 
   property("foldRight") {
-    forAll { (b: ByteVector) =>
-      assert(b.foldRight(ByteVector.empty)(_ +: _) == b)
-    }
+    forAll((b: ByteVector) => assert(b.foldRight(ByteVector.empty)(_ +: _) == b))
   }
 
   test("insert (1)") {
@@ -77,9 +69,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("zipWith (2)") {
-    forAll { (b: ByteVector) =>
-      assert(b.zipWithI(b)(_ - _) == ByteVector.fill(b.size)(0))
-    }
+    forAll((b: ByteVector) => assert(b.zipWithI(b)(_ - _) == ByteVector.fill(b.size)(0)))
   }
 
   test("zipWith2 (1)") {
@@ -90,9 +80,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("zipWith2 (2)") {
-    forAll { (b: ByteVector) =>
-      assert(b.zipWithI2(b, b)(_ + _ - _) == b)
-    }
+    forAll((b: ByteVector) => assert(b.zipWithI2(b, b)(_ + _ - _) == b))
   }
 
   test("zipWith3 (1)") {
@@ -102,7 +90,7 @@ class ByteVectorTest extends BitsSuite {
     val b4 = ByteVector(3, 4, 5, 6)
     assert(b1.zipWithI3(b2, b3, b4)(_ + _ + _ + _) == ByteVector(6, 10, 14, 18))
   }
-  
+
   property("zipWith3 (2)") {
     forAll { (b: ByteVector) =>
       assert(b.zipWithI3(b, b, b)(_ + _ - _ - _) == ByteVector.fill(b.size)(0))
@@ -196,7 +184,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromValidBin") {
     assert(ByteVector.fromValidBin(deadbeef.toBin) == deadbeef)
-    intercept[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
+    intercept[IllegalArgumentException](ByteVector.fromValidBin("1101a000"))
   }
 
   test("toBase58") {
@@ -254,15 +242,13 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("base64 roundtrip") {
-    forAll { (b: ByteVector) =>
-      assert(ByteVector.fromValidBase64(b.toBase64) == b)
-    }
+    forAll((b: ByteVector) => assert(ByteVector.fromValidBase64(b.toBase64) == b))
   }
 
   test("base64 issue #45") {
     val base64 =
       "1MOyoQIABAAAAAAAAAAAAP//AAABAAAAPl6hVQvgDAA8AAAAPAAAAP///////wAhQwjkUwgARQAA\r\nKEPjAABAEd9lqf4Bgan+Af/a/hOIABSGXENNRAAAAAAbqf4B/wAAAAAAAD9eoVX52QYAPAAAADwA\r\nAAABgMIAAAAAH5AHOpIAJkJCAwAAAAAAkAAADlgwS+AAAAA3kAAADlgwS+CAAgIABgABAAQAc2Vy\r\nYwAAAAA="
-    assert(BitVector.fromBase64Descriptive(base64).map { _.size } == Right(1408))
+    assert(BitVector.fromBase64Descriptive(base64).map(_.size) == Right(1408))
   }
 
   property("buffer :+") {
@@ -452,16 +438,14 @@ class ByteVectorTest extends BitsSuite {
 
   property("UUID conversions (1)") {
     // Valid conversions
-    forAll { (u: UUID) =>
-      assert(ByteVector.fromUUID(u).toUUID == u)
-    }
+    forAll((u: UUID) => assert(ByteVector.fromUUID(u).toUUID == u))
   }
 
   property("UUID conversions (2)") {
     // "Invalid" conversions
     val badlySizedByteVector: Gen[ByteVector] = byteVectors.suchThat(_.length != 16)
     forAll(badlySizedByteVector) { badlySizedByteVector =>
-      intercept[IllegalArgumentException] { badlySizedByteVector.toUUID }
+      intercept[IllegalArgumentException](badlySizedByteVector.toUUID)
       ()
     }
   }
@@ -484,9 +468,12 @@ class ByteVectorTest extends BitsSuite {
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
       assert(
-        Arrays.equals(xs, (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
-          startPlusSize.toInt
-        )).toArray)
+        Arrays.equals(
+          xs,
+          (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+            startPlusSize.toInt
+          )).toArray
+        )
       )
     }
   }

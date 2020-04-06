@@ -1237,7 +1237,7 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
       opmode: Int,
       aparams: Option[AlgorithmParameters] = None
   )(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
-    bytes.cipher(ci, key, opmode, aparams)(sr).map { _.bits }
+    bytes.cipher(ci, key, opmode, aparams)(sr).map(_.bits)
 
   /**
     * Pretty print this `BitVector`.
@@ -1600,7 +1600,7 @@ object BitVector extends BitVectorPlatform {
       str: String,
       alphabet: Bases.Alphabet = Bases.Alphabets.Base58
   ): Either[String, BitVector] =
-    ByteVector.fromBase58Descriptive(str, alphabet).map { _.toBitVector }
+    ByteVector.fromBase58Descriptive(str, alphabet).map(_.toBitVector)
 
   /**
     * Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid base 58.
@@ -1635,7 +1635,7 @@ object BitVector extends BitVectorPlatform {
       str: String,
       alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
   ): Either[String, BitVector] =
-    ByteVector.fromBase64Descriptive(str, alphabet).map { _.toBitVector }
+    ByteVector.fromBase64Descriptive(str, alphabet).map(_.toBitVector)
 
   /**
     * Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
@@ -1671,7 +1671,7 @@ object BitVector extends BitVectorPlatform {
   def encodeString(
       str: String
   )(implicit charset: Charset): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeString(str)(charset).map { _.bits }
+    ByteVector.encodeString(str)(charset).map(_.bits)
 
   /**
     * Encodes the specified string to a `BitVector` using the UTF-8 charset.
@@ -1679,7 +1679,7 @@ object BitVector extends BitVectorPlatform {
     * @group constructors
     */
   def encodeUtf8(str: String): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeUtf8(str).map { _.bits }
+    ByteVector.encodeUtf8(str).map(_.bits)
 
   /**
     * Encodes the specified string to a `BitVector` using the US-ASCII charset.
@@ -1687,7 +1687,7 @@ object BitVector extends BitVectorPlatform {
     * @group constructors
     */
   def encodeAscii(str: String): Either[CharacterCodingException, BitVector] =
-    ByteVector.encodeAscii(str).map { _.bits }
+    ByteVector.encodeAscii(str).map(_.bits)
 
   /**
     * Concatenates all the given `BitVector`s into a single instance.
@@ -1714,7 +1714,7 @@ object BitVector extends BitVectorPlatform {
     Suspend { () =>
       f(s)
         .map { case (h, t) => Append(h, unfold(t)(f)) }
-        .getOrElse { BitVector.empty }
+        .getOrElse(BitVector.empty)
     }
 
   /**
@@ -1905,7 +1905,8 @@ object BitVector extends BitVectorPlatform {
             shiftedByWholeBytes.zipWithI(shiftedByWholeBytes.drop(1) :+ (0: Byte)) {
               case (a, b) =>
                 val hi = (a << bitsToShiftEachByte)
-                val low = (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
+                val low =
+                  (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
                 hi | low
             }
           }
@@ -1925,7 +1926,8 @@ object BitVector extends BitVectorPlatform {
     def getByte(n: Long): Byte =
       if (n < left.size / 8) left.getByte(n)
       else if (left.size % 8 == 0 && n > left.size / 8) right.getByte(n - left.size / 8)
-      else drop(n * 8).take(8).align.getByte(0) // fall back to inefficient impl (todo: improve this)
+      else
+        drop(n * 8).take(8).align.getByte(0) // fall back to inefficient impl (todo: improve this)
     def update(n: Long, high: Boolean): BitVector =
       if (n < left.size) Append(left.update(n, high), right)
       else Append(left, right.update(n - left.size, high))
@@ -2388,7 +2390,7 @@ object BitVector extends BitVectorPlatform {
     def fixup(stack: List[(A, Long)]): List[(A, Long)] = stack match {
       // h actually appeared first in `v`, followed by `h2`, preserve this order
       case (h2, n) :: (h, m) :: t if n > m / 2 =>
-        fixup { (f(h, h2), m + n) :: t }
+        fixup((f(h, h2), m + n) :: t)
       case _ => stack
     }
     v.foldLeft(List[(A, Long)]())((stack, a) => fixup((a -> size(a)) :: stack))

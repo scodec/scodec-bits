@@ -15,7 +15,7 @@ class ByteVectorJvmTest extends BitsSuite {
     super.beforeAll()
     pool = java.util.concurrent.Executors.newFixedThreadPool(4)
   }
-  
+
   override def afterAll() = {
     pool.shutdownNow()
     super.afterAll()
@@ -97,9 +97,7 @@ class ByteVectorJvmTest extends BitsSuite {
   }
 
   property("gzip (1)") {
-    forAll { (x: ByteVector) =>
-      assert(x.deflate().inflate() == Right(x))
-    }
+    forAll((x: ByteVector) => assert(x.deflate().inflate() == Right(x)))
   }
 
   property("gzip (2)") {
@@ -113,8 +111,6 @@ class ByteVectorJvmTest extends BitsSuite {
   }
 
   property("serialization") {
-    forAll { (x: ByteVector) =>
-      serializationShouldRoundtrip(x)
-    }
+    forAll((x: ByteVector) => serializationShouldRoundtrip(x))
   }
 }

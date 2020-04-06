@@ -24,9 +24,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("=== consistent with ==") {
-    forAll { (b: BitVector, b2: BitVector) =>
-      assert((b == b2) == (b === b2))
-    }
+    forAll((b: BitVector, b2: BitVector) => assert((b == b2) == (b === b2)))
   }
 
   test("compact is a no-op for already compact bit vectors") {
@@ -45,15 +43,11 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("hashCode/take/drop stack safety") {
-    forAll(hugeBitStreams) { b =>
-      assert(b.hashCode == b.hashCode)
-    }
+    forAll(hugeBitStreams)(b => assert(b.hashCode == b.hashCode))
   }
 
   property("size stack safety") {
-    forAll(hugeBitStreams) { b =>
-      assert(b.size == b.size)
-    }
+    forAll(hugeBitStreams)(b => assert(b.size == b.size))
   }
 
   test("acquire stack safety for lazy BitVector") {
@@ -61,9 +55,8 @@ class BitVectorTest extends BitsSuite {
     assert(nats.acquire(100000).isRight == true)
   }
 
-  val bitVectorWithTakeIndex = Arbitrary.arbitrary[BitVector].flatMap { bits =>
-    Gen.choose(0L, bits.size + 1).map((bits, _))
-  }
+  val bitVectorWithTakeIndex =
+    Arbitrary.arbitrary[BitVector].flatMap(bits => Gen.choose(0L, bits.size + 1).map((bits, _)))
 
   property("acquire/take consistency") {
     def check(bits: BitVector, n: Long): Unit = {
@@ -259,7 +252,7 @@ class BitVectorTest extends BitsSuite {
   property("b.take(n).drop(n) == b (1)") {
     forAll(Arbitrary.arbitrary[List[Boolean]], Gen.choose[Int](0, 10000), Gen.choose[Int](0, 10000)) {
       (xs: List[Boolean], n0: Int, m0: Int) =>
-        if(xs.nonEmpty) {
+        if (xs.nonEmpty) {
           val n = n0.abs % xs.size
           val m = m0.abs % xs.size
           assert(xs.drop(m).take(n) == xs.take(m + n).drop(m))
@@ -355,9 +348,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("reverse (2)") {
-    forAll { (bv: BitVector) =>
-      assert(bv.reverse.reverse == bv)
-    }
+    forAll((bv: BitVector) => assert(bv.reverse.reverse == bv))
   }
 
   test("reverseByteOrder (1)") {
@@ -372,9 +363,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("reverseByteOrder (3)") {
-    forAll { (bv: BitVector) =>
-      assert(bv.reverseByteOrder.invertReverseByteOrder == bv)
-    }
+    forAll((bv: BitVector) => assert(bv.reverseByteOrder.invertReverseByteOrder == bv))
   }
 
   test("toHex (1)") {
@@ -407,7 +396,7 @@ class BitVectorTest extends BitsSuite {
 
   test("fromValidHex") {
     assert(BitVector.fromValidHex("0x012") == BitVector(0x01, 0x20).take(12))
-    intercept[IllegalArgumentException] { BitVector.fromValidHex("0x01gg") }
+    intercept[IllegalArgumentException](BitVector.fromValidHex("0x01gg"))
   }
 
   test("toBin (1)") {
@@ -416,15 +405,11 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("toBin (2)") {
-    forAll { (bv: BitVector) =>
-      assert(bv.toBin == bv.toByteVector.toBin.take(bv.size.toInt))
-    }
+    forAll((bv: BitVector) => assert(bv.toBin == bv.toByteVector.toBin.take(bv.size.toInt)))
   }
 
   property("fromBinDescriptive (1)") {
-    forAll { (bv: BitVector) =>
-      assert(BitVector.fromBinDescriptive(bv.toBin) == Right(bv))
-    }
+    forAll((bv: BitVector) => assert(BitVector.fromBinDescriptive(bv.toBin) == Right(bv)))
   }
 
   test("fromBinDescriptive (2)") {
@@ -433,13 +418,11 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("fromValidBin (1)") {
-    forAll { (bv: BitVector) =>
-      assert(BitVector.fromValidBin(bv.toBin) == bv)
-    }
+    forAll((bv: BitVector) => assert(BitVector.fromValidBin(bv.toBin) == bv))
   }
 
   test("fromValidBin (2)") {
-    intercept[IllegalArgumentException] { BitVector.fromValidBin("0x0102") }
+    intercept[IllegalArgumentException](BitVector.fromValidBin("0x0102"))
   }
 
   test("bin string interpolator") {
@@ -463,9 +446,7 @@ class BitVectorTest extends BitsSuite {
 
   property("population count") {
     forAll { (bv: BitVector) =>
-      val cnt = bv.toIndexedSeq.foldLeft(0) { (acc, b) =>
-        if (b) acc + 1 else acc
-      }
+      val cnt = bv.toIndexedSeq.foldLeft(0)((acc, b) => if (b) acc + 1 else acc)
       assert(bv.populationCount == cnt)
     }
   }
@@ -643,16 +624,14 @@ class BitVectorTest extends BitsSuite {
 
   property("UUID conversions (1)") {
     // Valid conversions
-    forAll { (u: UUID) =>
-      assert(BitVector.fromUUID(u).toUUID == u)
-    }
+    forAll((u: UUID) => assert(BitVector.fromUUID(u).toUUID == u))
   }
 
   property("UUID conversions (2)") {
     // "Invalid" conversions
     val badlySizedBitVector: Gen[BitVector] = arbitraryBitVector.arbitrary.suchThat(_.length != 128)
     forAll(badlySizedBitVector) { badlySizedBitVector =>
-      intercept[IllegalArgumentException] { badlySizedBitVector.toUUID }
+      intercept[IllegalArgumentException](badlySizedBitVector.toUUID)
       ()
     }
   }
@@ -669,9 +648,7 @@ class BitVectorTest extends BitsSuite {
       // checks for consistency:
       assert(buffered == unbuffered)
       // get
-      (0L until unbuffered.size).foreach { i =>
-        assert(buffered(i) == unbuffered(i))
-      }
+      (0L until unbuffered.size).foreach(i => assert(buffered(i) == unbuffered(i)))
       // update
       val i = delta.min(unbuffered.size - 1).max(0)
       if (buffered.nonEmpty)

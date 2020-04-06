@@ -61,17 +61,17 @@ lazy val publishingSettings = Seq(
   },
   publishMavenStyle := true,
   publishArtifact in Test := false,
-  pomIncludeRepository := { x =>
-    false
-  },
+  pomIncludeRepository := { x => false },
   pomExtra := (
     <url>http://github.com/scodec/scodec-bits</url>
     <developers>
-      {for ((username, name) <- contributors) yield <developer>
+      {
+      for ((username, name) <- contributors) yield <developer>
         <id>{username}</id>
         <name>{name}</name>
         <url>http://github.com/{username}</url>
-      </developer>}
+      </developer>
+    }
     </developers>
   ),
   pomPostProcess := { (node) =>
@@ -81,9 +81,7 @@ lazy val publishingSettings = Seq(
       override def transform(n: Node) =
         if (f(n)) NodeSeq.Empty else n
     }
-    val stripTestScope = stripIf { n =>
-      n.label == "dependency" && (n \ "scope").text == "test"
-    }
+    val stripTestScope = stripIf(n => n.label == "dependency" && (n \ "scope").text == "test")
     new RuleTransformer(stripTestScope).transform(node)(0)
   }
 )
@@ -130,9 +128,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         )
     },
     scalacOptions in (Compile, console) ~= {
-      _.filterNot { o =>
-        o == "-Ywarn-unused" || o == "-Xfatal-warnings"
-      }
+      _.filterNot(o => o == "-Ywarn-unused" || o == "-Xfatal-warnings")
     },
     publishArtifact in (Compile, packageDoc) := !isDotty.value,
     publishArtifact in packageDoc := !isDotty.value,

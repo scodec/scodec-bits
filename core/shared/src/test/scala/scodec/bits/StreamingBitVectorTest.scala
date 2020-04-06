@@ -2,7 +2,8 @@ package scodec.bits
 
 object StreamingBitVectorTest extends App {
 
-  println { """
+  println {
+    """
   |Simple integration test for streaming, lazy-I/O-backed `BitVector`.
   |When viewing output, we are looking for two things:
   |
@@ -13,7 +14,8 @@ object StreamingBitVectorTest extends App {
   |   file size. That is, the garbage collector should be able to
   |   reclaim previous chunks when the stream is traversed in a linear
   |   fashion. Try running with -Xmx100m to verify this.
-  """.stripMargin }
+  """.stripMargin
+  }
 
   def time[A](label: String, mb: Double)(a: => A): A = {
     val start = System.currentTimeMillis

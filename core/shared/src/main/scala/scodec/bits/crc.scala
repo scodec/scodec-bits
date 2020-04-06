@@ -9,15 +9,11 @@ object crc {
 
   /** 32-bit CRC using poly 0x04c11db7, initial 0xffffffff, reflected input/output, and final xor 0xffffffff. */
   lazy val crc32: BitVector => BitVector =
-    int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen { i =>
-      BitVector.fromInt(i)
-    }
+    int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
   /** 32-bit CRC using poly 0x1edc6f41, initial 0xffffffff, reflected input/output, and final xor 0xffffffff. */
   lazy val crc32c: BitVector => BitVector =
-    int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen { i =>
-      BitVector.fromInt(i)
-    }
+    int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
   /**
     * Constructs a table-based CRC function using the specified polynomial.
@@ -41,8 +37,7 @@ object crc {
 
     if (poly.size == 32L) {
       int32(poly.toInt(), initial.toInt(), reflectInput, reflectOutput, finalXor.toInt()).andThen {
-        i =>
-          BitVector.fromInt(i)
+        i => BitVector.fromInt(i)
       }
     } else {
       vectorTable(poly, initial, reflectInput, reflectOutput, finalXor)
