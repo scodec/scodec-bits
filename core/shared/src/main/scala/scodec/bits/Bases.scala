@@ -96,7 +96,7 @@ object Bases {
     }
 
     private def charIndicesLookupArray(indicesMap: Map[Char, Int]): (Int, Array[Int]) = {
-      val indicesMin: Int = indicesMap.keys.min
+      val indicesMin: Int = indicesMap.keys.min.toInt
       val indices: Array[Int] = Array.tabulate[Int](indicesMap.keys.max - indicesMin + 1) { i =>
         indicesMap.getOrElse((i + indicesMin).toChar, -1)
       }
@@ -107,10 +107,8 @@ object Bases {
     object Base32 extends Base32Alphabet {
       private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray {
-        val map = Map.from[Char, Int](Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex)
-        map ++ Map(
-          '0' -> map('O')
-        )
+        val map = (Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex).toMap
+        map ++ Map('0' -> map('O'))
       }
       val pad = '='
       def toChar(i: Int) = Chars(i)
@@ -128,7 +126,7 @@ object Bases {
       private val Chars: Array[Char] =
         (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'Z')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray {
-        val map = Map.from[Char, Int](Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex)
+        val map = (Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex).toMap
         map ++ Map(
           'O' -> map('0'),
           'o' -> map('0'),

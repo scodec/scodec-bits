@@ -8,4 +8,3 @@ import scala.language.experimental.macros
   * @see [[BitVector]] and [[ByteVector]]
   */
 package object bits
-
