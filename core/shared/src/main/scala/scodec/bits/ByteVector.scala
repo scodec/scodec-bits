@@ -833,7 +833,8 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     val charsPerGroup = bytesPerGroup * 8 / bitsPerChar
 
     val bytes = toArray
-    val bldr = CharBuffer.allocate((bytes.length + bytesPerGroup - 1) / bytesPerGroup * charsPerGroup)
+    val bldr =
+      CharBuffer.allocate((bytes.length + bytesPerGroup - 1) / bytesPerGroup * charsPerGroup)
 
     {
       var bidx: Long = 0
@@ -845,7 +846,8 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
     }
 
     if (alphabet.pad != 0.toChar) {
-      val padLen = (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+      val padLen =
+        (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
       var i = 0
       while (i < padLen) {
         bldr.append(alphabet.pad)
@@ -1931,9 +1933,10 @@ object ByteVector extends ByteVectorPlatform {
       if (Pad != 0.toChar && c == Pad) {
         padding += 1
       } else if (!alphabet.ignore(c)) {
-        if (padding > 0) return Left(
-          s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
-        )
+        if (padding > 0)
+          return Left(
+            s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
+          )
 
         val index =
           try {
@@ -1962,10 +1965,12 @@ object ByteVector extends ByteVectorPlatform {
     acc.flip()
     val bytes = ByteVector.view(acc)
 
-    val expectedPadding = (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
-    if (padding != 0 && padding != expectedPadding) return Left(
-      "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
-    )
+    val expectedPadding =
+      (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+    if (padding != 0 && padding != expectedPadding)
+      return Left(
+        "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
+      )
 
     Right(bytes)
   }

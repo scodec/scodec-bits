@@ -116,7 +116,8 @@ object Bases {
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = {
         val lookupIndex = c - indicesMin
-        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0) indices(lookupIndex)
+        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0)
+          indices(lookupIndex)
         else throw new IllegalArgumentException
       }
       def ignore(c: Char) = c == '-' || c.isWhitespace
@@ -124,7 +125,8 @@ object Bases {
 
     /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]]. Whitespace and hyphen is ignored. */
     object Base32Crockford extends Base32Alphabet {
-      private val Chars: Array[Char] = (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'Z')).toArray
+      private val Chars: Array[Char] =
+        (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'Z')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray {
         val map = Map.from[Char, Int](Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex)
         map ++ Map(
@@ -140,7 +142,8 @@ object Bases {
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = {
         val lookupIndex = c - indicesMin
-        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0) indices(lookupIndex)
+        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0)
+          indices(lookupIndex)
         else throw new IllegalArgumentException
       }
       def ignore(c: Char) = c == '-' || c.isWhitespace
@@ -148,9 +151,9 @@ object Bases {
 
     /** Base 58 alphabet as defined by [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses the same order. */
     object Base58 extends Alphabet {
-      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z')).filterNot(c =>
-        List('O', 'I', 'l').contains(c)
-      ).toArray
+      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z'))
+        .filterNot(c => List('O', 'I', 'l').contains(c))
+        .toArray
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = c match {
         case c if c >= '1' && c <= '9' => c - '1'
