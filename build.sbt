@@ -179,7 +179,9 @@ lazy val coreJVM = core.jvm.settings(
   OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package")
 )
 
-lazy val coreJS = core.js
+lazy val coreJS = core.js.settings(
+  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+)
 
 lazy val benchmark: Project = project
   .in(file("benchmark"))
