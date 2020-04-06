@@ -2,14 +2,15 @@ package scodec.bits
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.UUID
+import java.util.{Arrays, UUID}
 
 import Arbitraries._
 import org.scalacheck._
+import Prop.forAll
 
 class ByteVectorTest extends BitsSuite {
 
-  test("hashCode/equals") {
+  property("hashCode/equals") {
     forAll(bytesWithIndex) {
       case (b, m) =>
         assert((b.take(m) ++ b.drop(m)) == b)
@@ -27,7 +28,7 @@ class ByteVectorTest extends BitsSuite {
     assert((x === y) == false)
   }
 
-  test("=== consistent with ==") {
+  property("=== consistent with ==") {
     forAll { (b: ByteVector, b2: ByteVector) =>
       assert((b == b2) == (b === b2))
     }
@@ -38,87 +39,105 @@ class ByteVectorTest extends BitsSuite {
     assert((b.compact eq b.compact) == true)
   }
 
-  test("reverse.reverse == id") {
+  property("reverse.reverse == id") {
     forAll { (b: ByteVector) =>
       assert(b.reverse.reverse == b)
     }
   }
 
-  test("foldRight/left") {
+  property("foldLeft") {
     forAll { (b: ByteVector) =>
       assert(b.foldLeft(ByteVector.empty)(_ :+ _) == b)
     }
+  }
+
+  property("foldRight") {
     forAll { (b: ByteVector) =>
       assert(b.foldRight(ByteVector.empty)(_ +: _) == b)
     }
   }
 
-  test("insert") {
+  test("insert (1)") {
     val b = ByteVector.empty
     assert(b.insert(0, 1) == ByteVector(1))
     assert(ByteVector(1, 2, 3, 4).insert(0, 0) == ByteVector(0, 1, 2, 3, 4))
     assert(ByteVector(1, 2, 3, 4).insert(1, 0) == ByteVector(1, 0, 2, 3, 4))
+  }
+
+  property("insert (2)") {
     forAll { (b: ByteVector) =>
       assert(b.foldLeft(ByteVector.empty)((acc, b) => acc.insert(acc.size, b)) == b)
     }
   }
 
-  test("zipWith") {
+  test("zipWith (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     assert(b1.zipWithI(b2)(_ + _) == ByteVector(1, 3, 5, 7))
+  }
+
+  property("zipWith (2)") {
     forAll { (b: ByteVector) =>
       assert(b.zipWithI(b)(_ - _) == ByteVector.fill(b.size)(0))
     }
   }
 
-  test("zipWith2") {
+  test("zipWith2 (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     val b3 = ByteVector(2, 3, 4, 5)
     assert(b1.zipWithI2(b2, b3)(_ + _ + _) == ByteVector(3, 6, 9, 12))
+  }
+
+  property("zipWith2 (2)") {
     forAll { (b: ByteVector) =>
       assert(b.zipWithI2(b, b)(_ + _ - _) == b)
     }
   }
 
-  test("zipWith3") {
+  test("zipWith3 (1)") {
     val b1 = ByteVector(0, 1, 2, 3)
     val b2 = ByteVector(1, 2, 3, 4)
     val b3 = ByteVector(2, 3, 4, 5)
     val b4 = ByteVector(3, 4, 5, 6)
     assert(b1.zipWithI3(b2, b3, b4)(_ + _ + _ + _) == ByteVector(6, 10, 14, 18))
+  }
+  
+  property("zipWith3 (2)") {
     forAll { (b: ByteVector) =>
       assert(b.zipWithI3(b, b, b)(_ + _ - _ - _) == ByteVector.fill(b.size)(0))
     }
   }
 
-  test("consistent with Array[Byte] implementations") {
+  property("consistent with Array[Byte] implementations (1)") {
     forAll(bytesWithIndex) {
       case (b, ind) =>
         val ba = b.toArray
-        assert(b.take(ind).toArray === ba.take(ind.toInt))
-        assert(b.drop(ind).toArray === ba.drop(ind.toInt))
+        assert(Arrays.equals(b.take(ind).toArray, ba.take(ind.toInt)))
+        assert(Arrays.equals(b.drop(ind).toArray, ba.drop(ind.toInt)))
         assert(b.lift(ind) == ba.lift(ind.toInt))
-        assert(b.takeRight(ind).toArray === ba.takeRight(ind.toInt))
-        assert(b.dropRight(ind).toArray === ba.dropRight(ind.toInt))
-        assert(b.reverse.toArray === ba.reverse)
-        assert(b.partialCompact(ind).toArray === ba)
+        assert(Arrays.equals(b.takeRight(ind).toArray, ba.takeRight(ind.toInt)))
+        assert(Arrays.equals(b.dropRight(ind).toArray, ba.dropRight(ind.toInt)))
+        assert(Arrays.equals(b.reverse.toArray, ba.reverse))
+        assert(Arrays.equals(b.partialCompact(ind).toArray, ba))
         assert(b.lastOption == ba.lastOption)
         assert(b.nonEmpty == ba.nonEmpty)
         if (b.nonEmpty) {
           assert(b.last == ba.last)
-          assert(b.init.toArray === ba.init)
+          assert(Arrays.equals(b.init.toArray, ba.init))
         }
         if (ind < b.size) {
           val actual = b.update(ind, 9).toArray
           val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
-          assert(actual === correct)
+          assert(Arrays.equals(actual, correct))
         }
 
     }
+  }
+
+  property("consistent with Array[Byte] implementations (2)") {
     forAll { (b1: ByteVector, b2: ByteVector) =>
-      assert((b1 ++ b2).toArray === (b1.toArray ++ b2.toArray))
+      assert(Arrays.equals((b1 ++ b2).toArray, (b1.toArray ++ b2.toArray)))
     }
   }
 
@@ -177,7 +196,7 @@ class ByteVectorTest extends BitsSuite {
 
   test("fromValidBin") {
     assert(ByteVector.fromValidBin(deadbeef.toBin) == deadbeef)
-    assertThrows[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
+    intercept[IllegalArgumentException] { ByteVector.fromValidBin("1101a000") }
   }
 
   test("toBase58") {
@@ -234,7 +253,7 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromBase58("3CMNFxN1oHBc4R1EpboAL5yzHGgE611Xol").isEmpty)
   }
 
-  test("base64 roundtrip") {
+  property("base64 roundtrip") {
     forAll { (b: ByteVector) =>
       assert(ByteVector.fromValidBase64(b.toBase64) == b)
     }
@@ -246,7 +265,7 @@ class ByteVectorTest extends BitsSuite {
     assert(BitVector.fromBase64Descriptive(base64).map { _.size } == Right(1408))
   }
 
-  test("buffer :+") {
+  property("buffer :+") {
     forAll { (b: ByteVector, bs: List[ByteVector], n: Int) =>
       val unbuf = bs.foldLeft(b)(_ ++ _)
       val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))((acc, a) => a.foldLeft(acc)(_ :+ _))
@@ -254,7 +273,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("buffer ++/take/drop") {
+  property("buffer ++/take/drop") {
     forAll { (b: ByteVector, bs: List[ByteVector], n: Int) =>
       val unbuf = bs.foldLeft(b)(_ ++ _)
       val buf = bs.foldLeft(b.bufferBy((n % 50).max(0) + 1))(_ ++ _)
@@ -265,7 +284,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("buffer rebuffering") {
+  property("buffer rebuffering") {
     forAll { (b1: ByteVector, b2: ByteVector, b3: ByteVector, n: Int) =>
       val chunkSize = (n % 50).max(0) + 1
       val b1b = b1.bufferBy(chunkSize)
@@ -288,7 +307,7 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector(0xaa, 0xaa, 0xaa) >>> 1 == ByteVector(0x55, 0x55, 0x55))
   }
 
-  test("rotations") {
+  property("rotations") {
     forAll { (b: ByteVector, n: Long) =>
       assert(b.rotateLeft(b.size * 8) == b)
       assert(b.rotateRight(b.size * 8) == b)
@@ -299,12 +318,10 @@ class ByteVectorTest extends BitsSuite {
 
   test("hex string interpolator") {
     assert(hex"deadbeef" == deadbeef)
-    val x = ByteVector.fromValidHex("be")
-    assert(hex"dead${x}ef" == deadbeef)
-    assertDoesNotCompile("""hex"deadgg"""")
+    compileErrors("""hex"deadgg"""")
   }
 
-  test("toIterable roundtrip") {
+  property("toIterable roundtrip") {
     forAll { (b: ByteVector) =>
       val fromIter = ByteVector(b.toIterable)
       assert(b == fromIter)
@@ -312,7 +329,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("toArray roundtrip") {
+  property("toArray roundtrip") {
     forAll { (b: ByteVector) =>
       val fromArr = ByteVector(b.toArray)
       assert(b == fromArr)
@@ -323,7 +340,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("copyToStream roundtrip") {
+  property("copyToStream roundtrip") {
     forAll { (b: ByteVector) =>
       val os = new ByteArrayOutputStream()
       b.copyToStream(os)
@@ -333,7 +350,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("toByteBuffer roundtrip") {
+  property("toByteBuffer roundtrip") {
     forAll { (b: ByteVector) =>
       val fromBuffer = ByteVector(b.toByteBuffer)
       assert(b == fromBuffer)
@@ -341,7 +358,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("dropping from a view is consistent with dropping from a strict vector") {
+  property("dropping from a view is consistent with dropping from a strict vector") {
     forAll { (b: ByteVector, n0: Long) =>
       val view = ByteVector.view(b.toArray)
       val n = n0.abs
@@ -349,7 +366,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("grouped + concatenate") {
+  property("grouped + concatenate") {
     forAll { (bv: ByteVector) =>
       if (bv.isEmpty) {
         assert(bv.grouped(1).toList == Nil)
@@ -363,7 +380,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("indexOfSlice/containsSlice/startsWith") {
+  property("indexOfSlice/containsSlice/startsWith") {
     forAll { (bv: ByteVector, m0: Int, n0: Int) =>
       val m = if (bv.nonEmpty) (m0 % bv.size).abs else 0
       val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
@@ -375,7 +392,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("endsWith") {
+  property("endsWith") {
     forAll { (bv: ByteVector, n0: Int) =>
       val n = if (bv.nonEmpty) (n0 % bv.size).abs else 0
       val slice = bv.takeRight(n)
@@ -384,7 +401,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("splice") {
+  property("splice") {
     forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       assert(x.splice(n, ByteVector.empty) == x)
@@ -392,7 +409,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("patch") {
+  property("patch") {
     forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       assert(x.patch(n, x.slice(n, n)) == x)
@@ -400,7 +417,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("short conversions") {
+  property("short conversions") {
     forAll { (n: Short) =>
       assert(ByteVector.fromShort(n).toShort() == n)
       assert(
@@ -411,7 +428,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("int conversions") {
+  property("int conversions") {
     forAll { (n: Int) =>
       assert(ByteVector.fromInt(n).toInt() == n)
       assert(
@@ -422,7 +439,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("long conversions") {
+  property("long conversions") {
     forAll { (n: Long) =>
       assert(ByteVector.fromLong(n).toLong() == n)
       assert(
@@ -433,19 +450,23 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("UUID conversions") {
+  property("UUID conversions (1)") {
     // Valid conversions
     forAll { (u: UUID) =>
       assert(ByteVector.fromUUID(u).toUUID == u)
     }
+  }
+
+  property("UUID conversions (2)") {
     // "Invalid" conversions
     val badlySizedByteVector: Gen[ByteVector] = byteVectors.suchThat(_.length != 16)
     forAll(badlySizedByteVector) { badlySizedByteVector =>
-      assertThrows[IllegalArgumentException] { badlySizedByteVector.toUUID }
+      intercept[IllegalArgumentException] { badlySizedByteVector.toUUID }
+      ()
     }
   }
 
-  test("concat") {
+  property("concat") {
     forAll { (bvs: List[ByteVector]) =>
       val c = ByteVector.concat(bvs)
       assert(c.size == bvs.map(_.size).foldLeft(0L)(_ + _))
@@ -454,7 +475,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("copyToArray with offset/size") {
+  property("copyToArray with offset/size") {
     forAll { (b: ByteVector) =>
       val size = b.size / 3
       val start = b.size / 4
@@ -463,14 +484,14 @@ class ByteVectorTest extends BitsSuite {
       b.copyToArray(xs, start.toInt, offset, size.toInt)
       val startPlusSize = start + size
       assert(
-        xs === (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
+        Arrays.equals(xs, (xs.take(start.toInt) ++ b.drop(offset).take(size).toArray ++ xs.drop(
           startPlusSize.toInt
-        )).toArray
+        )).toArray)
       )
     }
   }
 
-  test("copyToBuffer") {
+  property("copyToBuffer") {
     forAll { (b: ByteVector, bufferSize0: Int, initialPosition0: Int, direct: Boolean) =>
       val bufferSize = (bufferSize0 % 1000000).abs
       val buffer =
@@ -484,7 +505,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("viewing ByteBuffer with non-zero positoin") {
+  property("viewing ByteBuffer with non-zero position") {
     forAll { (b: Array[Byte], position0: Int, sliceSize0: Int, direct: Boolean) =>
       val buffer = if (direct) ByteBuffer.allocateDirect(b.size) else ByteBuffer.allocate(b.size)
       val position = if (b.size == 0) 0 else (position0 % b.size).abs
@@ -497,10 +518,11 @@ class ByteVectorTest extends BitsSuite {
       assert(ByteVector.view(buffer) == ByteVector.view(slice))
 
       buffer.position(position)
+      ()
     }
   }
 
-  test("dropWhile") {
+  property("dropWhile") {
     forAll { (x: ByteVector) =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, dropping), b) =>
@@ -515,7 +537,7 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
-  test("takeWhile") {
+  property("takeWhile") {
     forAll { (x: ByteVector) =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, taking), b) =>
@@ -554,7 +576,7 @@ class ByteVectorTest extends BitsSuite {
     assert(hex"001122334455".slice(-21, -4) == hex"")
   }
 
-  test("slice is consistent with array slice") {
+  property("slice is consistent with array slice") {
     forAll { (b: ByteVector, from: Int, until: Int) =>
       assert(b.slice(from.toLong, until.toLong) == ByteVector.view(b.toArray.slice(from, until)))
     }

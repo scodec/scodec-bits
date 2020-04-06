@@ -1,15 +1,15 @@
 package scodec.bits
 
-import org.scalatest.Assertion
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
+import munit.ScalaCheckSuite
 
-abstract class BitsSuite extends AnyFunSuite with ScalaCheckPropertyChecks {
+abstract class BitsSuite extends ScalaCheckSuite {
 
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration =
-    PropertyCheckConfiguration(minSuccessful = 100, workers = 4)
+  override def scalaCheckTestParameters =
+    super.scalaCheckTestParameters
+      .withMinSuccessfulTests(100)
+      .withWorkers(4)
 
-  protected def serializationShouldRoundtrip[A](x: A): Assertion = {
+  protected def serializationShouldRoundtrip[A](x: A): Unit = {
     import java.io.{
       ByteArrayInputStream,
       ByteArrayOutputStream,
@@ -22,6 +22,6 @@ abstract class BitsSuite extends AnyFunSuite with ScalaCheckPropertyChecks {
     out.close()
     val in = new ObjectInputStream(new ByteArrayInputStream(bout.toByteArray))
     val deserialized = in.readObject.asInstanceOf[A]
-    assert(deserialized == x)
+    assertEquals(deserialized, x)
   }
 }

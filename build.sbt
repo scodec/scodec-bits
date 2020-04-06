@@ -20,6 +20,13 @@ lazy val commonSettings = Seq(
   scmInfo := Some(
     ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
   ),
+  Compile / unmanagedSourceDirectories ++= {
+    if (isDotty.value)
+      List(CrossType.Pure, CrossType.Full).flatMap(
+        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-3"))
+      )
+    else Nil
+  },
   unmanagedResources in Compile ++= {
     val base = baseDirectory.value
     (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
@@ -40,7 +47,7 @@ lazy val commonSettings = Seq(
         Nil
       case other => sys.error(s"Unsupported scala version: $other")
     }),
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+  testFrameworks += new TestFramework("munit.Framework"),
   releaseCrossBuild := true
 ) ++ publishingSettings
 
@@ -96,22 +103,11 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.1" % "test",
     libraryDependencies ++= {
-      if (isDotty.value)
-        Seq(
-          "dev.travisbrown" %%% "scalatest" % "3.1.0-20200201-c4c847f-NIGHTLY" % "test",
-          "dev.travisbrown" %%% "scalacheck-1-14" % "3.1.0.1-20200201-c4c847f-NIGHTLY" % "test"
-        )
-      else
-        Seq(
-          "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
-          "org.scalatest" %%% "scalatest" % "3.1.0" % "test",
-          "org.scalatestplus" %%% "scalacheck-1-14" % "3.1.0.1" % "test"
-        )
+      if (isDotty.value) Nil
+      else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
     },
-    libraryDependencies ++= Seq(
-      ("org.scalacheck" %%% "scalacheck" % "1.14.3" % "test").withDottyCompat(scalaVersion.value)
-    ),
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),

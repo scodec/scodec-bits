@@ -1,19 +1,34 @@
 package scodec.bits
 
 import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Prop.forAll
 import Arbitrary.arbitrary
 import Arbitraries._
 
+import java.util.concurrent.Callable
+
 class ByteVectorJvmTest extends BitsSuite {
 
-  test("toBase64") {
+  var pool: java.util.concurrent.ExecutorService = null
+
+  override def beforeAll() = {
+    super.beforeAll()
+    pool = java.util.concurrent.Executors.newFixedThreadPool(4)
+  }
+  
+  override def afterAll() = {
+    pool.shutdownNow()
+    super.afterAll()
+  }
+
+  property("toBase64") {
     forAll { (b: ByteVector) =>
       val guavaB64 = com.google.common.io.BaseEncoding.base64
       assert(ByteVector.view(guavaB64.decode(b.toBase64)) == b)
     }
   }
 
-  test("fromBase64") {
+  property("fromBase64") {
     forAll { (b: ByteVector) =>
       val guavaB64 = com.google.common.io.BaseEncoding.base64
       assert(ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) == b)
@@ -60,10 +75,7 @@ class ByteVectorJvmTest extends BitsSuite {
     assert(ByteVector.fromBase64Descriptive("") == Right(ByteVector.empty))
   }
 
-  test("buffer concurrency") {
-    import java.util.concurrent.Callable
-    val pool = java.util.concurrent.Executors.newFixedThreadPool(4)
-
+  property("buffer concurrency") {
     // Concurrently append b1.buffer ++ b2 and b1.buffer ++ b3
     // making sure this gives same results as unbuffered appends
     forAll { (b1: ByteVector, b2: ByteVector, b3: ByteVector, n: Int) =>
@@ -75,21 +87,22 @@ class ByteVectorJvmTest extends BitsSuite {
       assert(rb1b2.get == (b1 ++ b2))
       assert(rb1b3.get == (b1 ++ b3))
     }
-    pool.shutdown
   }
 
-  test("digest") {
+  property("digest") {
     forAll { (x: ByteVector) =>
       val sha256 = java.security.MessageDigest.getInstance("SHA-256")
       assert(x.digest("SHA-256") == ByteVector.view(sha256.digest(x.toArray)))
     }
   }
 
-  test("gzip") {
+  property("gzip (1)") {
     forAll { (x: ByteVector) =>
       assert(x.deflate().inflate() == Right(x))
     }
+  }
 
+  property("gzip (2)") {
     val deflatableByteVectors = for {
       b <- arbitrary[Byte]
       sz <- Gen.chooseNum(1L, 8192L)
@@ -99,7 +112,7 @@ class ByteVectorJvmTest extends BitsSuite {
     }
   }
 
-  test("serialization") {
+  property("serialization") {
     forAll { (x: ByteVector) =>
       serializationShouldRoundtrip(x)
     }
