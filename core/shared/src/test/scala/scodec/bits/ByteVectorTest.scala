@@ -187,6 +187,48 @@ class ByteVectorTest extends BitsSuite {
     intercept[IllegalArgumentException](ByteVector.fromValidBin("1101a000"))
   }
 
+  test("toBase32") {
+    assert(hex"".toBase32 == (""))
+    assert(hex"00".toBase32 == ("AA======"))
+    assert(hex"61".toBase32 == ("ME======"))
+    assert(hex"626262".toBase32 == ("MJRGE==="))
+    assert(hex"636363".toBase32 == ("MNRWG==="))
+    assert(
+      hex"73696d706c792061206c6f6e6720737472696e67".toBase32 == ("ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH")
+    )
+    assert(
+      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase32 == ("ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH")
+    )
+    assert(hex"516b6fcd0f".toBase32 == ("KFVW7TIP"))
+    assert(hex"bf4f89001e670274dd".toBase32 == ("X5HYSAA6M4BHJXI="))
+    assert(hex"572e4794".toBase32 == ("K4XEPFA="))
+    assert(hex"ecac89cad93923c02321".toBase32 == ("5SWITSWZHER4AIZB"))
+    assert(hex"10c8511e".toBase32 == ("CDEFCHQ="))
+    assert(hex"00000000000000000000".toBase32 == ("AAAAAAAAAAAAAAAA"))
+  }
+
+  test("fromValidBase32") {
+    assert(ByteVector.fromValidBase32("") == (ByteVector.empty))
+    assert(ByteVector.fromValidBase32("AA======") == hex"00")
+    assert(ByteVector.fromValidBase32("ME======") == (hex"61"))
+    assert(ByteVector.fromValidBase32("MJRGE===") == (hex"626262"))
+    assert(ByteVector.fromValidBase32("MNRWG===") == (hex"636363"))
+    assert(
+      ByteVector
+        .fromValidBase32("ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH") == (hex"73696d706c792061206c6f6e6720737472696e67")
+    )
+    assert(
+      ByteVector
+        .fromValidBase32("ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH") == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+    )
+    assert(ByteVector.fromValidBase32("KFVW7TIP") == (hex"516b6fcd0f"))
+    assert(ByteVector.fromValidBase32("X5HYSAA6M4BHJXI=") == (hex"bf4f89001e670274dd"))
+    assert(ByteVector.fromValidBase32("K4XEPFA=") == (hex"572e4794"))
+    assert(ByteVector.fromValidBase32("5SWITSWZHER4AIZB") == (hex"ecac89cad93923c02321"))
+    assert(ByteVector.fromValidBase32("CDEFCHQ=") == (hex"10c8511e"))
+    assert(ByteVector.fromValidBase32("AAAAAAAAAAAAAAAA") == (hex"00000000000000000000"))
+  }
+
   test("toBase58") {
     assert(hex"".toBase58 == (""))
     assert(hex"00".toBase58 == ("1"))

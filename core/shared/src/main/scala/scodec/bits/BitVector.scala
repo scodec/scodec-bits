@@ -739,6 +739,24 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
+    * Converts the contents of this vector to a base 32 string.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
+  final def toBase32: String = toBase32(Bases.Alphabets.Base32)
+
+  /**
+    * Converts the contents of this vector to a base 32 string using the specified alphabet.
+    *
+    * The last byte is right-padded with zeros if the size is not evenly divisible by 8.
+    *
+    * @group conversions
+    */
+  final def toBase32(alphabet: Bases.Base32Alphabet): String = toByteVector.toBase32(alphabet)
+
+  /**
     * Converts the contents of this vector to a base 58 string.
     *
     * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
