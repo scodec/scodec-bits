@@ -103,7 +103,7 @@ object Bases {
       (indicesMin, indices)
     }
 
-    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace and hyphen is ignored. */
+    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
     object Base32 extends Base32Alphabet {
       private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray(Chars.zipWithIndex.toMap)
