@@ -1609,11 +1609,11 @@ object BitVector extends BitVectorPlatform {
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   /**
-   * Constructs a `BitVector` from a base 32 string or returns an error message if the string is not valid base 32.
-   * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   * @group base
-   */
+    * Constructs a `BitVector` from a base 32 string or returns an error message if the string is not valid base 32.
+    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
   def fromBase32Descriptive(
       str: String,
       alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
@@ -1621,25 +1621,28 @@ object BitVector extends BitVectorPlatform {
     ByteVector.fromBase32Descriptive(str, alphabet).map(_.toBitVector)
 
   /**
-   * Constructs a `BitVector` from a base 32 string or returns `None` if the string is not valid base 32.
-   * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   * @group base
-   */
+    * Constructs a `BitVector` from a base 32 string or returns `None` if the string is not valid base 32.
+    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    * @group base
+    */
   def fromBase32(
       str: String,
       alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
   ): Option[BitVector] = fromBase32Descriptive(str, alphabet).toOption
 
   /**
-   * Constructs a `BitVector` from a base 32 string or throws an IllegalArgumentException if the string is not valid base 32.
-   * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-   * The string may contain whitespace characters which are ignored.
-   *
-   * @throws IllegalArgumentException if the string is not valid base 32
-   * @group base
-   */
-  def fromValidBase32(str: String, alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32): BitVector =
+    * Constructs a `BitVector` from a base 32 string or throws an IllegalArgumentException if the string is not valid base 32.
+    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
+    * The string may contain whitespace characters which are ignored.
+    *
+    * @throws IllegalArgumentException if the string is not valid base 32
+    * @group base
+    */
+  def fromValidBase32(
+      str: String,
+      alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
+  ): BitVector =
     fromBase32Descriptive(str, alphabet)
       .fold(msg => throw new IllegalArgumentException(msg), identity)
 
