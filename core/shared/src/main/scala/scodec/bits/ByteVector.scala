@@ -1969,7 +1969,7 @@ object ByteVector extends ByteVectorPlatform {
       (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
     if (padding != 0 && padding != expectedPadding)
       return Left(
-        "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
+        s"Malformed padding - optionally expected $expectedPadding padding characters such that the quantum is completed"
       )
 
     Right(bytes)
