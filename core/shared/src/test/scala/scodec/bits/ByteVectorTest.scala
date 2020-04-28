@@ -229,6 +229,22 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromValidBase32("AAAAAAAAAAAAAAAA") == (hex"00000000000000000000"))
   }
 
+  test("fail due to illegal character fromBase32") {
+    assert(
+      ByteVector
+        .fromBase32Descriptive("7654321") == Left("Invalid base 32 character '1' at index 6")
+    )
+    assert(
+      ByteVector
+        .fromBase32Descriptive("ABc") == Left("Invalid base 32 character 'c' at index 2")
+    )
+    assert(
+      ByteVector
+        .fromBase32Descriptive("AB CD 0") == Left("Invalid base 32 character '0' at index 6")
+    )
+    assert(ByteVector.fromBase32("a").isEmpty)
+  }
+
   test("toBase58") {
     assert(hex"".toBase58 == (""))
     assert(hex"00".toBase58 == ("1"))

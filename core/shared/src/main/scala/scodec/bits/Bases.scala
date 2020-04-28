@@ -103,13 +103,10 @@ object Bases {
       (indicesMin, indices)
     }
 
-    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace and hyphen is ignored. */
+    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
     object Base32 extends Base32Alphabet {
       private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
-      private val (indicesMin, indices) = charIndicesLookupArray {
-        val map = (Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex).toMap
-        map ++ Map('0' -> map('O'))
-      }
+      private val (indicesMin, indices) = charIndicesLookupArray(Chars.zipWithIndex.toMap)
       val pad = '='
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = {
@@ -118,7 +115,7 @@ object Bases {
           indices(lookupIndex)
         else throw new IllegalArgumentException
       }
-      def ignore(c: Char) = c == '-' || c.isWhitespace
+      def ignore(c: Char) = c.isWhitespace
     }
 
     /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]]. Whitespace and hyphen is ignored. */
