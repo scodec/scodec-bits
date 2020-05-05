@@ -11,7 +11,7 @@ import scala.quoted.matching._
   * val b: scodec.bits.ByteVector = ByteVector(4 bytes, 0xdeadbeef)
   * }}}
   */
-inline def (ctx: StringContext).hex (inline args: Any*): ByteVector =
+inline def (inline ctx: StringContext).hex (inline args: Any*): ByteVector =
   ${Literals.validate(Literals.Hex, 'ctx, 'args)}
 
 /**
@@ -22,7 +22,7 @@ inline def (ctx: StringContext).hex (inline args: Any*): ByteVector =
   * val b: scodec.bits.BitVector = BitVector(10 bits, 0xaa8)
   * }}}
   */
-inline def (ctx: StringContext).bin (inline args: Any*): BitVector =
+inline def (inline ctx: StringContext).bin (inline args: Any*): BitVector =
   ${Literals.validate(Literals.Bin, 'ctx, 'args)}
 
 object Literals {
@@ -32,20 +32,21 @@ object Literals {
     def build(s: String)(using QuoteContext): Expr[A]
   }
 
-  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] =
-    strCtxExpr match {
-      case '{ StringContext(${Varargs(parts)}: _*) } =>
-        validate(validator, parts, argsExpr)
-      case '{ new StringContext(${Varargs(parts)}: _*) } =>
-        validate(validator, parts, argsExpr)
+  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] = {
+    strCtxExpr.unlift match {
+      case Some(sc) => validate(validator, sc.parts, argsExpr)
+      case None =>
+        qctx.error("StringContext args must be statically known")
+        ???
     }
+  }
 
-  private def validate[A](validator: Validator[A], parts: Seq[Expr[String]], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] = {
+  private def validate[A](validator: Validator[A], parts: Seq[String], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] = {
     if (parts.size == 1) {
-      val Const(literal) = parts.head
+      val literal = parts.head
       validator.validate(literal) match {
         case Some(err) =>
-          qctx.error(err, parts.head)
+          qctx.error(err)
           ???
         case None =>
           validator.build(literal)

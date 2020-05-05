@@ -101,7 +101,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.1" % "test",
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.5" % "test",
     libraryDependencies ++= {
       if (isDotty.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
