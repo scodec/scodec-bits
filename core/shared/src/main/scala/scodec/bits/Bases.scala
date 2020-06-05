@@ -39,6 +39,9 @@ object Bases {
   /** An alphabet that supports hexadecimal conversion. */
   trait HexAlphabet extends Alphabet
 
+  /** An alphabet that supports base 32 conversion. */
+  trait Base32Alphabet extends PaddedAlphabet
+
   /** An alphabet that supports base 64 conversion. */
   trait Base64Alphabet extends PaddedAlphabet
 
@@ -92,11 +95,60 @@ object Bases {
       def toChar(i: Int) = Chars(i)
     }
 
-    /** Base 58 alphabet as defined by [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses the same order */
+    private def charIndicesLookupArray(indicesMap: Map[Char, Int]): (Int, Array[Int]) = {
+      val indicesMin: Int = indicesMap.keys.min.toInt
+      val indices: Array[Int] = Array.tabulate[Int](indicesMap.keys.max - indicesMin + 1) { i =>
+        indicesMap.getOrElse((i + indicesMin).toChar, -1)
+      }
+      (indicesMin, indices)
+    }
+
+    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
+    object Base32 extends Base32Alphabet {
+      private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
+      private val (indicesMin, indices) = charIndicesLookupArray(Chars.zipWithIndex.toMap)
+      val pad = '='
+      def toChar(i: Int) = Chars(i)
+      def toIndex(c: Char) = {
+        val lookupIndex = c - indicesMin
+        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0)
+          indices(lookupIndex)
+        else throw new IllegalArgumentException
+      }
+      def ignore(c: Char) = c.isWhitespace
+    }
+
+    /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]]. Whitespace and hyphen is ignored. */
+    object Base32Crockford extends Base32Alphabet {
+      private val Chars: Array[Char] =
+        (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'Z')).toArray
+      private val (indicesMin, indices) = charIndicesLookupArray {
+        val map = (Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex).toMap
+        map ++ Map(
+          'O' -> map('0'),
+          'o' -> map('0'),
+          'I' -> map('1'),
+          'i' -> map('1'),
+          'L' -> map('1'),
+          'l' -> map('1')
+        )
+      }
+      val pad = '='
+      def toChar(i: Int) = Chars(i)
+      def toIndex(c: Char) = {
+        val lookupIndex = c - indicesMin
+        if (lookupIndex >= 0 && lookupIndex < indices.length && indices(lookupIndex) >= 0)
+          indices(lookupIndex)
+        else throw new IllegalArgumentException
+      }
+      def ignore(c: Char) = c == '-' || c.isWhitespace
+    }
+
+    /** Base 58 alphabet as defined by [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses the same order. */
     object Base58 extends Alphabet {
-      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z')).filterNot(c =>
-        List('O', 'I', 'l').exists(_ == c)
-      )
+      private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z'))
+        .filterNot(c => List('O', 'I', 'l').contains(c))
+        .toArray
       def toChar(i: Int) = Chars(i)
       def toIndex(c: Char) = c match {
         case c if c >= '1' && c <= '9' => c - '1'
@@ -111,7 +163,7 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 64 alphabet as defined by [[http://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
+    /** Base 64 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
     object Base64 extends Base64Alphabet {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '+' :+ '/').toArray
       val pad = '='
@@ -127,7 +179,7 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 64 alphabet as defined by [[http://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored. */
+    /** Base 64 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored. */
     object Base64Url extends Base64Alphabet {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '-' :+ '_').toArray
       val pad = '='
