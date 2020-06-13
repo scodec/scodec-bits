@@ -1,7 +1,6 @@
 package scodec.bits
 
 import scala.quoted._
-import scala.quoted.matching._
 
 /**
   * Provides the `hex` string interpolator, which returns `ByteVector` instances from hexadecimal strings.
