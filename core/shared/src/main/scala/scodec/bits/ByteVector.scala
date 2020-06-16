@@ -933,8 +933,12 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
       bldr
         .append(alphabet.toChar(first))
         .append(alphabet.toChar(second))
-        .append(alphabet.pad)
-        .append(alphabet.pad)
+
+      if (alphabet.pad != 0.toChar) {
+        bldr
+          .append(alphabet.pad)
+          .append(alphabet.pad)
+      }
     } else if (mod == 2) {
       var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
       val third = buffer & 0x3f
@@ -942,14 +946,38 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
       val second = buffer & 0x3f
       buffer = buffer >> 6
       val first = buffer
+
       bldr
         .append(alphabet.toChar(first))
         .append(alphabet.toChar(second))
         .append(alphabet.toChar(third))
-        .append(alphabet.pad)
+
+      if (alphabet.pad != 0.toChar) bldr.append(alphabet.pad)
     }
     bldr.flip.toString
   }
+
+  /**
+   * Converts the contents of this vector to a base 64 string without padding.
+   *
+   * @group conversions
+   */
+  final def toBase64NoPad: String = toBase64(Bases.Alphabets.Base64NoPad)
+
+  /**
+   * Converts the contents of this vector to a base 64 url string with padding.
+   *
+   * @group conversions
+   */
+  final def toBase64Url: String = toBase64(Bases.Alphabets.Base64Url)
+
+  /**
+   * Converts the contents of this vector to a base 64 url string without padding.
+   *
+   * @group conversions
+   */
+  final def toBase64UrlNoPad: String = toBase64(Bases.Alphabets.Base64UrlNoPad)
+
 
   /**
     * Converts the contents of this vector to a byte.

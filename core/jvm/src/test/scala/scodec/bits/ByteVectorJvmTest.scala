@@ -14,6 +14,27 @@ class ByteVectorJvmTest extends BitsSuite {
     }
   }
 
+  test("toBase64NoPad") {
+    forAll { (b: ByteVector) =>
+      val guavaB64 = com.google.common.io.BaseEncoding.base64.omitPadding()
+      ByteVector.view(guavaB64.decode(b.toBase64NoPad)) shouldBe b
+    }
+  }
+
+  test("toBase64Url") {
+    forAll { (b: ByteVector) =>
+      val guavaB64 = com.google.common.io.BaseEncoding.base64Url()
+      ByteVector.view(guavaB64.decode(b.toBase64Url)) shouldBe b
+    }
+  }
+
+  test("toBase64UrlNoPad") {
+    forAll { (b: ByteVector) =>
+      val guavaB64 = com.google.common.io.BaseEncoding.base64Url().omitPadding()
+      ByteVector.view(guavaB64.decode(b.toBase64UrlNoPad)) shouldBe b
+    }
+  }
+
   test("fromBase64") {
     forAll { (b: ByteVector) =>
       val guavaB64 = com.google.common.io.BaseEncoding.base64
