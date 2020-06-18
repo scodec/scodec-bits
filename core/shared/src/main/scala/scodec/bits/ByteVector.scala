@@ -804,6 +804,20 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
+   * Helper alias for [[toHex:String*]]
+   *
+   * @group conversions
+   */
+  final def toBase16: String = toHex
+
+  /**
+   * Helper alias for [[toHex(alphabet:scodec\.bits\.Bases\.HexAlphabet):String*]]
+   *
+   * @group conversions
+   */
+  final def toBase16(alphabet: Bases.HexAlphabet): String = toHex(alphabet)
+
+  /**
     * Converts the contents of this vector to a base 32 string.
     *
     * @group conversions
