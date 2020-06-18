@@ -807,6 +807,27 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
+   * Converts the contents of this vector to a base 64 string without padding.
+   *
+   * @group conversions
+   */
+  final def toBase64NoPad: String = toByteVector.toBase64NoPad
+
+  /**
+   * Converts the contents of this vector to a base 64 string without padding.
+   *
+   * @group conversions
+   */
+  final def toBase64Url: String = toByteVector.toBase64Url
+
+  /**
+   * Converts the contents of this vector to a base 64 string without padding.
+   *
+   * @group conversions
+   */
+  final def toBase64UrlNoPad: String = toByteVector.toBase64UrlNoPad
+
+  /**
     * Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.
     *
     * @param signed whether sign extension should be performed

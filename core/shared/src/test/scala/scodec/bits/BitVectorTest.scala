@@ -2,7 +2,6 @@ package scodec.bits
 
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalacheck.Prop.forAll
-import org.scalacheck._
 
 import java.util.UUID
 

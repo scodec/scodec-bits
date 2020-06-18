@@ -103,7 +103,7 @@ object Bases {
       (indicesMin, indices)
     }
 
-    /** Base 32 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
+    /** Base 32 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
     object Base32 extends Base32Alphabet {
       private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray(Chars.zipWithIndex.toMap)
@@ -163,12 +163,14 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 64 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
-    object Base64 extends Base64Alphabet {
+    private object Base64Base {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '+' :+ '/').toArray
-      val pad = '='
-      def toChar(i: Int) = Chars(i)
-      def toIndex(c: Char) = c match {
+    }
+
+    sealed trait Base64Base extends Base64Alphabet  {
+      override val pad = '='
+      override def toChar(i: Int) = Base64Base.Chars(i)
+      override def toIndex(c: Char) = c match {
         case c if c >= 'A' && c <= 'Z' => c - 'A'
         case c if c >= 'a' && c <= 'z' => c - 'a' + 26
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
@@ -176,15 +178,26 @@ object Bases {
         case '/'                       => 63
         case _                         => throw new IllegalArgumentException
       }
-      def ignore(c: Char) = c.isWhitespace
+      override def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 64 alphabet as defined by [[https://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored. */
-    object Base64Url extends Base64Alphabet {
+    /** Base 64 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
+    object Base64 extends Base64Base with PaddedAlphabet
+
+    /** Base 64 alphabet, without padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
+    object Base64NoPad extends Base64Base {
+      override val pad = 0.toChar
+    }
+
+    private object Base64UrlBase {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '-' :+ '_').toArray
-      val pad = '='
-      def toChar(i: Int) = Chars(i)
-      def toIndex(c: Char) = c match {
+    }
+
+    /** Base 64 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored. */
+    sealed trait Base64UrlBase extends Base64Alphabet {
+      override val pad = '='
+      override def toChar(i: Int) = Base64UrlBase.Chars(i)
+      override def toIndex(c: Char) = c match {
         case c if c >= 'A' && c <= 'Z' => c - 'A'
         case c if c >= 'a' && c <= 'z' => c - 'a' + 26
         case c if c >= '0' && c <= '9' => c - '0' + 26 + 26
@@ -192,8 +205,13 @@ object Bases {
         case '_'                       => 63
         case _                         => throw new IllegalArgumentException
       }
-      def ignore(c: Char) = c.isWhitespace
+      override def ignore(c: Char) = c.isWhitespace
     }
 
+    object Base64Url extends Base64UrlBase
+
+    object Base64UrlNoPad extends Base64UrlBase {
+      override val pad = 0.toChar
+    }
   }
 }
