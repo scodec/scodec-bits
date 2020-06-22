@@ -603,4 +603,15 @@ class ByteVectorTest extends BitsSuite {
       case ByteVector(0, 1, 2) => // OK
     }
   }
+
+  test("Ordered#compare") {
+    assert(ByteVector[Int]().compare(ByteVector[Int]()) == 0)
+    assert(ByteVector(1).compare(ByteVector(1)) == 0)
+    assert(ByteVector[Int]() < ByteVector(1))
+    assert(ByteVector(1) < ByteVector(1, 2))
+    assert(ByteVector(1) > ByteVector[Int]())
+    assert(ByteVector(1, 2) > ByteVector(1))
+    assert(ByteVector(1, 2) < ByteVector(2))
+    assert(ByteVector(2) > ByteVector(1, 2))
+  }
 }
