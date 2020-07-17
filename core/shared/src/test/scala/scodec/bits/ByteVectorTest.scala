@@ -647,5 +647,6 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector(1, 2) > ByteVector(1))
     assert(ByteVector(1, 2) < ByteVector(2))
     assert(ByteVector(2) > ByteVector(1, 2))
+    assert(ByteVector(100) < ByteVector(200))
   }
 }

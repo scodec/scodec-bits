@@ -1413,7 +1413,8 @@ sealed abstract class ByteVector
       val commonLength = thisLength.min(thatLength)
       var i = 0
       while (i < commonLength) {
-        val cmp = this(i).compare(that(i))
+        import java.lang.Byte.toUnsignedInt
+        val cmp = toUnsignedInt(this(i)).compare(toUnsignedInt(that(i)))
         if (cmp != 0) {
           return cmp
         }
