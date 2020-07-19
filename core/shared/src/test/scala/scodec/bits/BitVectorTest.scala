@@ -697,4 +697,15 @@ class BitVectorTest extends BitsSuite {
   test("highByte") {
     assert(BitVector.highByte.toBin == "11111111")
   }
+
+  test("Ordered#compare") {
+    assert(BitVector[Int]().compare(BitVector[Int]()) == 0)
+    assert(BitVector(1).compare(BitVector(1)) == 0)
+    assert(BitVector[Int]() < BitVector(1))
+    assert(BitVector(1) < BitVector(1, 2))
+    assert(BitVector(1) > BitVector[Int]())
+    assert(BitVector(1, 2) > BitVector(1))
+    assert(BitVector(1, 2) < BitVector(2))
+    assert(BitVector(2) > BitVector(1, 2))
+  }
 }
