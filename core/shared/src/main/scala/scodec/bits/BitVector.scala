@@ -32,7 +32,10 @@ import javax.crypto.Cipher
   *
   * @define bitwiseOperationsReprDescription bit vector
   */
-sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with Serializable {
+sealed abstract class BitVector
+    extends BitwiseOperations[BitVector, Long]
+    with Ordered[BitVector]
+    with Serializable {
   import BitVector._
 
   /**
@@ -740,17 +743,17 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   }
 
   /**
-   * Helper alias of [[toHex():String*]]
-   *
-   * @group conversions
-   */
+    * Helper alias of [[toHex():String*]]
+    *
+    * @group conversions
+    */
   final def toBase16: String = toHex
 
   /**
-   * Helper alias of [[toHex(alpbabet:scodec\.bits\.Bases\.HexAlphabet):String*]]
-   *
-   * @group conversions
-   */
+    * Helper alias of [[toHex(alpbabet:scodec\.bits\.Bases\.HexAlphabet):String*]]
+    *
+    * @group conversions
+    */
   final def toBase16(alphabet: Bases.HexAlphabet): String = toHex(alphabet)
 
   /**
@@ -808,24 +811,24 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
   final def toBase64(alphabet: Bases.Base64Alphabet): String = toByteVector.toBase64(alphabet)
 
   /**
-   * Converts the contents of this vector to a base 64 string without padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string without padding.
+    *
+    * @group conversions
+    */
   final def toBase64NoPad: String = toByteVector.toBase64NoPad
 
   /**
-   * Converts the contents of this vector to a base 64 string without padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string without padding.
+    *
+    * @group conversions
+    */
   final def toBase64Url: String = toByteVector.toBase64Url
 
   /**
-   * Converts the contents of this vector to a base 64 string without padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string without padding.
+    *
+    * @group conversions
+    */
   final def toBase64UrlNoPad: String = toByteVector.toBase64UrlNoPad
 
   /**
@@ -1321,6 +1324,30 @@ sealed abstract class BitVector extends BitwiseOperations[BitVector, Long] with 
     )
 
   protected final def writeReplace(): AnyRef = new SerializationProxy(toByteArray, size)
+
+  override def compare(that: BitVector): Int =
+    if (this.eq(that)) {
+      0
+    } else {
+      val thisLength = this.length
+      val thatLength = that.length
+      val commonLength = thisLength.min(thatLength)
+      var i = 0
+      while (i < commonLength) {
+        val cmp = this(i).compare(that(i))
+        if (cmp != 0) {
+          return cmp
+        }
+        i = i + 1
+      }
+      if (thisLength < thatLength) {
+        -1
+      } else if (thisLength > thatLength) {
+        1
+      } else {
+        0
+      }
+    }
 }
 
 /**
@@ -1477,7 +1504,7 @@ object BitVector {
 
   /**
     * Constructs a bit vector with the 2's complement encoding of the specified byte.
-    * @param s value to encode
+    * @param b value to encode
     * @param size size of vector (<= 8)
     * @group numeric
     */
@@ -1526,7 +1553,7 @@ object BitVector {
 
   /**
     * Constructs a bit vector with the 2's complement encoding of the specified value.
-    * @param i value to encode
+    * @param l value to encode
     * @param size size of vector (<= 64)
     * @param ordering byte ordering of vector
     * @group numeric

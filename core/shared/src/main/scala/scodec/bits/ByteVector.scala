@@ -50,7 +50,10 @@ import scala.annotation.tailrec
   * @define bitwiseOperationsReprDescription bit vector
   * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] generate a new strict vector.
   */
-sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] with Serializable {
+sealed abstract class ByteVector
+    extends BitwiseOperations[ByteVector, Long]
+    with Ordered[ByteVector]
+    with Serializable {
 
   /**
     * Returns the number of bytes in this vector.
@@ -804,17 +807,17 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
-   * Helper alias for [[toHex:String*]]
-   *
-   * @group conversions
-   */
+    * Helper alias for [[toHex:String*]]
+    *
+    * @group conversions
+    */
   final def toBase16: String = toHex
 
   /**
-   * Helper alias for [[toHex(alphabet:scodec\.bits\.Bases\.HexAlphabet):String*]]
-   *
-   * @group conversions
-   */
+    * Helper alias for [[toHex(alphabet:scodec\.bits\.Bases\.HexAlphabet):String*]]
+    *
+    * @group conversions
+    */
   final def toBase16(alphabet: Bases.HexAlphabet): String = toHex(alphabet)
 
   /**
@@ -972,26 +975,25 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
   }
 
   /**
-   * Converts the contents of this vector to a base 64 string without padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 string without padding.
+    *
+    * @group conversions
+    */
   final def toBase64NoPad: String = toBase64(Bases.Alphabets.Base64NoPad)
 
   /**
-   * Converts the contents of this vector to a base 64 url string with padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 url string with padding.
+    *
+    * @group conversions
+    */
   final def toBase64Url: String = toBase64(Bases.Alphabets.Base64Url)
 
   /**
-   * Converts the contents of this vector to a base 64 url string without padding.
-   *
-   * @group conversions
-   */
+    * Converts the contents of this vector to a base 64 url string without padding.
+    *
+    * @group conversions
+    */
   final def toBase64UrlNoPad: String = toBase64(Bases.Alphabets.Base64UrlNoPad)
-
 
   /**
     * Converts the contents of this vector to a byte.
@@ -1407,6 +1409,30 @@ sealed abstract class ByteVector extends BitwiseOperations[ByteVector, Long] wit
       throw new IndexOutOfBoundsException(s"invalid index: $n for size $size")
 
   protected final def writeReplace(): AnyRef = new SerializationProxy(toArray)
+
+  override def compare(that: ByteVector): Int =
+    if (this.eq(that)) {
+      0
+    } else {
+      val thisLength = this.length
+      val thatLength = that.length
+      val commonLength = thisLength.min(thatLength)
+      var i = 0
+      while (i < commonLength) {
+        val cmp = (this(i) & 0xFF).compare(that(i) & 0xFF)
+        if (cmp != 0) {
+          return cmp
+        }
+        i = i + 1
+      }
+      if (thisLength < thatLength) {
+        -1
+      } else if (thisLength > thatLength) {
+        1
+      } else {
+        0
+      }
+    }
 }
 
 /**
