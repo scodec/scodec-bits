@@ -1413,7 +1413,7 @@ sealed abstract class ByteVector
       val commonLength = thisLength.min(thatLength)
       var i = 0
       while (i < commonLength) {
-        val cmp = (this(i) & 0xFF).compare(that(i) & 0xFF)
+        val cmp = (this(i.toLong) & 0xFF).compare(that(i.toLong) & 0xFF)
         if (cmp != 0) {
           return cmp
         }

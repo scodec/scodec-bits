@@ -31,27 +31,27 @@ object Literals {
     def build(s: String)(using QuoteContext): Expr[A]
   }
 
-  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] = {
+  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[A] = {
     strCtxExpr.unlift match {
       case Some(sc) => validate(validator, sc.parts, argsExpr)
       case None =>
-        qctx.error("StringContext args must be statically known")
+        report.error("StringContext args must be statically known")
         ???
     }
   }
 
-  private def validate[A](validator: Validator[A], parts: Seq[String], argsExpr: Expr[Seq[Any]])(using qctx: QuoteContext): Expr[A] = {
+  private def validate[A](validator: Validator[A], parts: Seq[String], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[A] = {
     if (parts.size == 1) {
       val literal = parts.head
       validator.validate(literal) match {
         case Some(err) =>
-          qctx.error(err)
+          report.error(err)
           ???
         case None =>
           validator.build(literal)
       }
     } else {
-      qctx.error("interpolation not supported", argsExpr)
+      report.error("interpolation not supported", argsExpr)
       ???
     }
   }

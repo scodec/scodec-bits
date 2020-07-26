@@ -1333,7 +1333,7 @@ sealed abstract class BitVector
       val commonLength = thisLength.min(thatLength)
       var i = 0
       while (i < commonLength) {
-        val cmp = this(i).compare(that(i))
+        val cmp = this(i.toLong).compare(that(i.toLong))
         if (cmp != 0) {
           return cmp
         }

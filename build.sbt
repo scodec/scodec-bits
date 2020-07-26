@@ -5,6 +5,19 @@ import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
+crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
+
+scalaVersion in ThisBuild := crossScalaVersions.value.head
+
+githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.11")
+githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
+githubWorkflowBuild in ThisBuild := Seq(
+  WorkflowStep.Sbt(List("fmtCheck", "compile")),
+  WorkflowStep.Sbt(List("testJVM")),
+  WorkflowStep.Sbt(List("testJS")),
+  WorkflowStep.Sbt(List("doc", "mimaReportBinaryIssues")),
+)
+
 lazy val contributors = Seq(
   "mpilquist" -> "Michael Pilquist",
   "pchiusano" -> "Paul Chiusano"
@@ -103,12 +116,26 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.9" % "test",
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.10" % "test",
     libraryDependencies ++= {
       if (isDotty.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
     },
+    crossScalaVersions := {
+      val default = crossScalaVersions.value
+      if (crossProjectPlatform.value.identifier != "jvm")
+        default.filter(_.startsWith("2."))
+      else
+        default
+    },
     autoAPIMappings := true,
+    Compile / doc / sources := {
+      val old = (Compile / doc / sources).value
+      if (isDotty.value)
+        Seq()
+      else
+        old
+    },
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
     publishArtifact in (Compile, packageDoc) := !isDotty.value,
