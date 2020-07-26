@@ -15,10 +15,9 @@ class BitVectorTest extends BitsSuite {
   property("hashCode/equals") {
     forAll { (b: BitVector, b2: BitVector, m: Long) =>
       assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
-      if (b.take(3) == b2.take(3)) {
+      if (b.take(3) == b2.take(3))
         // kind of weak, since this will only happen 1/8th of attempts on average
         assert(b.take(3).hashCode == b2.take(3).hashCode)
-      }
     }
   }
 
@@ -30,7 +29,8 @@ class BitVectorTest extends BitsSuite {
     val b = BitVector(0x80, 0x90)
     assert((b.compact.underlying eq b.compact.underlying) == true)
     assert((b.toByteVector eq b.toByteVector) == true)
-    val b2 = b.drop(8).align // also make sure this works if we're talking about a byte-aligned slice
+    val b2 =
+      b.drop(8).align // also make sure this works if we're talking about a byte-aligned slice
     assert((b2.compact.underlying eq b2.compact.underlying) == true)
     assert((b2.toByteVector eq b2.toByteVector) == true)
   }
@@ -249,13 +249,16 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("b.take(n).drop(n) == b (1)") {
-    forAll(Arbitrary.arbitrary[List[Boolean]], Gen.choose[Int](0, 10000), Gen.choose[Int](0, 10000)) {
-      (xs: List[Boolean], n0: Int, m0: Int) =>
-        if (xs.nonEmpty) {
-          val n = n0.abs % xs.size
-          val m = m0.abs % xs.size
-          assert(xs.drop(m).take(n) == xs.take(m + n).drop(m))
-        }
+    forAll(
+      Arbitrary.arbitrary[List[Boolean]],
+      Gen.choose[Int](0, 10000),
+      Gen.choose[Int](0, 10000)
+    ) { (xs: List[Boolean], n0: Int, m0: Int) =>
+      if (xs.nonEmpty) {
+        val n = n0.abs % xs.size
+        val m = m0.abs % xs.size
+        assert(xs.drop(m).take(n) == xs.take(m + n).drop(m))
+      }
     }
   }
 
@@ -431,15 +434,14 @@ class BitVectorTest extends BitsSuite {
 
   property("grouped + concatenate") {
     forAll { (bv: BitVector) =>
-      if (bv.isEmpty) {
+      if (bv.isEmpty)
         assert(bv.grouped(1).toList == Nil)
-      } else if (bv.size < 3) {
+      else if (bv.size < 3)
         assert(bv.grouped(bv.size).toList == List(bv))
-      } else {
+      else
         assert(bv.grouped(bv.size / 3).toList.foldLeft(BitVector.empty) { (acc, b) =>
           acc ++ b
         } == bv)
-      }
     }
   }
 

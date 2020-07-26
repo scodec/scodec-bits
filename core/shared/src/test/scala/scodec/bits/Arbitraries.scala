@@ -70,9 +70,7 @@ object Arbitraries {
     for {
       b <- g
       n <- Gen.choose[Long](0, b.size + 1)
-    } yield {
-      b.take(n) ++ b.drop(n)
-    }
+    } yield b.take(n) ++ b.drop(n)
 
   def genByteBufferVectors(maxSize: Int): Gen[ByteVector] =
     for {

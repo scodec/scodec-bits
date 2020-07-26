@@ -9,14 +9,15 @@ import scala.language.experimental.macros
   */
 package object bits {
 
-  implicit class EitherOps[A,B](val e: Either[A,B]) extends AnyVal {
+  implicit class EitherOps[A, B](val e: Either[A, B]) extends AnyVal {
     def flatMap[A1 >: A, B1](f: B => Either[A1, B1]): Either[A1, B1] = e.right.flatMap(f)
     def map[B1](f: B => B1): Either[A, B1] = e.right.map(f)
 
-    def toOption: Option[B] = e match {
-      case Right(b) => Some(b)
-      case _        => None
-    }
+    def toOption: Option[B] =
+      e match {
+        case Right(b) => Some(b)
+        case _        => None
+      }
   }
 
   private[bits] type IterableOnce[+A] = collection.GenTraversableOnce[A]

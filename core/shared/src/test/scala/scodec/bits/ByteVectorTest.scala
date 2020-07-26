@@ -15,10 +15,9 @@ class ByteVectorTest extends BitsSuite {
       case (b, m) =>
         assert((b.take(m) ++ b.drop(m)) == b)
         assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
-        if (b.take(3) == b.drop(3).take(3)) {
+        if (b.take(3) == b.drop(3).take(3))
           // kind of weak, since this will only happen 1/8th of attempts on average
           assert(b.take(3).hashCode == b.drop(3).take(3).hashCode)
-        }
     }
   }
 
@@ -215,11 +214,15 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromValidBase32("MNRWG===") == (hex"636363"))
     assert(
       ByteVector
-        .fromValidBase32("ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH") == (hex"73696d706c792061206c6f6e6720737472696e67")
+        .fromValidBase32(
+          "ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH"
+        ) == (hex"73696d706c792061206c6f6e6720737472696e67")
     )
     assert(
       ByteVector
-        .fromValidBase32("ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH") == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+        .fromValidBase32(
+          "ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH"
+        ) == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
     )
     assert(ByteVector.fromValidBase32("KFVW7TIP") == (hex"516b6fcd0f"))
     assert(ByteVector.fromValidBase32("X5HYSAA6M4BHJXI=") == (hex"bf4f89001e670274dd"))
@@ -273,11 +276,15 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromValidBase58("aPEr") == (hex"636363"))
     assert(
       ByteVector
-        .fromValidBase58("2cFupjhnEsSn59qHXstmK2ffpLv2") == (hex"73696d706c792061206c6f6e6720737472696e67")
+        .fromValidBase58(
+          "2cFupjhnEsSn59qHXstmK2ffpLv2"
+        ) == (hex"73696d706c792061206c6f6e6720737472696e67")
     )
     assert(
       ByteVector
-        .fromValidBase58("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L") == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+        .fromValidBase58(
+          "1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"
+        ) == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
     )
     assert(ByteVector.fromValidBase58("ABnLTmg") == (hex"516b6fcd0f"))
     assert(ByteVector.fromValidBase58("3SEo3LWLoPntC") == (hex"bf4f89001e670274dd"))
@@ -412,15 +419,14 @@ class ByteVectorTest extends BitsSuite {
 
   property("grouped + concatenate") {
     forAll { (bv: ByteVector) =>
-      if (bv.isEmpty) {
+      if (bv.isEmpty)
         assert(bv.grouped(1).toList == Nil)
-      } else if (bv.size < 3) {
+      else if (bv.size < 3)
         assert(bv.grouped(bv.size).toList == List(bv))
-      } else {
+      else
         assert(bv.grouped(bv.size / 3).toList.foldLeft(ByteVector.empty) { (acc, b) =>
           acc ++ b
         } == bv)
-      }
     }
   }
 
@@ -571,12 +577,11 @@ class ByteVectorTest extends BitsSuite {
     forAll { (x: ByteVector) =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, dropping), b) =>
-          if (dropping) {
+          if (dropping)
             if (b == 0) (acc :+ 0, false)
             else (acc, true)
-          } else {
+          else
             (acc :+ b, false)
-          }
       }
       assert(x.dropWhile(_ != 0.toByte) == expected)
     }
@@ -586,12 +591,11 @@ class ByteVectorTest extends BitsSuite {
     forAll { (x: ByteVector) =>
       val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
         case ((acc, taking), b) =>
-          if (taking) {
+          if (taking)
             if (b == 0) (acc, false)
             else (acc :+ b, true)
-          } else {
+          else
             (acc, false)
-          }
       }
       assert(x.takeWhile(_ != 0.toByte) == expected)
     }

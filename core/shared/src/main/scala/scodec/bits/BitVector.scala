@@ -209,11 +209,12 @@ sealed abstract class BitVector
   /**
     * Returns the depth of this tree. The result of `compact` has depth 0.
     */
-  private[bits] def depth: Int = this match {
-    case Append(l, r) => 1 + (l.depth.max(r.depth))
-    case c: Chunks    => 1 + c.chunks.depth
-    case _            => 0
-  }
+  private[bits] def depth: Int =
+    this match {
+      case Append(l, r) => 1 + (l.depth.max(r.depth))
+      case c: Chunks    => 1 + c.chunks.depth
+      case _            => 0
+    }
 
   /**
     * Returns a vector of all bits in this vector except the first `n` bits.
@@ -520,11 +521,10 @@ sealed abstract class BitVector
     if (isEmpty || n <= 0) this
     else {
       val extensionHigh = signExtension && head
-      if (n >= size) {
+      if (n >= size)
         if (extensionHigh) BitVector.high(size) else BitVector.low(size)
-      } else {
+      else
         (if (extensionHigh) BitVector.high(n) else BitVector.low(n)) ++ dropRight(n)
-      }
     }
 
   final def rotateLeft(n: Long): BitVector =
@@ -566,14 +566,15 @@ sealed abstract class BitVector
 
     // we collect up all the chunks, then merge them in O(n * log n)
     @annotation.tailrec
-    def go(b: List[BitVector], acc: Vector[Bytes]): Vector[Bytes] = b match {
-      case (s @ Suspend(_)) :: rem  => go(s.underlying :: rem, acc)
-      case (b @ Bytes(_, _)) :: rem => go(rem, acc :+ b)
-      case Append(l, r) :: rem      => go(l :: r :: rem, acc)
-      case (d: Drop) :: rem         => go(rem, acc :+ d.interpretDrop)
-      case (c: Chunks) :: rem       => go(c.chunks.left :: c.chunks.right :: rem, acc)
-      case _                        => acc
-    }
+    def go(b: List[BitVector], acc: Vector[Bytes]): Vector[Bytes] =
+      b match {
+        case (s @ Suspend(_)) :: rem  => go(s.underlying :: rem, acc)
+        case (b @ Bytes(_, _)) :: rem => go(rem, acc :+ b)
+        case Append(l, r) :: rem      => go(l :: r :: rem, acc)
+        case (d: Drop) :: rem         => go(rem, acc :+ d.interpretDrop)
+        case (c: Chunks) :: rem       => go(c.chunks.left :: c.chunks.right :: rem, acc)
+        case _                        => acc
+      }
 
     this match {
       // common case, we have a single flat `Bytes`, in which case we compact and return it directly
@@ -614,10 +615,11 @@ sealed abstract class BitVector
     *
     * @group collection
     */
-  final def copy: Bytes = this match {
-    case Bytes(b, n) => Bytes(b.copy, n)
-    case _           => this.compact
-  }
+  final def copy: Bytes =
+    this match {
+      case Bytes(b, n) => Bytes(b.copy, n)
+      case _           => this.compact
+    }
 
   /**
     * Forces any `Suspend` nodes in this `BitVector` and ensures the tree is balanced.
@@ -627,7 +629,7 @@ sealed abstract class BitVector
   final def force: BitVector = {
     @annotation.tailrec
     def go(cont: Vector[BitVector]): BitVector =
-      if (cont.nonEmpty) {
+      if (cont.nonEmpty)
         (cont.head, cont.tail) match {
           case (cur, cont) =>
             cur match {
@@ -638,7 +640,7 @@ sealed abstract class BitVector
               case b: Chunks       => go(b.chunks +: cont)
             }
         }
-      } else cont.foldLeft(BitVector.empty)(_ ++ _)
+      else cont.foldLeft(BitVector.empty)(_ ++ _)
     go(Vector(this))
   }
 
@@ -1031,7 +1033,7 @@ sealed abstract class BitVector
     @annotation.tailrec
     def go(i: Int): Unit =
       if (i < bytesNeeded) {
-        result = (result << 8) | (0x0FFL & this.getByte(base + i))
+        result = (result << 8) | (0x0ffL & this.getByte(base + i))
         go(i + 1)
       }
     go(0)
@@ -1065,15 +1067,15 @@ sealed abstract class BitVector
 
           case 32 =>
             val i = bytes.underlying.toByteBuffer.order(ordering.toJava).getInt
-            if (signed) i.toLong else i & 0x0FFFFFFFFL
+            if (signed) i.toLong else i & 0x0ffffffffL
 
           case 16 =>
             val sh = bytes.underlying.toByteBuffer.order(ordering.toJava).getShort
-            if (signed) sh.toLong else sh & 0x0FFFFL
+            if (signed) sh.toLong else sh & 0x0ffffL
 
           case 8 =>
             val b = bytes.underlying.toByteBuffer.get
-            if (signed) b.toLong else b & 0x0FFL
+            if (signed) b.toLong else b & 0x0ffL
 
           case bits =>
             if (ordering == ByteOrdering.LittleEndian)
@@ -1096,11 +1098,10 @@ sealed abstract class BitVector
     */
   final def toUUID: UUID = {
     // Sanity check
-    if (size != 128) {
+    if (size != 128)
       throw new IllegalArgumentException(
         s"Cannot convert BitVector of size $size to UUID; must be 128 bits"
       )
-    }
     // Convert
     val byteBuffer = toByteBuffer
     val mostSignificant = byteBuffer.getLong
@@ -1194,8 +1195,8 @@ sealed abstract class BitVector
     * @param sr secure random
     * @group crypto
     */
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
-      implicit sr: SecureRandom
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
+      sr: SecureRandom
   ): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
 
@@ -1210,8 +1211,8 @@ sealed abstract class BitVector
     * @param sr secure random
     * @group crypto
     */
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
-      implicit sr: SecureRandom
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
+      sr: SecureRandom
   ): Either[GeneralSecurityException, BitVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
@@ -1239,10 +1240,11 @@ sealed abstract class BitVector
     * @see [[BitVector.===]]
     * @group collection
     */
-  override final def equals(other: Any): Boolean = other match {
-    case o: BitVector => this === o
-    case _            => false
-  }
+  override final def equals(other: Any): Boolean =
+    other match {
+      case o: BitVector => this === o
+      case _            => false
+    }
 
   /**
     * Calculates the hash code of this vector. The result is cached.
@@ -1279,13 +1281,14 @@ sealed abstract class BitVector
   final protected def outOfBounds(n: Long): Nothing =
     throw new NoSuchElementException(s"invalid index: $n of $size")
 
-  final protected def mapBytes(f: ByteVector => ByteVector): BitVector = this match {
-    case Bytes(bs, n)   => toBytes(f(bs), n)
-    case Append(l, r)   => Append(l.mapBytes(f), r.mapBytes(f))
-    case Drop(b, n)     => Drop(b.mapBytes(f).compact, n)
-    case s @ Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
-    case c: Chunks      => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
-  }
+  final protected def mapBytes(f: ByteVector => ByteVector): BitVector =
+    this match {
+      case Bytes(bs, n)   => toBytes(f(bs), n)
+      case Append(l, r)   => Append(l.mapBytes(f), r.mapBytes(f))
+      case Drop(b, n)     => Drop(b.mapBytes(f).compact, n)
+      case s @ Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
+      case c: Chunks      => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
+    }
 
   private[bits] def cipher(
       ci: Cipher,
@@ -1298,21 +1301,22 @@ sealed abstract class BitVector
   /**
     * Pretty print this `BitVector`.
     */
-  private[bits] def internalPretty(prefix: String): String = this match {
-    case Append(l, r) =>
-      prefix + "append\n" +
-        l.internalPretty(prefix + "  ") + "\n" +
-        r.internalPretty(prefix + "  ")
-    case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
-    case Drop(u, n) =>
-      prefix + s"drop ${n}\n" +
-        u.internalPretty(prefix + "  ")
-    case s @ Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
-    case c: Chunks =>
-      prefix + "chunks\n" +
-        c.chunks.left.internalPretty("  ") + "\n" +
-        c.chunks.right.internalPretty("  ")
-  }
+  private[bits] def internalPretty(prefix: String): String =
+    this match {
+      case Append(l, r) =>
+        prefix + "append\n" +
+          l.internalPretty(prefix + "  ") + "\n" +
+          r.internalPretty(prefix + "  ")
+      case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
+      case Drop(u, n) =>
+        prefix + s"drop ${n}\n" +
+          u.internalPretty(prefix + "  ")
+      case s @ Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
+      case c: Chunks =>
+        prefix + "chunks\n" +
+          c.chunks.left.internalPretty("  ") + "\n" +
+          c.chunks.right.internalPretty("  ")
+    }
 
   private def zipBytesWith(other: BitVector)(op: (Byte, Byte) => Int): BitVector =
     // todo: this has a much more efficient recursive algorithm -
@@ -1325,27 +1329,25 @@ sealed abstract class BitVector
   protected final def writeReplace(): AnyRef = new SerializationProxy(toByteArray, size)
 
   override def compare(that: BitVector): Int =
-    if (this.eq(that)) {
+    if (this.eq(that))
       0
-    } else {
+    else {
       val thisLength = this.length
       val thatLength = that.length
       val commonLength = thisLength.min(thatLength)
       var i = 0
       while (i < commonLength) {
         val cmp = this(i.toLong).compare(that(i.toLong))
-        if (cmp != 0) {
+        if (cmp != 0)
           return cmp
-        }
         i = i + 1
       }
-      if (thisLength < thatLength) {
+      if (thisLength < thatLength)
         -1
-      } else if (thisLength > thatLength) {
+      else if (thisLength > thatLength)
         1
-      } else {
+      else
         0
-      }
     }
 }
 
@@ -1962,13 +1964,13 @@ object BitVector extends BitVectorPlatform {
     def combine(other: Bytes): Bytes = {
       val invalidBits = this.invalidBits
       val otherBytes = other.underlying
-      if (isEmpty) {
+      if (isEmpty)
         other
-      } else if (otherBytes.isEmpty) {
+      else if (otherBytes.isEmpty)
         this
-      } else if (invalidBits == 0) {
+      else if (invalidBits == 0)
         toBytes(underlying ++ otherBytes, size + other.size)
-      } else {
+      else {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
         val lo =
@@ -2019,15 +2021,14 @@ object BitVector extends BitVectorPlatform {
         val bitsToShiftEachByte = (low % 8).toInt
         val newBytes = {
           if (bitsToShiftEachByte == 0) shiftedByWholeBytes
-          else {
+          else
             shiftedByWholeBytes.zipWithI(shiftedByWholeBytes.drop(1) :+ (0: Byte)) {
               case (a, b) =>
-                val hi = (a << bitsToShiftEachByte)
+                val hi = a << bitsToShiftEachByte
                 val low =
-                  (((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte))
+                  ((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte)
                 hi | low
             }
-          }
         }
         toBytes(
           if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes,
@@ -2053,10 +2054,9 @@ object BitVector extends BitVectorPlatform {
 
     @volatile var knownSize: Long = right match {
       case _: Suspend => -1L
-      case _ => { // eagerly compute the size if we're strict
+      case _ => // eagerly compute the size if we're strict
         val sz = left.size + right.size
         sz
-      }
     }
     var sizeLowerBound = left.size
 
@@ -2064,13 +2064,14 @@ object BitVector extends BitVectorPlatform {
       if (knownSize != -1L) knownSize
       else { // faster to just allow recomputation if there's contention
         @annotation.tailrec
-        def go(rem: List[BitVector], acc: Long): Long = rem match {
-          case Nil                       => acc
-          case Append(x, y) :: t         => go(x :: y :: t, acc)
-          case Chunks(Append(x, y)) :: t => go(x :: y :: t, acc)
-          case (s: Suspend) :: t         => go(s.underlying :: t, acc)
-          case h :: t                    => go(t, acc + h.size)
-        }
+        def go(rem: List[BitVector], acc: Long): Long =
+          rem match {
+            case Nil                       => acc
+            case Append(x, y) :: t         => go(x :: y :: t, acc)
+            case Chunks(Append(x, y)) :: t => go(x :: y :: t, acc)
+            case (s: Suspend) :: t         => go(s.underlying :: t, acc)
+            case h :: t                    => go(t, acc + h.size)
+          }
         val sz = go(List(left, right), 0)
         knownSize = sz
         sz
@@ -2085,13 +2086,14 @@ object BitVector extends BitVectorPlatform {
       else if (npos <= left.size) left.take(npos)
       else {
         @annotation.tailrec
-        def go(accL: BitVector, cur: BitVector, n: Long): BitVector = cur match {
-          case Append(left, right) =>
-            if (n <= left.size) accL ++ left.take(n)
-            else go(accL ++ left, right, n - left.size)
-          case s: Suspend => go(accL, s.underlying, n)
-          case _          => accL ++ cur.take(n)
-        }
+        def go(accL: BitVector, cur: BitVector, n: Long): BitVector =
+          cur match {
+            case Append(left, right) =>
+              if (n <= left.size) accL ++ left.take(n)
+              else go(accL ++ left, right, n - left.size)
+            case s: Suspend => go(accL, s.underlying, n)
+            case _          => accL ++ cur.take(n)
+          }
         go(left, right, npos - left.size)
       }
     }
@@ -2101,13 +2103,14 @@ object BitVector extends BitVectorPlatform {
       if (npos == 0) this
       else {
         @annotation.tailrec
-        def go(cur: BitVector, n: Long): BitVector = cur match {
-          case Append(left, right) =>
-            if (n >= left.size) go(right, n - left.size)
-            else Append(left.drop(n), right)
-          case s: Suspend => go(s.underlying, n)
-          case _          => cur.drop(n)
-        }
+        def go(cur: BitVector, n: Long): BitVector =
+          cur match {
+            case Append(left, right) =>
+              if (n >= left.size) go(right, n - left.size)
+              else Append(left.drop(n), right)
+            case s: Suspend => go(s.underlying, n)
+            case _          => cur.drop(n)
+          }
         if (npos >= left.size) go(right, npos - left.size)
         else Append(left.drop(npos), right)
       }
@@ -2118,17 +2121,17 @@ object BitVector extends BitVectorPlatform {
       else if (sizeLowerBound >= n) false
       else {
         @annotation.tailrec
-        def go(cur: BitVector, n: Long, seen: Long): Boolean = cur match {
-          case Append(l, r) =>
-            if (l.size >= n) {
-              sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false
-            } else go(r, n - l.size, seen + l.size)
-          case s: Suspend => go(s.underlying, n, seen)
-          case _ => {
-            sizeLowerBound = math.max(seen, sizeLowerBound)
-            cur.size < n
+        def go(cur: BitVector, n: Long, seen: Long): Boolean =
+          cur match {
+            case Append(l, r) =>
+              if (l.size >= n) {
+                sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false
+              } else go(r, n - l.size, seen + l.size)
+            case s: Suspend => go(s.underlying, n, seen)
+            case _ =>
+              sizeLowerBound = math.max(seen, sizeLowerBound)
+              cur.size < n
           }
-        }
         go(this, n, 0)
       }
   }
@@ -2226,259 +2229,259 @@ object BitVector extends BitVectorPlatform {
     0x00.toByte,
     0x80.toByte,
     0x40.toByte,
-    0xC0.toByte,
+    0xc0.toByte,
     0x20.toByte,
-    0xA0.toByte,
+    0xa0.toByte,
     0x60.toByte,
-    0xE0.toByte,
+    0xe0.toByte,
     0x10.toByte,
     0x90.toByte,
     0x50.toByte,
-    0xD0.toByte,
+    0xd0.toByte,
     0x30.toByte,
-    0xB0.toByte,
+    0xb0.toByte,
     0x70.toByte,
-    0xF0.toByte,
+    0xf0.toByte,
     0x08.toByte,
     0x88.toByte,
     0x48.toByte,
-    0xC8.toByte,
+    0xc8.toByte,
     0x28.toByte,
-    0xA8.toByte,
+    0xa8.toByte,
     0x68.toByte,
-    0xE8.toByte,
+    0xe8.toByte,
     0x18.toByte,
     0x98.toByte,
     0x58.toByte,
-    0xD8.toByte,
+    0xd8.toByte,
     0x38.toByte,
-    0xB8.toByte,
+    0xb8.toByte,
     0x78.toByte,
-    0xF8.toByte,
+    0xf8.toByte,
     0x04.toByte,
     0x84.toByte,
     0x44.toByte,
-    0xC4.toByte,
+    0xc4.toByte,
     0x24.toByte,
-    0xA4.toByte,
+    0xa4.toByte,
     0x64.toByte,
-    0xE4.toByte,
+    0xe4.toByte,
     0x14.toByte,
     0x94.toByte,
     0x54.toByte,
-    0xD4.toByte,
+    0xd4.toByte,
     0x34.toByte,
-    0xB4.toByte,
+    0xb4.toByte,
     0x74.toByte,
-    0xF4.toByte,
-    0x0C.toByte,
-    0x8C.toByte,
-    0x4C.toByte,
-    0xCC.toByte,
-    0x2C.toByte,
-    0xAC.toByte,
-    0x6C.toByte,
-    0xEC.toByte,
-    0x1C.toByte,
-    0x9C.toByte,
-    0x5C.toByte,
-    0xDC.toByte,
-    0x3C.toByte,
-    0xBC.toByte,
-    0x7C.toByte,
-    0xFC.toByte,
+    0xf4.toByte,
+    0x0c.toByte,
+    0x8c.toByte,
+    0x4c.toByte,
+    0xcc.toByte,
+    0x2c.toByte,
+    0xac.toByte,
+    0x6c.toByte,
+    0xec.toByte,
+    0x1c.toByte,
+    0x9c.toByte,
+    0x5c.toByte,
+    0xdc.toByte,
+    0x3c.toByte,
+    0xbc.toByte,
+    0x7c.toByte,
+    0xfc.toByte,
     0x02.toByte,
     0x82.toByte,
     0x42.toByte,
-    0xC2.toByte,
+    0xc2.toByte,
     0x22.toByte,
-    0xA2.toByte,
+    0xa2.toByte,
     0x62.toByte,
-    0xE2.toByte,
+    0xe2.toByte,
     0x12.toByte,
     0x92.toByte,
     0x52.toByte,
-    0xD2.toByte,
+    0xd2.toByte,
     0x32.toByte,
-    0xB2.toByte,
+    0xb2.toByte,
     0x72.toByte,
-    0xF2.toByte,
-    0x0A.toByte,
-    0x8A.toByte,
-    0x4A.toByte,
-    0xCA.toByte,
-    0x2A.toByte,
-    0xAA.toByte,
-    0x6A.toByte,
-    0xEA.toByte,
-    0x1A.toByte,
-    0x9A.toByte,
-    0x5A.toByte,
-    0xDA.toByte,
-    0x3A.toByte,
-    0xBA.toByte,
-    0x7A.toByte,
-    0xFA.toByte,
+    0xf2.toByte,
+    0x0a.toByte,
+    0x8a.toByte,
+    0x4a.toByte,
+    0xca.toByte,
+    0x2a.toByte,
+    0xaa.toByte,
+    0x6a.toByte,
+    0xea.toByte,
+    0x1a.toByte,
+    0x9a.toByte,
+    0x5a.toByte,
+    0xda.toByte,
+    0x3a.toByte,
+    0xba.toByte,
+    0x7a.toByte,
+    0xfa.toByte,
     0x06.toByte,
     0x86.toByte,
     0x46.toByte,
-    0xC6.toByte,
+    0xc6.toByte,
     0x26.toByte,
-    0xA6.toByte,
+    0xa6.toByte,
     0x66.toByte,
-    0xE6.toByte,
+    0xe6.toByte,
     0x16.toByte,
     0x96.toByte,
     0x56.toByte,
-    0xD6.toByte,
+    0xd6.toByte,
     0x36.toByte,
-    0xB6.toByte,
+    0xb6.toByte,
     0x76.toByte,
-    0xF6.toByte,
-    0x0E.toByte,
-    0x8E.toByte,
-    0x4E.toByte,
-    0xCE.toByte,
-    0x2E.toByte,
-    0xAE.toByte,
-    0x6E.toByte,
-    0xEE.toByte,
-    0x1E.toByte,
-    0x9E.toByte,
-    0x5E.toByte,
-    0xDE.toByte,
-    0x3E.toByte,
-    0xBE.toByte,
-    0x7E.toByte,
-    0xFE.toByte,
+    0xf6.toByte,
+    0x0e.toByte,
+    0x8e.toByte,
+    0x4e.toByte,
+    0xce.toByte,
+    0x2e.toByte,
+    0xae.toByte,
+    0x6e.toByte,
+    0xee.toByte,
+    0x1e.toByte,
+    0x9e.toByte,
+    0x5e.toByte,
+    0xde.toByte,
+    0x3e.toByte,
+    0xbe.toByte,
+    0x7e.toByte,
+    0xfe.toByte,
     0x01.toByte,
     0x81.toByte,
     0x41.toByte,
-    0xC1.toByte,
+    0xc1.toByte,
     0x21.toByte,
-    0xA1.toByte,
+    0xa1.toByte,
     0x61.toByte,
-    0xE1.toByte,
+    0xe1.toByte,
     0x11.toByte,
     0x91.toByte,
     0x51.toByte,
-    0xD1.toByte,
+    0xd1.toByte,
     0x31.toByte,
-    0xB1.toByte,
+    0xb1.toByte,
     0x71.toByte,
-    0xF1.toByte,
+    0xf1.toByte,
     0x09.toByte,
     0x89.toByte,
     0x49.toByte,
-    0xC9.toByte,
+    0xc9.toByte,
     0x29.toByte,
-    0xA9.toByte,
+    0xa9.toByte,
     0x69.toByte,
-    0xE9.toByte,
+    0xe9.toByte,
     0x19.toByte,
     0x99.toByte,
     0x59.toByte,
-    0xD9.toByte,
+    0xd9.toByte,
     0x39.toByte,
-    0xB9.toByte,
+    0xb9.toByte,
     0x79.toByte,
-    0xF9.toByte,
+    0xf9.toByte,
     0x05.toByte,
     0x85.toByte,
     0x45.toByte,
-    0xC5.toByte,
+    0xc5.toByte,
     0x25.toByte,
-    0xA5.toByte,
+    0xa5.toByte,
     0x65.toByte,
-    0xE5.toByte,
+    0xe5.toByte,
     0x15.toByte,
     0x95.toByte,
     0x55.toByte,
-    0xD5.toByte,
+    0xd5.toByte,
     0x35.toByte,
-    0xB5.toByte,
+    0xb5.toByte,
     0x75.toByte,
-    0xF5.toByte,
-    0x0D.toByte,
-    0x8D.toByte,
-    0x4D.toByte,
-    0xCD.toByte,
-    0x2D.toByte,
-    0xAD.toByte,
-    0x6D.toByte,
-    0xED.toByte,
-    0x1D.toByte,
-    0x9D.toByte,
-    0x5D.toByte,
-    0xDD.toByte,
-    0x3D.toByte,
-    0xBD.toByte,
-    0x7D.toByte,
-    0xFD.toByte,
+    0xf5.toByte,
+    0x0d.toByte,
+    0x8d.toByte,
+    0x4d.toByte,
+    0xcd.toByte,
+    0x2d.toByte,
+    0xad.toByte,
+    0x6d.toByte,
+    0xed.toByte,
+    0x1d.toByte,
+    0x9d.toByte,
+    0x5d.toByte,
+    0xdd.toByte,
+    0x3d.toByte,
+    0xbd.toByte,
+    0x7d.toByte,
+    0xfd.toByte,
     0x03.toByte,
     0x83.toByte,
     0x43.toByte,
-    0xC3.toByte,
+    0xc3.toByte,
     0x23.toByte,
-    0xA3.toByte,
+    0xa3.toByte,
     0x63.toByte,
-    0xE3.toByte,
+    0xe3.toByte,
     0x13.toByte,
     0x93.toByte,
     0x53.toByte,
-    0xD3.toByte,
+    0xd3.toByte,
     0x33.toByte,
-    0xB3.toByte,
+    0xb3.toByte,
     0x73.toByte,
-    0xF3.toByte,
-    0x0B.toByte,
-    0x8B.toByte,
-    0x4B.toByte,
-    0xCB.toByte,
-    0x2B.toByte,
-    0xAB.toByte,
-    0x6B.toByte,
-    0xEB.toByte,
-    0x1B.toByte,
-    0x9B.toByte,
-    0x5B.toByte,
-    0xDB.toByte,
-    0x3B.toByte,
-    0xBB.toByte,
-    0x7B.toByte,
-    0xFB.toByte,
+    0xf3.toByte,
+    0x0b.toByte,
+    0x8b.toByte,
+    0x4b.toByte,
+    0xcb.toByte,
+    0x2b.toByte,
+    0xab.toByte,
+    0x6b.toByte,
+    0xeb.toByte,
+    0x1b.toByte,
+    0x9b.toByte,
+    0x5b.toByte,
+    0xdb.toByte,
+    0x3b.toByte,
+    0xbb.toByte,
+    0x7b.toByte,
+    0xfb.toByte,
     0x07.toByte,
     0x87.toByte,
     0x47.toByte,
-    0xC7.toByte,
+    0xc7.toByte,
     0x27.toByte,
-    0xA7.toByte,
+    0xa7.toByte,
     0x67.toByte,
-    0xE7.toByte,
+    0xe7.toByte,
     0x17.toByte,
     0x97.toByte,
     0x57.toByte,
-    0xD7.toByte,
+    0xd7.toByte,
     0x37.toByte,
-    0xB7.toByte,
+    0xb7.toByte,
     0x77.toByte,
-    0xF7.toByte,
-    0x0F.toByte,
-    0x8F.toByte,
-    0x4F.toByte,
-    0xCF.toByte,
-    0x2F.toByte,
-    0xAF.toByte,
-    0x6F.toByte,
-    0xEF.toByte,
-    0x1F.toByte,
-    0x9F.toByte,
-    0x5F.toByte,
-    0xDF.toByte,
-    0x3F.toByte,
-    0xBF.toByte,
-    0x7F.toByte,
-    0xFF.toByte
+    0xf7.toByte,
+    0x0f.toByte,
+    0x8f.toByte,
+    0x4f.toByte,
+    0xcf.toByte,
+    0x2f.toByte,
+    0xaf.toByte,
+    0x6f.toByte,
+    0xef.toByte,
+    0x1f.toByte,
+    0x9f.toByte,
+    0x5f.toByte,
+    0xdf.toByte,
+    0x3f.toByte,
+    0xbf.toByte,
+    0x7f.toByte,
+    0xff.toByte
   )
 
   /** Clears (sets to 0) any bits in the last byte that are not used for storing `size` bits. */
@@ -2488,9 +2491,8 @@ object BitVector extends BitVectorPlatform {
       val idx = bytes.size - 1
       val last = bytes(idx)
       bytes.update(idx, (last & topNBits(valid)).toByte)
-    } else {
+    } else
       bytes
-    }
   }
 
   /**
@@ -2505,12 +2507,13 @@ object BitVector extends BitVectorPlatform {
     */
   private[bits] def reduceBalanced[A](v: Iterable[A])(size: A => Long)(f: (A, A) => A): A = {
     @annotation.tailrec
-    def fixup(stack: List[(A, Long)]): List[(A, Long)] = stack match {
-      // h actually appeared first in `v`, followed by `h2`, preserve this order
-      case (h2, n) :: (h, m) :: t if n > m / 2 =>
-        fixup((f(h, h2), m + n) :: t)
-      case _ => stack
-    }
+    def fixup(stack: List[(A, Long)]): List[(A, Long)] =
+      stack match {
+        // h actually appeared first in `v`, followed by `h2`, preserve this order
+        case (h2, n) :: (h, m) :: t if n > m / 2 =>
+          fixup((f(h, h2), m + n) :: t)
+        case _ => stack
+      }
     v.foldLeft(List[(A, Long)]())((stack, a) => fixup((a -> size(a)) :: stack))
       .reverse
       .map(_._1)

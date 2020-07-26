@@ -13,13 +13,14 @@ class BitVectorJvmTest extends BitsSuite {
   property("sizeGreater/LessThan concurrent") {
     forAll { (x: BitVector) =>
       val ok = new java.util.concurrent.atomic.AtomicBoolean(true)
-      def t = new Thread {
-        override def start =
-          (0 until x.size.toInt).foreach { i =>
-            ok.compareAndSet(true, x.sizeGreaterThan(i.toLong))
-            ()
-          }
-      }
+      def t =
+        new Thread {
+          override def start =
+            (0 until x.size.toInt).foreach { i =>
+              ok.compareAndSet(true, x.sizeGreaterThan(i.toLong))
+              ()
+            }
+        }
       val t1 = t
       val t2 = t
       t1.start

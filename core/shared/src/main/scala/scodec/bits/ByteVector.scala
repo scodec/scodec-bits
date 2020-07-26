@@ -236,14 +236,15 @@ sealed abstract class ByteVector
     else if (n1 == 0) ByteVector.empty
     else {
       @annotation.tailrec
-      def go(accL: ByteVector, cur: ByteVector, n1: Long): ByteVector = cur match {
-        case Chunk(bs) => accL ++ Chunk(bs.take(n1))
-        case Append(l, r) =>
-          if (n1 > l.size) go(accL ++ l, r, n1 - l.size)
-          else go(accL, l, n1)
-        case c: Chunks => go(accL, c.chunks, n1)
-        case b: Buffer => go(accL, b.unbuffer, n1)
-      }
+      def go(accL: ByteVector, cur: ByteVector, n1: Long): ByteVector =
+        cur match {
+          case Chunk(bs) => accL ++ Chunk(bs.take(n1))
+          case Append(l, r) =>
+            if (n1 > l.size) go(accL ++ l, r, n1 - l.size)
+            else go(accL, l, n1)
+          case c: Chunks => go(accL, c.chunks, n1)
+          case b: Buffer => go(accL, b.unbuffer, n1)
+        }
       go(ByteVector.empty, this, n1)
     }
   }
@@ -344,13 +345,14 @@ sealed abstract class ByteVector
     */
   final def foldLeftBB[A](z: A)(f: (A, ByteBuffer) => A): A = {
     @annotation.tailrec
-    def go(rem: List[ByteVector], a: A): A = rem match {
-      case Chunk(bs) :: rem            => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
-      case Append(l, r) :: rem         => go(l :: r :: rem, a)
-      case Chunks(Append(l, r)) :: rem => go(l :: r :: rem, a)
-      case (b: Buffer) :: rem          => go(b.unbuffer :: rem, a)
-      case Nil                         => a
-    }
+    def go(rem: List[ByteVector], a: A): A =
+      rem match {
+        case Chunk(bs) :: rem            => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
+        case Append(l, r) :: rem         => go(l :: r :: rem, a)
+        case Chunks(Append(l, r)) :: rem => go(l :: r :: rem, a)
+        case (b: Buffer) :: rem          => go(b.unbuffer :: rem, a)
+        case Nil                         => a
+      }
     go(this :: Nil, z)
   }
 
@@ -375,25 +377,27 @@ sealed abstract class ByteVector
 
   private[scodec] final def foreachV(f: View => Unit): Unit = {
     @annotation.tailrec
-    def go(rem: List[ByteVector]): Unit = rem match {
-      case Chunk(bs) :: rem            => f(bs); go(rem)
-      case Append(l, r) :: rem         => go(l :: r :: rem)
-      case Chunks(Append(l, r)) :: rem => go(l :: r :: rem)
-      case (b: Buffer) :: rem          => go(b.unbuffer :: rem)
-      case Nil                         => ()
-    }
+    def go(rem: List[ByteVector]): Unit =
+      rem match {
+        case Chunk(bs) :: rem            => f(bs); go(rem)
+        case Append(l, r) :: rem         => go(l :: r :: rem)
+        case Chunks(Append(l, r)) :: rem => go(l :: r :: rem)
+        case (b: Buffer) :: rem          => go(b.unbuffer :: rem)
+        case Nil                         => ()
+      }
     go(this :: Nil)
   }
 
   private[scodec] final def foreachVPartial(f: View => Boolean): Boolean = {
     @annotation.tailrec
-    def go(rem: List[ByteVector]): Boolean = rem match {
-      case Chunk(bs) :: rem            => if (f(bs)) go(rem) else false
-      case Append(l, r) :: rem         => go(l :: r :: rem)
-      case Chunks(Append(l, r)) :: rem => go(l :: r :: rem)
-      case (b: Buffer) :: rem          => go(b.unbuffer :: rem)
-      case Nil                         => true
-    }
+    def go(rem: List[ByteVector]): Boolean =
+      rem match {
+        case Chunk(bs) :: rem            => if (f(bs)) go(rem) else false
+        case Append(l, r) :: rem         => go(l :: r :: rem)
+        case Chunks(Append(l, r)) :: rem => go(l :: r :: rem)
+        case (b: Buffer) :: rem          => go(b.unbuffer :: rem)
+        case Nil                         => true
+      }
     go(this :: Nil)
   }
 
@@ -561,20 +565,22 @@ sealed abstract class ByteVector
     *
     * @group collection
     */
-  final def compact: ByteVector = this match {
-    case Chunk(_) => this
-    case _        => this.copy
-  }
+  final def compact: ByteVector =
+    this match {
+      case Chunk(_) => this
+      case _        => this.copy
+    }
 
   /**
     * Invokes `compact` on any subtrees whose size is `<= chunkSize`.
     * @group collection
     */
-  final def partialCompact(chunkSize: Long): ByteVector = this match {
-    case small if small.size <= chunkSize => small.compact
-    case Append(l, r)                     => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
-    case _                                => this
-  }
+  final def partialCompact(chunkSize: Long): ByteVector =
+    this match {
+      case small if small.size <= chunkSize => small.compact
+      case Append(l, r)                     => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
+      case _                                => this
+    }
 
   /**
     * Returns a vector with the same contents as this vector but with a single compacted node made up
@@ -586,9 +592,8 @@ sealed abstract class ByteVector
     if (sz <= Int.MaxValue) {
       val arr = this.toArray
       Chunk(View(new AtArray(arr), 0, sz))
-    } else {
+    } else
       take(Int.MaxValue).copy ++ drop(Int.MaxValue).copy
-    }
   }
 
   /**
@@ -664,10 +669,11 @@ sealed abstract class ByteVector
     *
     * @group conversions
     */
-  final def toIndexedSeq: IndexedSeq[Byte] = new IndexedSeq[Byte] {
-    val length = toIntSize(ByteVector.this.size)
-    def apply(i: Int) = ByteVector.this.apply(i.toLong)
-  }
+  final def toIndexedSeq: IndexedSeq[Byte] =
+    new IndexedSeq[Byte] {
+      val length = toIntSize(ByteVector.this.size)
+      def apply(i: Int) = ByteVector.this.apply(i.toLong)
+    }
 
   /**
     * Converts the contents of this vector to a `Seq`.
@@ -742,10 +748,11 @@ sealed abstract class ByteVector
     *
     * @group conversions
     */
-  final def toByteBuffer: ByteBuffer = this match {
-    case Chunk(v) => v.asByteBuffer
-    case _        => ByteBuffer.wrap(toArray).asReadOnlyBuffer()
-  }
+  final def toByteBuffer: ByteBuffer =
+    this match {
+      case Chunk(v) => v.asByteBuffer
+      case _        => ByteBuffer.wrap(toArray).asReadOnlyBuffer()
+    }
 
   /**
     * Converts the contents of this byte vector to a binary string of `size * 8` digits.
@@ -834,7 +841,7 @@ sealed abstract class ByteVector
       val half = (bytes(i) << off) & mask
       val full =
         if (off + length <= 8 || i + 1 >= bytes.length) half
-        else half | ((bytes(i + 1) & ((mask << (8 - off)) & 0xFF)) >>> (8 - off))
+        else half | ((bytes(i + 1) & ((mask << (8 - off)) & 0xff)) >>> (8 - off))
       full >>> (8 - length)
     }
   }
@@ -888,21 +895,21 @@ sealed abstract class ByteVector
     * @group conversions
     */
   final def toBase58(alphabet: Bases.Alphabet): String =
-    if (isEmpty) {
+    if (isEmpty)
       ""
-    } else {
+    else {
       val ZERO = BigInt(0)
       val RADIX = BigInt(58L)
       val ones = List.fill(takeWhile(_ == 0).length.toInt)('1')
 
       @tailrec
-      def go(value: BigInt, chars: List[Char]): String = value match {
-        case ZERO => (ones ++ chars).mkString
-        case _ => {
-          val (div, rem) = value /% RADIX
-          go(div, alphabet.toChar(rem.toInt) +: chars)
+      def go(value: BigInt, chars: List[Char]): String =
+        value match {
+          case ZERO => (ones ++ chars).mkString
+          case _ =>
+            val (div, rem) = value /% RADIX
+            go(div, alphabet.toChar(rem.toInt) +: chars)
         }
-      }
       go(BigInt(1, toArray), List.empty)
     }
 
@@ -949,11 +956,10 @@ sealed abstract class ByteVector
         .append(alphabet.toChar(first))
         .append(alphabet.toChar(second))
 
-      if (alphabet.pad != 0.toChar) {
+      if (alphabet.pad != 0.toChar)
         bldr
           .append(alphabet.pad)
           .append(alphabet.pad)
-      }
     } else if (mod == 2) {
       var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
       val third = buffer & 0x3f
@@ -1047,11 +1053,10 @@ sealed abstract class ByteVector
     */
   final def toUUID: UUID = {
     // Sanity check
-    if (size != 16) {
+    if (size != 16)
       throw new IllegalArgumentException(
         s"Cannot convert ByteVector of size $size to UUID; must be 16 bytes"
       )
-    }
     // Convert
     val byteBuffer = toByteBuffer
     val mostSignificant = byteBuffer.getLong
@@ -1065,9 +1070,8 @@ sealed abstract class ByteVector
     */
   final def decodeString(implicit charset: Charset): Either[CharacterCodingException, String] = {
     val decoder = charset.newDecoder
-    try {
-      Right(decoder.decode(toByteBuffer).toString)
-    } catch {
+    try Right(decoder.decode(toByteBuffer).toString)
+    catch {
       case e: CharacterCodingException => Left(e)
     }
   }
@@ -1216,9 +1220,7 @@ sealed abstract class ByteVector
         deflater.setInput(Array.empty[Byte])
         deflater.finish()
         result ++ loop(ByteVector.empty, true)
-      } finally {
-        deflater.end()
-      }
+      } finally deflater.end()
     }
 
   /**
@@ -1258,9 +1260,7 @@ sealed abstract class ByteVector
         } catch {
           case e: DataFormatException => Left(e)
         }
-      } finally {
-        inflater.end()
-      }
+      } finally inflater.end()
     }
 
   /**
@@ -1289,8 +1289,8 @@ sealed abstract class ByteVector
     * @param sr secure random
     * @group crypto
     */
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
-      implicit sr: SecureRandom
+  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
+      sr: SecureRandom
   ): Either[GeneralSecurityException, ByteVector] =
     cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
 
@@ -1303,8 +1303,8 @@ sealed abstract class ByteVector
     * @param sr secure random
     * @group crypto
     */
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(
-      implicit sr: SecureRandom
+  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
+      sr: SecureRandom
   ): Either[GeneralSecurityException, ByteVector] =
     cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
 
@@ -1346,17 +1346,16 @@ sealed abstract class ByteVector
     */
   final def ===(other: ByteVector): Boolean = {
     val s = this.size
-    if (s != other.size) {
+    if (s != other.size)
       false
-    } else {
+    else {
       @annotation.tailrec
       def go(i: Long): Boolean =
-        if (i < s) {
+        if (i < s)
           if (this(i) == other(i)) go(i + 1)
           else false
-        } else {
+        else
           true
-        }
       go(0)
     }
   }
@@ -1366,10 +1365,11 @@ sealed abstract class ByteVector
     * @see [[ByteVector.===]]
     * @group collection
     */
-  override def equals(other: Any) = other match {
-    case that: ByteVector => this === that
-    case _                => false
-  }
+  override def equals(other: Any) =
+    other match {
+      case that: ByteVector => this === that
+      case _                => false
+    }
 
   /**
     * Display the size and bytes of this `ByteVector`.
@@ -1382,21 +1382,22 @@ sealed abstract class ByteVector
     else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
     else s"ByteVector($size bytes, #${hashCode})"
 
-  private[bits] def pretty(prefix: String): String = this match {
-    case Append(l, r) =>
-      prefix + "bytes:append\n" +
-        l.pretty(prefix + "  ") + "\n" +
-        r.pretty(prefix + "  ")
-    case Chunks(c) =>
-      prefix + "bytes:chunks " + size + "\n" +
-        c.left.pretty(prefix + "  ") + "\n" +
-        c.right.pretty(prefix + "  ")
-    case b: Buffer =>
-      prefix + "bytes:buffer " + size + "\n" +
-        b.hd.pretty(prefix + "  ") + "\n" +
-        b.lastBytes.pretty(prefix + "  ")
-    case Chunk(_) => prefix + (if (size < 16) "0x" + toHex else "#" + hashCode)
-  }
+  private[bits] def pretty(prefix: String): String =
+    this match {
+      case Append(l, r) =>
+        prefix + "bytes:append\n" +
+          l.pretty(prefix + "  ") + "\n" +
+          r.pretty(prefix + "  ")
+      case Chunks(c) =>
+        prefix + "bytes:chunks " + size + "\n" +
+          c.left.pretty(prefix + "  ") + "\n" +
+          c.right.pretty(prefix + "  ")
+      case b: Buffer =>
+        prefix + "bytes:buffer " + size + "\n" +
+          b.hd.pretty(prefix + "  ") + "\n" +
+          b.lastBytes.pretty(prefix + "  ")
+      case Chunk(_) => prefix + (if (size < 16) "0x" + toHex else "#" + hashCode)
+    }
 
   private def checkIndex(n: Long): Unit =
     if (n < 0 || n >= size)
@@ -1405,27 +1406,25 @@ sealed abstract class ByteVector
   protected final def writeReplace(): AnyRef = new SerializationProxy(toArray)
 
   override def compare(that: ByteVector): Int =
-    if (this.eq(that)) {
+    if (this.eq(that))
       0
-    } else {
+    else {
       val thisLength = this.length
       val thatLength = that.length
       val commonLength = thisLength.min(thatLength)
       var i = 0
       while (i < commonLength) {
-        val cmp = (this(i.toLong) & 0xFF).compare(that(i.toLong) & 0xFF)
-        if (cmp != 0) {
+        val cmp = (this(i.toLong) & 0xff).compare(that(i.toLong) & 0xff)
+        if (cmp != 0)
           return cmp
-        }
         i = i + 1
       }
-      if (thisLength < thatLength) {
+      if (thisLength < thatLength)
         -1
-      } else if (thisLength > thatLength) {
+      else if (thisLength > thatLength)
         1
-      } else {
+      else
         0
-      }
     }
 }
 
@@ -1576,10 +1575,11 @@ object ByteVector extends ByteVectorPlatform {
       copyToArray(arr, 0)
       arr
     }
-    def toArrayUnsafe: Array[Byte] = at match {
-      case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
-      case _                                                       => toArray
-    }
+    def toArrayUnsafe: Array[Byte] =
+      at match {
+        case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
+        case _                                                       => toArray
+      }
     def copyToBuffer(buffer: ByteBuffer): Int =
       at.copyToBuffer(buffer, offset, toIntSize(size))
     def take(n: Long): View =
@@ -1845,7 +1845,7 @@ object ByteVector extends ByteVectorPlatform {
     val bldr = ByteBuffer.allocate((str.size + 1) / 2)
     while (idx < withoutPrefix.length && (err eq null)) {
       val c = withoutPrefix(idx)
-      if (!alphabet.ignore(c)) {
+      if (!alphabet.ignore(c))
         try {
           val nibble = alphabet.toIndex(c)
           if (midByte) {
@@ -1860,21 +1860,23 @@ object ByteVector extends ByteVectorPlatform {
           case _: IllegalArgumentException =>
             err = s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         }
-      }
       idx += 1
     }
-    if (err eq null) {
+    if (err eq null)
       Right(
-        (if (midByte) {
-          bldr.put(hi.toByte)
-          bldr.flip()
-          ByteVector(bldr).shiftRight(4, false)
-        } else {
-          bldr.flip()
-          ByteVector(bldr)
-        }, count)
+        (
+          if (midByte) {
+            bldr.put(hi.toByte)
+            bldr.flip()
+            ByteVector(bldr).shiftRight(4, false)
+          } else {
+            bldr.flip()
+            ByteVector(bldr)
+          },
+          count
+        )
       )
-    } else Left(err)
+    else Left(err)
   }
 
   /**
@@ -1924,7 +1926,7 @@ object ByteVector extends ByteVectorPlatform {
     val bldr = ByteBuffer.allocate((str.size + 7) / 8)
     while (idx < withoutPrefix.length && (err eq null)) {
       val c = withoutPrefix(idx)
-      if (!alphabet.ignore(c)) {
+      if (!alphabet.ignore(c))
         try {
           byte = (byte << 1) | (1 & alphabet.toIndex(c))
           bits += 1
@@ -1933,7 +1935,6 @@ object ByteVector extends ByteVectorPlatform {
           case _: IllegalArgumentException =>
             err = s"Invalid binary character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         }
-      }
       if (bits == 8) {
         bldr.put(byte.toByte)
         byte = 0
@@ -1941,16 +1942,21 @@ object ByteVector extends ByteVectorPlatform {
       }
       idx += 1
     }
-    if (err eq null) {
-      Right((if (bits > 0) {
-        bldr.put((byte << (8 - bits)).toByte)
-        bldr.flip()
-        ByteVector(bldr).shiftRight((8 - bits).toLong, false)
-      } else {
-        bldr.flip()
-        ByteVector(bldr)
-      }, count))
-    } else Left(err)
+    if (err eq null)
+      Right(
+        (
+          if (bits > 0) {
+            bldr.put((byte << (8 - bits)).toByte)
+            bldr.flip()
+            ByteVector(bldr).shiftRight((8 - bits).toLong, false)
+          } else {
+            bldr.flip()
+            ByteVector(bldr)
+          },
+          count
+        )
+      )
+    else Left(err)
   }
 
   /**
@@ -1998,29 +2004,28 @@ object ByteVector extends ByteVectorPlatform {
     while (idx < str.length) {
       val c = str(idx)
 
-      if (Pad != 0.toChar && c == Pad) {
+      if (Pad != 0.toChar && c == Pad)
         padding += 1
-      } else if (!alphabet.ignore(c)) {
+      else if (!alphabet.ignore(c)) {
         if (padding > 0)
           return Left(
             s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
           )
 
         val index =
-          try {
-            alphabet.toIndex(c)
-          } catch {
+          try alphabet.toIndex(c)
+          catch {
             case _: IllegalArgumentException =>
               return Left(s"Invalid base 32 character '$c' at index $idx")
           }
 
-        buffer |= (index << (8 - bitsPerChar) >>> bidx) & 0xFF
+        buffer |= (index << (8 - bitsPerChar) >>> bidx) & 0xff
         bidx += bitsPerChar
 
         if (bidx >= 8) {
           bidx -= 8
           acc.put(buffer.toByte)
-          buffer = (index << (8 - bidx)) & 0xFF
+          buffer = (index << (8 - bidx)) & 0xff
         }
       }
 
@@ -2090,9 +2095,8 @@ object ByteVector extends ByteVectorPlatform {
     val RADIX = BigInt(58L)
     try {
       val decoded = trim.foldLeft(BigInt(0)) { (a, c) =>
-        try {
-          a * RADIX + BigInt(alphabet.toIndex(c))
-        } catch {
+        try a * RADIX + BigInt(alphabet.toIndex(c))
+        catch {
           case _: IllegalArgumentException =>
             val idx = trim.takeWhile(_ != c).length
             throw new IllegalArgumentException(s"Invalid base 58 character '$c' at index $idx")
@@ -2158,35 +2162,29 @@ object ByteVector extends ByteVectorPlatform {
         case c if alphabet.ignore(c) => // ignore
         case c =>
           val cidx = {
-            if (padding == 0) {
-              if (c == Pad) {
+            if (padding == 0)
+              if (c == Pad)
                 if (mod == 2 || mod == 3) {
                   padding += 1
                   0
-                } else {
+                } else
                   return Base64PaddingError
-                }
-              } else {
+              else
                 try alphabet.toIndex(c)
                 catch {
                   case _: IllegalArgumentException =>
                     return Left(s"Invalid base 64 character '$c' at index $idx")
                 }
-              }
-            } else {
-              if (c == Pad) {
-                if (padding == 1 && mod == 3) {
-                  padding += 1
-                  0
-                } else {
-                  return Base64PaddingError
-                }
-              } else {
-                return Left(
-                  s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
-                )
-              }
-            }
+            else if (c == Pad)
+              if (padding == 1 && mod == 3) {
+                padding += 1
+                0
+              } else
+                return Base64PaddingError
+            else
+              return Left(
+                s"Unexpected character '$c' at index $idx after padding character; only '=' and whitespace characters allowed after first padding character"
+              )
           }
           mod match {
             case 0 =>
@@ -2381,18 +2379,15 @@ object ByteVector extends ByteVectorPlatform {
     // for tiny ByteVectors
     override def ++(bs: ByteVector): ByteVector =
       if (bs.isEmpty) this
-      else {
-        // threads race to increment id, winner gets to update tl mutably
-        if (id.compareAndSet(stamp, stamp + 1) && (lastChunk.length - lastSize > bs.size)) {
-          bs.copyToArray(lastChunk, lastSize)
-          Buffer(id, stamp + 1, hd, lastChunk, lastSize + bs.size.toInt)
-        } else {
-          if (lastSize == 0) // just append directly to `hd`
-            Buffer(id, stamp, (hd ++ bs).unbuffer, lastChunk, lastSize)
-          else // loser has to make a copy of the scratch space
-            Buffer(new AtomicLong(0), 0, unbuffer, new Array[Byte](lastChunk.length), 0) ++ bs
-        }
-      }
+      else
+      // threads race to increment id, winner gets to update tl mutably
+      if (id.compareAndSet(stamp, stamp + 1) && (lastChunk.length - lastSize > bs.size)) {
+        bs.copyToArray(lastChunk, lastSize)
+        Buffer(id, stamp + 1, hd, lastChunk, lastSize + bs.size.toInt)
+      } else if (lastSize == 0) // just append directly to `hd`
+        Buffer(id, stamp, (hd ++ bs).unbuffer, lastChunk, lastSize)
+      else // loser has to make a copy of the scratch space
+        Buffer(new AtomicLong(0), 0, unbuffer, new Array[Byte](lastChunk.length), 0) ++ bs
 
     def lastBytes = ByteVector.view(lastChunk).take(lastSize.toLong)
 

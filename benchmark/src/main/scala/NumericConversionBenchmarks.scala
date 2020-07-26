@@ -10,9 +10,10 @@ class NumericConversionBenchmarks {
 
   val N = 1024
 
-  def bitVectors(size: Int) = (0 to N).map { n =>
-    BitVector.fromLong(n.toLong).take(size.toLong).compact
-  }
+  def bitVectors(size: Int) =
+    (0 to N).map { n =>
+      BitVector.fromLong(n.toLong).take(size.toLong).compact
+    }
 
   val bitVectors64bits = bitVectors(64)
   val bitVectors60bits = bitVectors(60)

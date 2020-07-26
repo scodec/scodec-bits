@@ -12,10 +12,10 @@ scalaVersion in ThisBuild := crossScalaVersions.value.head
 githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.11")
 githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
 githubWorkflowBuild in ThisBuild := Seq(
-  WorkflowStep.Sbt(List("fmtCheck", "compile")),
+  WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("testJVM")),
   WorkflowStep.Sbt(List("testJS")),
-  WorkflowStep.Sbt(List("doc", "mimaReportBinaryIssues")),
+  WorkflowStep.Sbt(List("doc", "mimaReportBinaryIssues"))
 )
 
 lazy val contributors = Seq(
@@ -81,7 +81,8 @@ lazy val publishingSettings = Seq(
     <url>http://github.com/scodec/scodec-bits</url>
     <developers>
       {
-      for ((username, name) <- contributors) yield <developer>
+      for ((username, name) <- contributors)
+        yield <developer>
         <id>{username}</id>
         <name>{name}</name>
         <url>http://github.com/{username}</url>
@@ -89,13 +90,14 @@ lazy val publishingSettings = Seq(
     }
     </developers>
   ),
-  pomPostProcess := { (node) =>
+  pomPostProcess := { node =>
     import scala.xml._
     import scala.xml.transform._
-    def stripIf(f: Node => Boolean) = new RewriteRule {
-      override def transform(n: Node) =
-        if (f(n)) NodeSeq.Empty else n
-    }
+    def stripIf(f: Node => Boolean) =
+      new RewriteRule {
+        override def transform(n: Node) =
+          if (f(n)) NodeSeq.Empty else n
+      }
     val stripTestScope = stripIf(n => n.label == "dependency" && (n \ "scope").text == "test")
     new RuleTransformer(stripTestScope).transform(node)(0)
   }
