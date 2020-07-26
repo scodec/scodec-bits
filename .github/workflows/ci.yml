@@ -78,9 +78,9 @@ jobs:
 
       - run: sbt ++${{ matrix.scala }} compile
 
-      - run: sbt ++${{ matrix.scala }} testJVM
+      - run: sbt ++${{ matrix.scala }} coreJVM/test
 
-      - run: sbt ++${{ matrix.scala }} testJS
+      - run: sbt ++${{ matrix.scala }} coreJS/test
 
       - run: sbt ++${{ matrix.scala }} doc mimaReportBinaryIssues
 

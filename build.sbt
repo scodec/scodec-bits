@@ -13,8 +13,8 @@ githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.11")
 githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
 githubWorkflowBuild in ThisBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
-  WorkflowStep.Sbt(List("testJVM")),
-  WorkflowStep.Sbt(List("testJS")),
+  WorkflowStep.Sbt(List("coreJVM/test")),
+  WorkflowStep.Sbt(List("coreJS/test")),
   WorkflowStep.Sbt(List("doc", "mimaReportBinaryIssues"))
 )
 
