@@ -15,7 +15,7 @@ githubWorkflowBuild in ThisBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("coreJVM/test")),
   WorkflowStep.Sbt(List("coreJS/test")),
-  WorkflowStep.Sbt(List("doc", "mimaReportBinaryIssues"))
+  WorkflowStep.Sbt(List("mimaReportBinaryIssues"))
 )
 
 lazy val contributors = Seq(

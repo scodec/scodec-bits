@@ -82,7 +82,7 @@ jobs:
 
       - run: sbt ++${{ matrix.scala }} coreJS/test
 
-      - run: sbt ++${{ matrix.scala }} doc mimaReportBinaryIssues
+      - run: sbt ++${{ matrix.scala }} mimaReportBinaryIssues
 
       - name: Upload target directory 'target' (${{ matrix.scala }})
         uses: actions/upload-artifact@v1
