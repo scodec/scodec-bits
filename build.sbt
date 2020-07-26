@@ -63,7 +63,15 @@ lazy val commonSettings = Seq(
       case other => sys.error(s"Unsupported scala version: $other")
     }),
   testFrameworks += new TestFramework("munit.Framework"),
-  releaseCrossBuild := true
+  releaseCrossBuild := true,
+  Compile / doc / sources := {
+    val old = (Compile / doc / sources).value
+    if (isDotty.value)
+      Seq()
+    else
+      old
+  },
+
 ) ++ publishingSettings
 
 lazy val publishingSettings = Seq(
@@ -131,13 +139,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         default
     },
     autoAPIMappings := true,
-    Compile / doc / sources := {
-      val old = (Compile / doc / sources).value
-      if (isDotty.value)
-        Seq()
-      else
-        old
-    },
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
     publishArtifact in (Compile, packageDoc) := !isDotty.value,
