@@ -442,14 +442,15 @@ sealed abstract class ByteVector
     */
   final def containsSlice(slice: ByteVector): Boolean = indexOfSlice(slice) >= 0
 
-  /**
-    * Converts this vector in to a sequence of `chunkSize`-byte vectors.
-    * @group collection
-    */
-  final def grouped(chunkSize: Long): Iterator[ByteVector] =
+  // This was public before version 1.1.8 so it must stay here for bincompat
+  // The public grouped method is adding via an extension method defined in the companion
+  private[bits] final def grouped(chunkSize: Long): Stream[ByteVector] =
+    groupedIterator(chunkSize).toStream
+
+  private final def groupedIterator(chunkSize: Long): Iterator[ByteVector] =
     if (isEmpty) Iterator.empty
     else if (size <= chunkSize) Iterator(this)
-    else Iterator(take(chunkSize)) ++ drop(chunkSize).grouped(chunkSize)
+    else Iterator(take(chunkSize)) ++ drop(chunkSize).groupedIterator(chunkSize)
 
   /**
     * Returns the first byte of this vector or throws if vector is emtpy.
@@ -614,7 +615,9 @@ sealed abstract class ByteVector
     */
   final def copyToArray(xs: Array[Byte], start: Int): Unit = {
     var i = start
-    foreachV { v => v.copyToArray(xs, i); i += toIntSize(v.size) }
+    foreachV { v =>
+      v.copyToArray(xs, i); i += toIntSize(v.size)
+    }
   }
 
   /**
@@ -1276,7 +1279,9 @@ sealed abstract class ByteVector
     * @group conversions
     */
   final def digest(digest: MessageDigest): ByteVector = {
-    foreachV(v => digest.update(v.toArray))
+    foreachV { v =>
+      digest.update(v.toArray)
+    }
     ByteVector.view(digest.digest)
   }
 
@@ -1316,7 +1321,9 @@ sealed abstract class ByteVector
   )(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
     try {
       aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view => ci.update(view.toArrayUnsafe); () }
+      foreachV { view =>
+        ci.update(view.toArrayUnsafe); ()
+      }
       Right(ByteVector.view(ci.doFinal()))
     } catch {
       case e: GeneralSecurityException => Left(e)
@@ -2425,4 +2432,13 @@ object ByteVector extends ByteVectorPlatform {
     * @group constructors
     */
   def unapplySeq(b: ByteVector): Some[Seq[Byte]] = Some(b.toIndexedSeq)
+
+  implicit class GroupedOp(val self: ByteVector) extends AnyVal {
+
+    /**
+      * Converts this vector in to a sequence of `chunkSize`-byte vectors.
+      * @group collection
+      */
+    final def grouped(chunkSize: Long): Iterator[ByteVector] = self.groupedIterator(chunkSize)
+  }
 }

@@ -7,24 +7,7 @@ import scala.language.experimental.macros
   *
   * @see [[BitVector]] and [[ByteVector]]
   */
-package object bits {
-
-  implicit class EitherOps[A, B](val e: Either[A, B]) extends AnyVal {
-    def flatMap[A1 >: A, B1](f: B => Either[A1, B1]): Either[A1, B1] = e.right.flatMap(f)
-    def map[B1](f: B => B1): Either[A, B1] = e.right.map(f)
-
-    def toOption: Option[B] =
-      e match {
-        case Right(b) => Some(b)
-        case _        => None
-      }
-  }
-
-  private[bits] type IterableOnce[+A] = collection.GenTraversableOnce[A]
-
-  private[bits] implicit class IterableOnceOps[A](private val self: IterableOnce[A]) {
-    def iterator: Iterator[A] = self.toIterator
-  }
+package object bits extends ScalaVersionSpecific {
 
   /**
     * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
@@ -52,5 +35,25 @@ package object bits {
       * of type `ByteVector`.
       */
     def hex(args: ByteVector*): ByteVector = macro LiteralSyntaxMacros.hexStringInterpolator
+  }
+
+  private[bits] implicit class EitherOps[L, R](val self: Either[L, R]) extends AnyVal {
+    def map[R2](f: R => R2): Either[L, R2] =
+      self match {
+        case Right(r)      => Right(f(r))
+        case l: Left[L, R] => l.asInstanceOf[Either[L, R2]]
+      }
+
+    def flatMap[R2](f: R => Either[L, R2]): Either[L, R2] =
+      self match {
+        case Right(r)      => f(r)
+        case l: Left[L, R] => l.asInstanceOf[Either[L, R2]]
+      }
+
+    def toOption: Option[R] =
+      self match {
+        case Right(r) => Some(r)
+        case Left(_)  => None
+      }
   }
 }

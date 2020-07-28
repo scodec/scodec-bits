@@ -34,11 +34,10 @@ lazy val commonSettings = Seq(
     ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
   ),
   Compile / unmanagedSourceDirectories ++= {
-    if (isDotty.value)
-      List(CrossType.Pure, CrossType.Full).flatMap(
-        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + "-3"))
-      )
-    else Nil
+    val major = if (isDotty.value) "-3" else "-2"
+    List(CrossType.Pure, CrossType.Full).flatMap(
+      _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
+    )
   },
   unmanagedResources in Compile ++= {
     val base = baseDirectory.value
@@ -166,36 +165,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     publishArtifact in packageDoc := !isDotty.value,
     scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
     mimaPreviousArtifacts := {
-      List("1.1.12").map { pv =>
+      if (isDotty.value) Set.empty
+      else List("1.1.17").map { pv =>
         organization.value % (normalizedName.value + "_" + scalaBinaryVersion.value) % pv
       }.toSet
     },
-    mimaBinaryIssueFilters ++= Seq(
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.grouped"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$GroupedOp"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$GroupedOp$"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.GroupedOp"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector$GroupedOp"),
-      ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.BitVector.grouped"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitVector$GroupedOp"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BitVector$GroupedOp$"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.GroupedOp"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector$GroupedOp"),
-      ProblemFilters.exclude[IncompatibleTemplateDefProblem]("scodec.bits.ScalaVersionSpecific"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific$"),
-      ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.package.EitherOps"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.package$EitherOps$"),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem](
-        "scodec.bits.LiteralSyntaxMacros.hexStringInterpolator"
-      ),
-      ProblemFilters.exclude[IncompatibleMethTypeProblem](
-        "scodec.bits.LiteralSyntaxMacros.binStringInterpolator"
-      ),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
-      ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific")
-    )
+    mimaBinaryIssueFilters ++= Seq()
   )
 
 lazy val coreJVM = core.jvm.settings(
