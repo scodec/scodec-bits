@@ -63,14 +63,28 @@ lazy val commonSettings = Seq(
     }),
   testFrameworks += new TestFramework("munit.Framework"),
   releaseCrossBuild := true,
+  releaseProcess := {
+    import sbtrelease.ReleaseStateTransformations._
+    Seq[ReleaseStep](
+      inquireVersions,
+      runClean,
+      releaseStepCommandAndRemaining("+test"),
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      releaseStepCommandAndRemaining("+publish"),
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
+    )
+  },
   Compile / doc / sources := {
     val old = (Compile / doc / sources).value
     if (isDotty.value)
       Seq()
     else
       old
-  },
-
+  }
 ) ++ publishingSettings
 
 lazy val publishingSettings = Seq(
