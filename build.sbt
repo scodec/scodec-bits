@@ -156,7 +156,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     autoAPIMappings := true,
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
-    publishArtifact in (Compile, packageDoc) := !isDotty.value,
     scalacOptions in (Compile, doc) := {
       val tagOrBranch = {
         if (version.value.endsWith("SNAPSHOT")) gitCurrentBranch.value
@@ -177,8 +176,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     scalacOptions in (Compile, console) ~= {
       _.filterNot(o => o == "-Ywarn-unused" || o == "-Xfatal-warnings")
     },
-    publishArtifact in (Compile, packageDoc) := !isDotty.value,
-    publishArtifact in packageDoc := !isDotty.value,
     scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value,
     mimaPreviousArtifacts := {
       if (isDotty.value) Set.empty
