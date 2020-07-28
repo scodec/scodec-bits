@@ -200,7 +200,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 
 lazy val coreJVM = core.jvm.settings(
   libraryDependencies ++= Seq(
-    "com.google.guava" % "guava" % "23.0" % "test"
+    "com.google.guava" % "guava" % "23.6.1-jre" % "test"
   ),
   OsgiKeys.privatePackage := Nil,
   OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
