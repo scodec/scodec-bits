@@ -78,6 +78,8 @@ lazy val commonSettings = Seq(
       pushChanges
     )
   },
+  // Needed b/c coreJS is published twice due to crossScalaVersions override
+  publishConfiguration := publishConfiguration.value.withOverwrite(true),
   Compile / doc / sources := {
     val old = (Compile / doc / sources).value
     if (isDotty.value)
