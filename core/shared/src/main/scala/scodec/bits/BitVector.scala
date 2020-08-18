@@ -1221,20 +1221,23 @@ sealed abstract class BitVector
     * Returns true if the specified `BitVector` has the same contents as this vector.
     * @group collection
     */
-  final def ===(other: BitVector): Boolean = {
-    val chunkSize = 8L * 1024 * 64
-    @annotation.tailrec
-    def go(x: BitVector, y: BitVector): Boolean =
-      if (x.isEmpty) y.isEmpty
-      else {
-        val chunkX = x.take(chunkSize)
-        val chunkY = y.take(chunkSize)
-        chunkX.size == chunkY.size &&
-        chunkX.toByteVector === chunkY.toByteVector &&
-        go(x.drop(chunkSize), y.drop(chunkSize))
-      }
-    go(this, other)
-  }
+  final def ===(other: BitVector): Boolean =
+    if (this.eq(other)) true
+    else if (this.length != other.length) false
+    else {
+      val chunkSize = 8L * 1024 * 64
+      @annotation.tailrec
+      def go(x: BitVector, y: BitVector): Boolean =
+        if (x.isEmpty) y.isEmpty
+        else {
+          val chunkX = x.take(chunkSize)
+          val chunkY = y.take(chunkSize)
+          chunkX.toByteVector === chunkY.toByteVector &&
+          go(x.drop(chunkSize), y.drop(chunkSize))
+        }
+
+      go(this, other)
+    }
 
   /**
     * Returns true if the specified value is a `BitVector` with the same contents as this vector.
