@@ -9,7 +9,7 @@ crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-R
 
 scalaVersion in ThisBuild := crossScalaVersions.value.head
 
-githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.11")
+githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.8")
 githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
 githubWorkflowBuild in ThisBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
