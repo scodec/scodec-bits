@@ -15,6 +15,9 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  PGP_SECRET: ${{ secrets.PGP_SECRET }}
 
 jobs:
   build:
@@ -23,7 +26,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.11.12, 2.12.11, 2.13.2, 0.26.0-RC1]
-        java: [adopt@1.11]
+        java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (fast)
@@ -122,7 +125,7 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         scala: [2.11.12]
-        java: [adopt@1.11]
+        java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout current branch (fast)
@@ -273,6 +276,9 @@ jobs:
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-project_target
           path: project/target
+
+      - name: Import signing key
+        run: echo $PGP_SECRET | base64 -d | gpg --import
 
       - name: Publish project
         run: sbt ++${{ matrix.scala }} +publish

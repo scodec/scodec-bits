@@ -5,18 +5,30 @@ import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
-crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
 
-scalaVersion in ThisBuild := crossScalaVersions.value.head
+ThisBuild / scalaVersion := crossScalaVersions.value.head
 
-githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.11")
-githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
-githubWorkflowBuild in ThisBuild := Seq(
+ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.Equals(Ref.Branch("main")))
+ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("coreJVM/test")),
   WorkflowStep.Sbt(List("coreJS/test")),
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"))
 )
+
+ThisBuild / githubWorkflowEnv ++= Map(
+  "SONATYPE_USERNAME" -> s"$${{ secrets.SONATYPE_USERNAME }}",
+  "SONATYPE_PASSWORD" -> s"$${{ secrets.SONATYPE_PASSWORD }}",
+  "PGP_SECRET" -> s"$${{ secrets.PGP_SECRET }}"
+)
+
+ThisBuild / githubWorkflowPublishPreamble +=
+  WorkflowStep.Run(
+    List("echo $PGP_SECRET | base64 -d | gpg --import"),
+    name = Some("Import signing key")
+  )
 
 lazy val contributors = Seq(
   "mpilquist" -> "Michael Pilquist",
@@ -141,7 +153,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.10" % "test",
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.11" % "test",
     libraryDependencies ++= {
       if (isDotty.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
@@ -188,7 +200,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
 
 lazy val coreJVM = core.jvm.settings(
   libraryDependencies ++= Seq(
-    "com.google.guava" % "guava" % "23.6.1-jre" % "test"
+    "com.google.guava" % "guava" % "29.0-jre" % "test"
   ),
   OsgiKeys.privatePackage := Nil,
   OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),

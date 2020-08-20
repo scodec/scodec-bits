@@ -1351,21 +1351,23 @@ sealed abstract class ByteVector
     * Returns true if the specified `ByteVector` has the same contents as this vector.
     * @group collection
     */
-  final def ===(other: ByteVector): Boolean = {
-    val s = this.size
-    if (s != other.size)
-      false
+  final def ===(other: ByteVector): Boolean =
+    if (this.eq(other)) true
     else {
-      @annotation.tailrec
-      def go(i: Long): Boolean =
-        if (i < s)
-          if (this(i) == other(i)) go(i + 1)
-          else false
-        else
-          true
-      go(0)
+      val s = this.size
+      if (s != other.size)
+        false
+      else {
+        @annotation.tailrec
+        def go(i: Long): Boolean =
+          if (i < s)
+            if (this(i) == other(i)) go(i + 1)
+            else false
+          else
+            true
+        go(0)
+      }
     }
-  }
 
   /**
     * Returns true if the specified value is a `ByteVector` with the same contents as this vector.
