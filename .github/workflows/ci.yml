@@ -15,6 +15,9 @@ on:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+  PGP_SECRET: ${{ secrets.PGP_SECRET }}
 
 jobs:
   build:
@@ -273,6 +276,9 @@ jobs:
         with:
           name: target-${{ matrix.os }}-${{ matrix.java }}-project_target
           path: project/target
+
+      - name: Import signing key
+        run: echo $PGP_SECRET | base64 -d | gpg --import
 
       - name: Publish project
         run: sbt ++${{ matrix.scala }} +publish

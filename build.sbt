@@ -5,18 +5,30 @@ import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
-crossScalaVersions in ThisBuild := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
 
-scalaVersion in ThisBuild := crossScalaVersions.value.head
+ThisBuild / scalaVersion := crossScalaVersions.value.head
 
-githubWorkflowJavaVersions in ThisBuild := Seq("adopt@1.8")
-githubWorkflowPublishTargetBranches in ThisBuild := Seq(RefPredicate.Equals(Ref.Branch("main")))
-githubWorkflowBuild in ThisBuild := Seq(
+ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.Equals(Ref.Branch("main")))
+ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("coreJVM/test")),
   WorkflowStep.Sbt(List("coreJS/test")),
   WorkflowStep.Sbt(List("mimaReportBinaryIssues"))
 )
+
+ThisBuild / githubWorkflowEnv ++= Map(
+  "SONATYPE_USERNAME" -> s"$${{ secrets.SONATYPE_USERNAME }}",
+  "SONATYPE_PASSWORD" -> s"$${{ secrets.SONATYPE_PASSWORD }}",
+  "PGP_SECRET" -> s"$${{ secrets.PGP_SECRET }}"
+)
+
+ThisBuild / githubWorkflowPublishPreamble +=
+  WorkflowStep.Run(
+    List("echo $PGP_SECRET | base64 -d | gpg --import"),
+    name = Some("Import signing key")
+  )
 
 lazy val contributors = Seq(
   "mpilquist" -> "Michael Pilquist",
