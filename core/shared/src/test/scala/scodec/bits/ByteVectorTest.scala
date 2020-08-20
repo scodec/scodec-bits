@@ -248,6 +248,27 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector.fromBase32("a").isEmpty)
   }
 
+  test("toBase32(Crockford)") {
+    import scodec.bits.Bases.Alphabets.{Base32Crockford => Crockford}
+
+    assert(hex"".toBase32(Crockford) == (""))
+    assert(hex"00".toBase32(Crockford) == ("00======"))
+    assert(hex"ffffffffff".toBase32(Crockford) == ("ZZZZZZZZ"))
+    assert(hex"8ca74adb5b".toBase32(Crockford) == ("HJKMNPTV"))
+  }
+
+  test("fromValidBase32(Crockford)") {
+    import scodec.bits.Bases.Alphabets.{Base32Crockford => Crockford}
+
+    assert(ByteVector.fromValidBase32("", Crockford) == (ByteVector.empty))
+    assert(ByteVector.fromValidBase32("00======", Crockford) == (hex"00"))
+    assert(ByteVector.fromValidBase32("ZZZZZZZZ", Crockford) == (hex"ffffffffff"))
+    assert(ByteVector.fromValidBase32("HJKMNPTV", Crockford) == (hex"8ca74adb5b"))
+    assert(ByteVector.fromValidBase32("hjkmnptv", Crockford) == (hex"8ca74adb5b"))
+    assert(ByteVector.fromValidBase32("00011111", Crockford) == (hex"0000108421"))
+    assert(ByteVector.fromValidBase32("0Oo1IiLl", Crockford) == (hex"0000108421"))
+  }
+
   test("toBase58") {
     assert(hex"".toBase58 == (""))
     assert(hex"00".toBase58 == ("1"))

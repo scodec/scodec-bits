@@ -124,7 +124,7 @@ object Bases {
     /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]]. Whitespace and hyphen is ignored. */
     object Base32Crockford extends Base32Alphabet {
       private val Chars: Array[Char] =
-        (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'Z')).toArray
+        (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'T') ++ ('V' to 'Z')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray {
         val map = (Chars.zipWithIndex ++ Chars.map(_.toLower).zipWithIndex).toMap
         map ++ Map(
