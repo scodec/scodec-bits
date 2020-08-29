@@ -25,7 +25,10 @@ ThisBuild / versionIntroduced := Map(
 )
 
 ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
-ThisBuild / githubWorkflowPublishTargetBranches := Seq(RefPredicate.Equals(Ref.Branch("main")))
+ThisBuild / githubWorkflowPublishTargetBranches := Seq(
+  RefPredicate.Equals(Ref.Branch("main")),
+  RefPredicate.StartsWith(Ref.Tag("v"))
+)
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("coreJVM/test")),
