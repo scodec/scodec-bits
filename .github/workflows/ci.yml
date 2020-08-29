@@ -12,6 +12,7 @@ on:
     branches: ['*']
   push:
     branches: ['*']
+    tags: [v*]
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -25,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.11.12, 2.12.11, 2.13.2, 0.26.0-RC1]
+        scala: [2.11.12, 2.12.11, 2.13.3, 0.27.0-RC1]
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -85,7 +86,7 @@ jobs:
 
       - run: sbt ++${{ matrix.scala }} coreJS/test
 
-      - run: sbt ++${{ matrix.scala }} mimaReportBinaryIssues
+      - run: sbt ++${{ matrix.scala }} +mimaReportBinaryIssues
 
       - name: Compress target directories
         run: tar cf targets.tar target benchmark/target core/js/target core/jvm/target project/target
@@ -103,7 +104,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest]
-        scala: [2.11.12]
+        scala: [0.27.0-RC1]
         java: [adopt@1.8]
     runs-on: ${{ matrix.os }}
     steps:
@@ -174,22 +175,22 @@ jobs:
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (2.13.2)
+      - name: Download target directories (2.13.3)
         uses: actions/download-artifact@v2
         with:
-          name: target-${{ matrix.os }}-2.13.2-${{ matrix.java }}
+          name: target-${{ matrix.os }}-2.13.3-${{ matrix.java }}
 
-      - name: Inflate target directories (2.13.2)
+      - name: Inflate target directories (2.13.3)
         run: |
           tar xf targets.tar
           rm targets.tar
 
-      - name: Download target directories (0.26.0-RC1)
+      - name: Download target directories (0.27.0-RC1)
         uses: actions/download-artifact@v2
         with:
-          name: target-${{ matrix.os }}-0.26.0-RC1-${{ matrix.java }}
+          name: target-${{ matrix.os }}-0.27.0-RC1-${{ matrix.java }}
 
-      - name: Inflate target directories (0.26.0-RC1)
+      - name: Inflate target directories (0.27.0-RC1)
         run: |
           tar xf targets.tar
           rm targets.tar
@@ -197,5 +198,4 @@ jobs:
       - name: Import signing key
         run: echo $PGP_SECRET | base64 -d | gpg --import
 
-      - name: Publish project
-        run: sbt ++${{ matrix.scala }} +publish
+      - run: sbt ++${{ matrix.scala }} release
