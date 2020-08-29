@@ -5,7 +5,7 @@ import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.2", "0.26.0-RC1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "0.27.0-RC1")
 
 ThisBuild / scalaVersion := crossScalaVersions.value.head
 
@@ -153,7 +153,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.11" % "test",
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.12" % "test",
     libraryDependencies ++= {
       if (isDotty.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
