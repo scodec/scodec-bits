@@ -690,6 +690,13 @@ sealed abstract class BitVector
         new IndexedSeq[Boolean] {
           def length = n
           def apply(idx: Int): Boolean = BitVector.this.get(idx.toLong)
+          override def foldRight[B](z: B)(op: (Boolean, B) => B): B = {
+            val it = reverseIterator
+            var b = z
+            while (it.hasNext)
+              b = op(it.next(), b)
+            b
+          }
         }
       }
       .getOrElse {
