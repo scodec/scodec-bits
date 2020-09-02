@@ -706,6 +706,7 @@ sealed abstract class ByteVector
     new IndexedSeq[Byte] {
       val length = toIntSize(ByteVector.this.size)
       def apply(i: Int) = ByteVector.this.apply(i.toLong)
+      override def foldRight[B](z: B)(op: (Byte, B) => B): B = ByteVector.this.foldRight(z)(op)
     }
 
   /**
