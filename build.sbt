@@ -135,7 +135,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(dottyLibrarySettings)
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.12" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.13" % "test"
   )
 
 lazy val coreJVM = core.jvm.settings(
