@@ -33,25 +33,21 @@ package scodec.bits
 /** Provides types related to base conversion -- e.g., binary, hexadecimal, and base 64. */
 object Bases {
 
-  /**
-    * Partial mapping between characters and indices used in base conversions.
+  /** Partial mapping between characters and indices used in base conversions.
     */
   trait Alphabet {
 
-    /**
-      * Converts the specified index to a character.
+    /** Converts the specified index to a character.
       * @throws IndexOutOfBoundsException if the specified byte is not supported by this alphabet
       */
     def toChar(index: Int): Char
 
-    /**
-      * Converts the specified char to an index.
+    /** Converts the specified char to an index.
       * @throws IllegalArgumentException if the specified char is not supported by this alphabet
       */
     def toIndex(c: Char): Int
 
-    /**
-      * Indicates whether the specified character should be ignored.
+    /** Indicates whether the specified character should be ignored.
       */
     def ignore(c: Char): Boolean
   }

@@ -41,13 +41,12 @@ import Prop.forAll
 class ByteVectorTest extends BitsSuite {
 
   property("hashCode/equals") {
-    forAll(bytesWithIndex) {
-      case (b, m) =>
-        assert((b.take(m) ++ b.drop(m)) == b)
-        assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
-        if (b.take(3) == b.drop(3).take(3))
-          // kind of weak, since this will only happen 1/8th of attempts on average
-          assert(b.take(3).hashCode == b.drop(3).take(3).hashCode)
+    forAll(bytesWithIndex) { case (b, m) =>
+      assert((b.take(m) ++ b.drop(m)) == b)
+      assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
+      if (b.take(3) == b.drop(3).take(3))
+        // kind of weak, since this will only happen 1/8th of attempts on average
+        assert(b.take(3).hashCode == b.drop(3).take(3).hashCode)
     }
   }
 
@@ -127,27 +126,26 @@ class ByteVectorTest extends BitsSuite {
   }
 
   property("consistent with Array[Byte] implementations (1)") {
-    forAll(bytesWithIndex) {
-      case (b, ind) =>
-        val ba = b.toArray
-        assert(Arrays.equals(b.take(ind).toArray, ba.take(ind.toInt)))
-        assert(Arrays.equals(b.drop(ind).toArray, ba.drop(ind.toInt)))
-        assert(b.lift(ind) == ba.lift(ind.toInt))
-        assert(Arrays.equals(b.takeRight(ind).toArray, ba.takeRight(ind.toInt)))
-        assert(Arrays.equals(b.dropRight(ind).toArray, ba.dropRight(ind.toInt)))
-        assert(Arrays.equals(b.reverse.toArray, ba.reverse))
-        assert(Arrays.equals(b.partialCompact(ind).toArray, ba))
-        assert(b.lastOption == ba.lastOption)
-        assert(b.nonEmpty == ba.nonEmpty)
-        if (b.nonEmpty) {
-          assert(b.last == ba.last)
-          assert(Arrays.equals(b.init.toArray, ba.init))
-        }
-        if (ind < b.size) {
-          val actual = b.update(ind, 9).toArray
-          val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
-          assert(Arrays.equals(actual, correct))
-        }
+    forAll(bytesWithIndex) { case (b, ind) =>
+      val ba = b.toArray
+      assert(Arrays.equals(b.take(ind).toArray, ba.take(ind.toInt)))
+      assert(Arrays.equals(b.drop(ind).toArray, ba.drop(ind.toInt)))
+      assert(b.lift(ind) == ba.lift(ind.toInt))
+      assert(Arrays.equals(b.takeRight(ind).toArray, ba.takeRight(ind.toInt)))
+      assert(Arrays.equals(b.dropRight(ind).toArray, ba.dropRight(ind.toInt)))
+      assert(Arrays.equals(b.reverse.toArray, ba.reverse))
+      assert(Arrays.equals(b.partialCompact(ind).toArray, ba))
+      assert(b.lastOption == ba.lastOption)
+      assert(b.nonEmpty == ba.nonEmpty)
+      if (b.nonEmpty) {
+        assert(b.last == ba.last)
+        assert(Arrays.equals(b.init.toArray, ba.init))
+      }
+      if (ind < b.size) {
+        val actual = b.update(ind, 9).toArray
+        val correct = Vector(b.toIndexedSeq: _*).updated(ind.toInt, 9.toByte).toArray
+        assert(Arrays.equals(actual, correct))
+      }
 
     }
   }
@@ -217,49 +215,49 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("toBase32") {
-    assert(hex"".toBase32 == (""))
-    assert(hex"00".toBase32 == ("AA======"))
-    assert(hex"61".toBase32 == ("ME======"))
-    assert(hex"626262".toBase32 == ("MJRGE==="))
-    assert(hex"636363".toBase32 == ("MNRWG==="))
+    assert(hex"".toBase32 == "")
+    assert(hex"00".toBase32 == "AA======")
+    assert(hex"61".toBase32 == "ME======")
+    assert(hex"626262".toBase32 == "MJRGE===")
+    assert(hex"636363".toBase32 == "MNRWG===")
     assert(
-      hex"73696d706c792061206c6f6e6720737472696e67".toBase32 == ("ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH")
+      hex"73696d706c792061206c6f6e6720737472696e67".toBase32 == "ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH"
     )
     assert(
-      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase32 == ("ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH")
+      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase32 == "ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH"
     )
-    assert(hex"516b6fcd0f".toBase32 == ("KFVW7TIP"))
-    assert(hex"bf4f89001e670274dd".toBase32 == ("X5HYSAA6M4BHJXI="))
-    assert(hex"572e4794".toBase32 == ("K4XEPFA="))
-    assert(hex"ecac89cad93923c02321".toBase32 == ("5SWITSWZHER4AIZB"))
-    assert(hex"10c8511e".toBase32 == ("CDEFCHQ="))
-    assert(hex"00000000000000000000".toBase32 == ("AAAAAAAAAAAAAAAA"))
+    assert(hex"516b6fcd0f".toBase32 == "KFVW7TIP")
+    assert(hex"bf4f89001e670274dd".toBase32 == "X5HYSAA6M4BHJXI=")
+    assert(hex"572e4794".toBase32 == "K4XEPFA=")
+    assert(hex"ecac89cad93923c02321".toBase32 == "5SWITSWZHER4AIZB")
+    assert(hex"10c8511e".toBase32 == "CDEFCHQ=")
+    assert(hex"00000000000000000000".toBase32 == "AAAAAAAAAAAAAAAA")
   }
 
   test("fromValidBase32") {
     assert(ByteVector.fromValidBase32("") == (ByteVector.empty))
     assert(ByteVector.fromValidBase32("AA======") == hex"00")
-    assert(ByteVector.fromValidBase32("ME======") == (hex"61"))
-    assert(ByteVector.fromValidBase32("MJRGE===") == (hex"626262"))
-    assert(ByteVector.fromValidBase32("MNRWG===") == (hex"636363"))
+    assert(ByteVector.fromValidBase32("ME======") == hex"61")
+    assert(ByteVector.fromValidBase32("MJRGE===") == hex"626262")
+    assert(ByteVector.fromValidBase32("MNRWG===") == hex"636363")
     assert(
       ByteVector
         .fromValidBase32(
           "ONUW24DMPEQGCIDMN5XGOIDTORZGS3TH"
-        ) == (hex"73696d706c792061206c6f6e6720737472696e67")
+        ) == hex"73696d706c792061206c6f6e6720737472696e67"
     )
     assert(
       ByteVector
         .fromValidBase32(
           "ADVRKIY57TVWBESYQ23H2BSSTGJFSFNOWFZMAZSH"
-        ) == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+        ) == hex"00eb15231dfceb60925886b67d065299925915aeb172c06647"
     )
-    assert(ByteVector.fromValidBase32("KFVW7TIP") == (hex"516b6fcd0f"))
-    assert(ByteVector.fromValidBase32("X5HYSAA6M4BHJXI=") == (hex"bf4f89001e670274dd"))
-    assert(ByteVector.fromValidBase32("K4XEPFA=") == (hex"572e4794"))
-    assert(ByteVector.fromValidBase32("5SWITSWZHER4AIZB") == (hex"ecac89cad93923c02321"))
-    assert(ByteVector.fromValidBase32("CDEFCHQ=") == (hex"10c8511e"))
-    assert(ByteVector.fromValidBase32("AAAAAAAAAAAAAAAA") == (hex"00000000000000000000"))
+    assert(ByteVector.fromValidBase32("KFVW7TIP") == hex"516b6fcd0f")
+    assert(ByteVector.fromValidBase32("X5HYSAA6M4BHJXI=") == hex"bf4f89001e670274dd")
+    assert(ByteVector.fromValidBase32("K4XEPFA=") == hex"572e4794")
+    assert(ByteVector.fromValidBase32("5SWITSWZHER4AIZB") == hex"ecac89cad93923c02321")
+    assert(ByteVector.fromValidBase32("CDEFCHQ=") == hex"10c8511e")
+    assert(ByteVector.fromValidBase32("AAAAAAAAAAAAAAAA") == hex"00000000000000000000")
   }
 
   test("fail due to illegal character fromBase32") {
@@ -281,68 +279,68 @@ class ByteVectorTest extends BitsSuite {
   test("toBase32(Crockford)") {
     import scodec.bits.Bases.Alphabets.{Base32Crockford => Crockford}
 
-    assert(hex"".toBase32(Crockford) == (""))
-    assert(hex"00".toBase32(Crockford) == ("00======"))
-    assert(hex"ffffffffff".toBase32(Crockford) == ("ZZZZZZZZ"))
-    assert(hex"8ca74adb5b".toBase32(Crockford) == ("HJKMNPTV"))
+    assert(hex"".toBase32(Crockford) == "")
+    assert(hex"00".toBase32(Crockford) == "00======")
+    assert(hex"ffffffffff".toBase32(Crockford) == "ZZZZZZZZ")
+    assert(hex"8ca74adb5b".toBase32(Crockford) == "HJKMNPTV")
   }
 
   test("fromValidBase32(Crockford)") {
     import scodec.bits.Bases.Alphabets.{Base32Crockford => Crockford}
 
     assert(ByteVector.fromValidBase32("", Crockford) == (ByteVector.empty))
-    assert(ByteVector.fromValidBase32("00======", Crockford) == (hex"00"))
-    assert(ByteVector.fromValidBase32("ZZZZZZZZ", Crockford) == (hex"ffffffffff"))
-    assert(ByteVector.fromValidBase32("HJKMNPTV", Crockford) == (hex"8ca74adb5b"))
-    assert(ByteVector.fromValidBase32("hjkmnptv", Crockford) == (hex"8ca74adb5b"))
-    assert(ByteVector.fromValidBase32("00011111", Crockford) == (hex"0000108421"))
-    assert(ByteVector.fromValidBase32("0Oo1IiLl", Crockford) == (hex"0000108421"))
+    assert(ByteVector.fromValidBase32("00======", Crockford) == hex"00")
+    assert(ByteVector.fromValidBase32("ZZZZZZZZ", Crockford) == hex"ffffffffff")
+    assert(ByteVector.fromValidBase32("HJKMNPTV", Crockford) == hex"8ca74adb5b")
+    assert(ByteVector.fromValidBase32("hjkmnptv", Crockford) == hex"8ca74adb5b")
+    assert(ByteVector.fromValidBase32("00011111", Crockford) == hex"0000108421")
+    assert(ByteVector.fromValidBase32("0Oo1IiLl", Crockford) == hex"0000108421")
   }
 
   test("toBase58") {
-    assert(hex"".toBase58 == (""))
-    assert(hex"00".toBase58 == ("1"))
-    assert(hex"61".toBase58 == ("2g"))
-    assert(hex"626262".toBase58 == ("a3gV"))
-    assert(hex"636363".toBase58 == ("aPEr"))
+    assert(hex"".toBase58 == "")
+    assert(hex"00".toBase58 == "1")
+    assert(hex"61".toBase58 == "2g")
+    assert(hex"626262".toBase58 == "a3gV")
+    assert(hex"636363".toBase58 == "aPEr")
     assert(
-      hex"73696d706c792061206c6f6e6720737472696e67".toBase58 == ("2cFupjhnEsSn59qHXstmK2ffpLv2")
+      hex"73696d706c792061206c6f6e6720737472696e67".toBase58 == "2cFupjhnEsSn59qHXstmK2ffpLv2"
     )
     assert(
-      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 == ("1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L")
+      hex"00eb15231dfceb60925886b67d065299925915aeb172c06647".toBase58 == "1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"
     )
-    assert(hex"516b6fcd0f".toBase58 == ("ABnLTmg"))
-    assert(hex"bf4f89001e670274dd".toBase58 == ("3SEo3LWLoPntC"))
-    assert(hex"572e4794".toBase58 == ("3EFU7m"))
-    assert(hex"ecac89cad93923c02321".toBase58 == ("EJDM8drfXA6uyA"))
-    assert(hex"10c8511e".toBase58 == ("Rt5zm"))
-    assert(hex"00000000000000000000".toBase58 == ("1111111111"))
+    assert(hex"516b6fcd0f".toBase58 == "ABnLTmg")
+    assert(hex"bf4f89001e670274dd".toBase58 == "3SEo3LWLoPntC")
+    assert(hex"572e4794".toBase58 == "3EFU7m")
+    assert(hex"ecac89cad93923c02321".toBase58 == "EJDM8drfXA6uyA")
+    assert(hex"10c8511e".toBase58 == "Rt5zm")
+    assert(hex"00000000000000000000".toBase58 == "1111111111")
   }
 
   test("fromValidBase58") {
     assert(ByteVector.fromValidBase58("") == (ByteVector.empty))
     assert(ByteVector.fromValidBase58("1") == hex"00")
-    assert(ByteVector.fromValidBase58("2g") == (hex"61"))
-    assert(ByteVector.fromValidBase58("a3gV") == (hex"626262"))
-    assert(ByteVector.fromValidBase58("aPEr") == (hex"636363"))
+    assert(ByteVector.fromValidBase58("2g") == hex"61")
+    assert(ByteVector.fromValidBase58("a3gV") == hex"626262")
+    assert(ByteVector.fromValidBase58("aPEr") == hex"636363")
     assert(
       ByteVector
         .fromValidBase58(
           "2cFupjhnEsSn59qHXstmK2ffpLv2"
-        ) == (hex"73696d706c792061206c6f6e6720737472696e67")
+        ) == hex"73696d706c792061206c6f6e6720737472696e67"
     )
     assert(
       ByteVector
         .fromValidBase58(
           "1NS17iag9jJgTHD1VXjvLCEnZuQ3rJDE9L"
-        ) == (hex"00eb15231dfceb60925886b67d065299925915aeb172c06647")
+        ) == hex"00eb15231dfceb60925886b67d065299925915aeb172c06647"
     )
-    assert(ByteVector.fromValidBase58("ABnLTmg") == (hex"516b6fcd0f"))
-    assert(ByteVector.fromValidBase58("3SEo3LWLoPntC") == (hex"bf4f89001e670274dd"))
-    assert(ByteVector.fromValidBase58("3EFU7m") == (hex"572e4794"))
-    assert(ByteVector.fromValidBase58("EJDM8drfXA6uyA") == (hex"ecac89cad93923c02321"))
-    assert(ByteVector.fromValidBase58("Rt5zm") == (hex"10c8511e"))
-    assert(ByteVector.fromValidBase58("1111111111") == (hex"00000000000000000000"))
+    assert(ByteVector.fromValidBase58("ABnLTmg") == hex"516b6fcd0f")
+    assert(ByteVector.fromValidBase58("3SEo3LWLoPntC") == hex"bf4f89001e670274dd")
+    assert(ByteVector.fromValidBase58("3EFU7m") == hex"572e4794")
+    assert(ByteVector.fromValidBase58("EJDM8drfXA6uyA") == hex"ecac89cad93923c02321")
+    assert(ByteVector.fromValidBase58("Rt5zm") == hex"10c8511e")
+    assert(ByteVector.fromValidBase58("1111111111") == hex"00000000000000000000")
   }
 
   test("fail due to illegal character fromBase58") {
@@ -626,13 +624,12 @@ class ByteVectorTest extends BitsSuite {
 
   property("dropWhile") {
     forAll { (x: ByteVector) =>
-      val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
-        case ((acc, dropping), b) =>
-          if (dropping)
-            if (b == 0) (acc :+ 0, false)
-            else (acc, true)
-          else
-            (acc :+ b, false)
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, dropping), b) =>
+        if (dropping)
+          if (b == 0) (acc :+ 0, false)
+          else (acc, true)
+        else
+          (acc :+ b, false)
       }
       assert(x.dropWhile(_ != 0.toByte) == expected)
     }
@@ -640,13 +637,12 @@ class ByteVectorTest extends BitsSuite {
 
   property("takeWhile") {
     forAll { (x: ByteVector) =>
-      val (expected, _) = x.foldLeft((ByteVector.empty, true)) {
-        case ((acc, taking), b) =>
-          if (taking)
-            if (b == 0) (acc, false)
-            else (acc :+ b, true)
-          else
-            (acc, false)
+      val (expected, _) = x.foldLeft((ByteVector.empty, true)) { case ((acc, taking), b) =>
+        if (taking)
+          if (b == 0) (acc, false)
+          else (acc :+ b, true)
+        else
+          (acc, false)
       }
       assert(x.takeWhile(_ != 0.toByte) == expected)
     }

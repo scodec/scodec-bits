@@ -99,10 +99,9 @@ class BitVectorTest extends BitsSuite {
       ()
     }
 
-    forAll(bitVectorWithTakeIndex) {
-      case (bits, ind) =>
-        check(bits, ind)
-        check(bits, ind * 2)
+    forAll(bitVectorWithTakeIndex) { case (bits, ind) =>
+      check(bits, ind)
+      check(bits, ind * 2)
     }
   }
 

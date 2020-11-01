@@ -40,8 +40,7 @@ sealed trait ByteOrdering {
 /** Companion for [[ByteOrdering]]. */
 object ByteOrdering {
 
-  /**
-    * Converts the specified byte order to a [[ByteOrdering]].
+  /** Converts the specified byte order to a [[ByteOrdering]].
     * @throws IllegalArgumentException if the order cannot be converted
     */
   def fromJava(bo: ByteOrder): ByteOrdering =

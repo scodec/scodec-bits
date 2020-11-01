@@ -30,8 +30,7 @@
 
 package scodec.bits
 
-/**
-  * Provides support for calculating cyclic redundancy checks.
+/** Provides support for calculating cyclic redundancy checks.
   *
   * @see http://www.repairfaq.org/filipg/LINK/F_crc_v3.html
   */
@@ -45,8 +44,7 @@ object crc {
   lazy val crc32c: BitVector => BitVector =
     int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
-  /**
-    * Constructs a table-based CRC function using the specified polynomial.
+  /** Constructs a table-based CRC function using the specified polynomial.
     *
     * Each of the input vectors must be the same size.
     *
@@ -145,8 +143,7 @@ object crc {
         }
       )
 
-  /**
-    * Constructs a 32-bit, table-based CRC function using the specified polynomial.
+  /** Constructs a 32-bit, table-based CRC function using the specified polynomial.
     *
     * @return function that calculates a 32-bit CRC
     */
@@ -216,8 +213,7 @@ object crc {
         }
       )
 
-  /**
-    * Calculates a bitwise CRC of the specified value.
+  /** Calculates a bitwise CRC of the specified value.
     *
     * If calculating a lot of CRCs, prefer the `apply` method, which precomputes a lookup table
     * and uses it in each CRC calculation.

@@ -52,10 +52,13 @@ ThisBuild / githubWorkflowPublishPreamble +=
 
 ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("release")))
 
+ThisBuild / scmInfo := Some(
+  ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
+)
 
-ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git"))
-
-ThisBuild / licenses := List(("BSD-3-Clause", url("https://github.com/scodec/scodec-bits/blob/main/LICENSE")))
+ThisBuild / licenses := List(
+  ("BSD-3-Clause", url("https://github.com/scodec/scodec-bits/blob/main/LICENSE"))
+)
 
 ThisBuild / testFrameworks += new TestFramework("munit.Framework")
 
@@ -64,9 +67,8 @@ ThisBuild / publishFullName := "Michael Pilquist"
 ThisBuild / developers ++= List(
   "mpilquist" -> "Michael Pilquist",
   "pchiusano" -> "Paul Chiusano"
-).map {
-  case (username, fullName) =>
-    Developer(username, fullName, s"@$username", url(s"https://github.com/$username"))
+).map { case (username, fullName) =>
+  Developer(username, fullName, s"@$username", url(s"https://github.com/$username"))
 }
 
 ThisBuild / fatalWarningsInCI := false
@@ -152,7 +154,8 @@ lazy val coreJVM = core.jvm.settings(
 )
 
 lazy val coreJS = core.js.settings(
-  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
+  crossScalaVersions := crossScalaVersions.value.filterNot(_.startsWith("0."))
 )
 
 lazy val benchmark: Project = project
@@ -161,4 +164,3 @@ lazy val benchmark: Project = project
   .enablePlugins(JmhPlugin)
   .settings(commonSettings: _*)
   .settings(noPublishSettings)
-
