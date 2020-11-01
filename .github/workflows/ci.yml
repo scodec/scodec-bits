@@ -91,7 +91,7 @@ jobs:
       - run: sbt ++${{ matrix.scala }} +mimaReportBinaryIssues
 
       - name: Compress target directories
-        run: tar cf targets.tar target benchmark/target core/js/target core/jvm/target project/target
+        run: tar cf targets.tar target core/jvm/target core/js/target benchmark/target project/target
 
       - name: Upload target directories
         uses: actions/upload-artifact@v2
