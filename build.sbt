@@ -140,7 +140,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.15" % "test"
   )
 
-lazy val coreJVM = core.jvm.settings(
+lazy val coreJVM = core.jvm.enablePlugins(SbtOsgi).settings(osgiSettings).settings(
   libraryDependencies ++= Seq(
     "com.google.guava" % "guava" % "30.0-jre" % "test"
   ),
