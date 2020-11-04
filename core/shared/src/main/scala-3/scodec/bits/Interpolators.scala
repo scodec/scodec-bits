@@ -40,8 +40,8 @@ import scala.quoted._
   * val b: scodec.bits.ByteVector = ByteVector(4 bytes, 0xdeadbeef)
   * }}}
   */
-inline def (inline ctx: StringContext).hex (inline args: Any*): ByteVector =
-  ${Literals.validate(Literals.Hex, 'ctx, 'args)}
+extension (inline ctx: StringContext) inline def hex (inline args: Any*): ByteVector =
+  ${Literals.validateHex('ctx, 'args)}
 
 /**
   * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
@@ -51,8 +51,8 @@ inline def (inline ctx: StringContext).hex (inline args: Any*): ByteVector =
   * val b: scodec.bits.BitVector = BitVector(10 bits, 0xaa8)
   * }}}
   */
-inline def (inline ctx: StringContext).bin (inline args: Any*): BitVector =
-  ${Literals.validate(Literals.Bin, 'ctx, 'args)}
+extension (inline ctx: StringContext) inline def bin (inline args: Any*): BitVector =
+  ${Literals.validateBin('ctx, 'args)}
 
 object Literals {
 
@@ -60,6 +60,12 @@ object Literals {
     def validate(s: String): Option[String]
     def build(s: String)(using QuoteContext): Expr[A]
   }
+
+  def validateHex(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[ByteVector] =
+    validate(Hex, strCtxExpr, argsExpr)
+
+  def validateBin(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[BitVector] =
+    validate(Bin, strCtxExpr, argsExpr)
 
   def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[A] = {
     strCtxExpr.unlift match {
