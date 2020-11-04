@@ -13,11 +13,12 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "0.27.0-RC1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "0.27.0-RC1", "3.0.0-M1")
 
 ThisBuild / strictSemVer := false
 
 ThisBuild / versionIntroduced := Map(
+  "3.0.0-M1" -> "1.1.99",
   "0.27.0-RC1" -> "1.1.99",
   "2.13" -> "1.1.12",
   "2.12" -> "1.1.2",
@@ -137,7 +138,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(dottyLibrarySettings)
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.15" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.16" % "test"
   )
 
 lazy val coreJVM = core.jvm.enablePlugins(SbtOsgi).settings(osgiSettings).settings(
@@ -155,7 +156,7 @@ lazy val coreJVM = core.jvm.enablePlugins(SbtOsgi).settings(osgiSettings).settin
 
 lazy val coreJS = core.js.settings(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
-  crossScalaVersions := crossScalaVersions.value.filterNot(_.startsWith("0."))
+  crossScalaVersions := crossScalaVersions.value.filter(_.startsWith("2."))
 )
 
 lazy val benchmark: Project = project
