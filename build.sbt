@@ -156,7 +156,7 @@ lazy val coreJVM = core.jvm.enablePlugins(SbtOsgi).settings(osgiSettings).settin
 
 lazy val coreJS = core.js.settings(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
-  crossScalaVersions := crossScalaVersions.value.filterNot(_.startsWith("0."))
+  crossScalaVersions := crossScalaVersions.value.filter(_.startsWith("2."))
 )
 
 lazy val benchmark: Project = project
