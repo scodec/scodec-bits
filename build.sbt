@@ -27,6 +27,8 @@ ThisBuild / versionIntroduced := Map(
 
 ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
 
+ThisBuild / spiewakCiReleaseSnapshots := true
+
 ThisBuild / spiewakMainBranches := List("main")
 
 ThisBuild / githubWorkflowBuild := Seq(
