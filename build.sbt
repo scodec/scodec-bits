@@ -18,8 +18,8 @@ ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M1"
 ThisBuild / strictSemVer := false
 
 ThisBuild / versionIntroduced := Map(
+  "3.0.0-M2" -> "1.1.99",
   "3.0.0-M1" -> "1.1.99",
-  "0.27.0-RC1" -> "1.1.99",
   "2.13" -> "1.1.12",
   "2.12" -> "1.1.2",
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
