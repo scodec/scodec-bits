@@ -107,7 +107,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration")
   )
-  .settings(dottyLibrarySettings)
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
     libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.19" % "test"
