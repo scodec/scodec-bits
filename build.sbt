@@ -85,24 +85,14 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
 )
 
-lazy val commonSettings = Seq(
-  unmanagedResources in Compile ++= {
-    val base = baseDirectory.value
-    (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
-  },
-  scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration")
-)
-
 lazy val root = project
   .in(file("."))
   .aggregate(coreJVM, coreJS, benchmark)
   .enablePlugins(NoPublishPlugin, SonatypeCiRelease)
-  .settings(commonSettings: _*)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
   .enablePlugins(BuildInfoPlugin)
-  .settings(commonSettings: _*)
   .settings(
     name := "scodec-bits",
     libraryDependencies ++= {
@@ -110,7 +100,12 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
     },
     buildInfoPackage := "scodec.bits",
-    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit)
+    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
+    unmanagedResources in Compile ++= {
+      val base = baseDirectory.value
+      (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
+    },
+    scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration")
   )
   .settings(dottyLibrarySettings)
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
@@ -135,12 +130,10 @@ lazy val coreJVM = core.jvm
   )
 
 lazy val coreJS = core.js.settings(
-  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
-  crossScalaVersions := crossScalaVersions.value.filterNot(_ == "3.0.0-M1")
+  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
 )
 
 lazy val benchmark: Project = project
   .in(file("benchmark"))
   .dependsOn(coreJVM)
   .enablePlugins(JmhPlugin, NoPublishPlugin)
-  .settings(commonSettings: _*)
