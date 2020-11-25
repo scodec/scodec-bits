@@ -13,7 +13,7 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "0.27.0-RC1", "3.0.0-M1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M1", "3.0.0-M2")
 
 ThisBuild / strictSemVer := false
 
@@ -26,32 +26,15 @@ ThisBuild / versionIntroduced := Map(
 )
 
 ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
-ThisBuild / githubWorkflowPublishTargetBranches := Seq(
-  RefPredicate.Equals(Ref.Branch("main")),
-  RefPredicate.StartsWith(Ref.Tag("v"))
-)
+
+ThisBuild / spiewakMainBranches := List("main")
+
 ThisBuild / githubWorkflowBuild := Seq(
   WorkflowStep.Sbt(List("compile")),
   WorkflowStep.Sbt(List("coreJVM/test")),
   WorkflowStep.Sbt(List("coreJS/test")),
   WorkflowStep.Sbt(List("+mimaReportBinaryIssues"))
 )
-
-ThisBuild / githubWorkflowEnv ++= Map(
-  "SONATYPE_USERNAME" -> s"$${{ secrets.SONATYPE_USERNAME }}",
-  "SONATYPE_PASSWORD" -> s"$${{ secrets.SONATYPE_PASSWORD }}",
-  "PGP_SECRET" -> s"$${{ secrets.PGP_SECRET }}"
-)
-
-ThisBuild / githubWorkflowTargetTags += "v*"
-
-ThisBuild / githubWorkflowPublishPreamble +=
-  WorkflowStep.Run(
-    List("echo $PGP_SECRET | base64 -d | gpg --import"),
-    name = Some("Import signing key")
-  )
-
-ThisBuild / githubWorkflowPublish := Seq(WorkflowStep.Sbt(List("release")))
 
 ThisBuild / scmInfo := Some(
   ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
@@ -103,12 +86,6 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
 )
 
 lazy val commonSettings = Seq(
-  Compile / unmanagedSourceDirectories ++= {
-    val major = if (isDotty.value) "-3" else "-2"
-    List(CrossType.Pure, CrossType.Full).flatMap(
-      _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
-    )
-  },
   unmanagedResources in Compile ++= {
     val base = baseDirectory.value
     (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
@@ -119,8 +96,8 @@ lazy val commonSettings = Seq(
 lazy val root = project
   .in(file("."))
   .aggregate(coreJVM, coreJS, benchmark)
+  .enablePlugins(NoPublishPlugin, SonatypeCiRelease)
   .settings(commonSettings: _*)
-  .settings(noPublishSettings)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
@@ -138,30 +115,32 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   .settings(dottyLibrarySettings)
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.18" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.19" % "test"
   )
 
-lazy val coreJVM = core.jvm.enablePlugins(SbtOsgi).settings(osgiSettings).settings(
-  libraryDependencies ++= Seq(
-    "com.google.guava" % "guava" % "30.0-jre" % "test"
-  ),
-  OsgiKeys.privatePackage := Nil,
-  OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
-  OsgiKeys.importPackage := Seq(
-    """scala.*;version="$<range;[==,=+)>"""",
-    "*"
-  ),
-  OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package")
-)
+lazy val coreJVM = core.jvm
+  .enablePlugins(SbtOsgi)
+  .settings(osgiSettings)
+  .settings(
+    libraryDependencies ++= Seq(
+      "com.google.guava" % "guava" % "30.0-jre" % "test"
+    ),
+    OsgiKeys.privatePackage := Nil,
+    OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
+    OsgiKeys.importPackage := Seq(
+      """scala.*;version="$<range;[==,=+)>"""",
+      "*"
+    ),
+    OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package")
+  )
 
 lazy val coreJS = core.js.settings(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
-  crossScalaVersions := crossScalaVersions.value.filter(_.startsWith("2."))
+  crossScalaVersions := crossScalaVersions.value.filterNot(_ == "3.0.0-M1")
 )
 
 lazy val benchmark: Project = project
   .in(file("benchmark"))
   .dependsOn(coreJVM)
-  .enablePlugins(JmhPlugin)
+  .enablePlugins(JmhPlugin, NoPublishPlugin)
   .settings(commonSettings: _*)
-  .settings(noPublishSettings)
