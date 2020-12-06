@@ -107,7 +107,13 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       val base = baseDirectory.value
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
-    scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration")
+    scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
+    Compile / unmanagedSourceDirectories ++= {
+      val major = if (isDotty.value) "-3" else "-2"
+      List(CrossType.Pure, CrossType.Full).flatMap(
+        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
+      )
+    }
   )
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
