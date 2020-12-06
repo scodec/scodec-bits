@@ -90,7 +90,7 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
 lazy val root = project
   .in(file("."))
   .aggregate(coreJVM, coreJS, benchmark)
-  .enablePlugins(NoPublishPlugin, SonatypeCiRelease)
+  .enablePlugins(NoPublishPlugin, SonatypeCiReleasePlugin)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
