@@ -68,10 +68,10 @@ object Literals {
     validate(Bin, strCtxExpr, argsExpr)
 
   def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[A] = {
-    strCtxExpr.unlift match {
+    strCtxExpr.value match {
       case Some(sc) => validate(validator, sc.parts, argsExpr)
       case None =>
-        report.error("StringContext args must be statically known")
+        quotes.reflect.report.error("StringContext args must be statically known")
         ???
     }
   }
@@ -81,13 +81,13 @@ object Literals {
       val literal = parts.head
       validator.validate(literal) match {
         case Some(err) =>
-          report.error(err)
+          quotes.reflect.report.error(err)
           ???
         case None =>
           validator.build(literal)
       }
     } else {
-      report.error("interpolation not supported", argsExpr)
+      quotes.reflect.report.error("interpolation not supported", argsExpr)
       ???
     }
   }
@@ -97,7 +97,7 @@ object Literals {
       ByteVector.fromHex(s).fold(Some("hexadecimal string literal may only contain characters [0-9a-fA-f]"))(_ => None)
     def build(s: String)(using Quotes): Expr[ByteVector] =
       '{ByteVector.fromValidHex(${Expr(s)})},
-  }    
+  }
 
   object Bin extends Validator[BitVector] {
     def validate(s: String): Option[String] =

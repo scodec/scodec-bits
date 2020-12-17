@@ -33,7 +33,7 @@ package scodec.bits
 import scala.util.FromDigits
 
 private[bits] trait ByteVectorPlatform { self: ByteVector.type =>
-  given FromDigits.WithRadix[ByteVector] {
+  given FromDigits.WithRadix[ByteVector] with {
     def fromDigits(digits: String, radix: Int): ByteVector =
       radix match {
         case 16 => ByteVector.fromValidHex(digits)
