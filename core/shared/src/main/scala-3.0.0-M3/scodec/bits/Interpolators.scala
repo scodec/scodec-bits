@@ -58,16 +58,16 @@ object Literals {
 
   trait Validator[A] {
     def validate(s: String): Option[String]
-    def build(s: String)(using QuoteContext): Expr[A]
+    def build(s: String)(using Quotes): Expr[A]
   }
 
-  def validateHex(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[ByteVector] =
+  def validateHex(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[ByteVector] =
     validate(Hex, strCtxExpr, argsExpr)
 
-  def validateBin(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[BitVector] =
+  def validateBin(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[BitVector] =
     validate(Bin, strCtxExpr, argsExpr)
 
-  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[A] = {
+  def validate[A](validator: Validator[A], strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[A] = {
     strCtxExpr.unlift match {
       case Some(sc) => validate(validator, sc.parts, argsExpr)
       case None =>
@@ -76,7 +76,7 @@ object Literals {
     }
   }
 
-  private def validate[A](validator: Validator[A], parts: Seq[String], argsExpr: Expr[Seq[Any]])(using QuoteContext): Expr[A] = {
+  private def validate[A](validator: Validator[A], parts: Seq[String], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[A] = {
     if (parts.size == 1) {
       val literal = parts.head
       validator.validate(literal) match {
@@ -95,14 +95,14 @@ object Literals {
   object Hex extends Validator[ByteVector] {
     def validate(s: String): Option[String] =
       ByteVector.fromHex(s).fold(Some("hexadecimal string literal may only contain characters [0-9a-fA-f]"))(_ => None)
-    def build(s: String)(using QuoteContext): Expr[ByteVector] =
+    def build(s: String)(using Quotes): Expr[ByteVector] =
       '{ByteVector.fromValidHex(${Expr(s)})},
   }    
 
   object Bin extends Validator[BitVector] {
     def validate(s: String): Option[String] =
       ByteVector.fromBin(s).fold(Some("binary string literal may only contain characters [0, 1]"))(_ => None)
-    def build(s: String)(using QuoteContext): Expr[BitVector] =
+    def build(s: String)(using Quotes): Expr[BitVector] =
       '{BitVector.fromValidBin(${Expr(s)})},
   }
 }
