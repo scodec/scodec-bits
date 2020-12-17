@@ -13,13 +13,13 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M1", "3.0.0-M2")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M2", "3.0.0-M3")
 
 ThisBuild / strictSemVer := false
 
 ThisBuild / versionIntroduced := Map(
+  "3.0.0-M3" -> "1.1.99",
   "3.0.0-M2" -> "1.1.99",
-  "3.0.0-M1" -> "1.1.99",
   "2.13" -> "1.1.12",
   "2.12" -> "1.1.2",
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
@@ -117,7 +117,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.19" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.20" % "test"
   )
 
 lazy val coreJVM = core.jvm
