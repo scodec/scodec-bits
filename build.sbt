@@ -13,7 +13,7 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M2", "3.0.0-M3")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M3", "3.0.0-RC1")
 
 ThisBuild / strictSemVer := false
 
@@ -117,7 +117,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.21" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.22" % "test"
   )
 
 lazy val coreJVM = core.jvm
