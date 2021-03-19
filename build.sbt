@@ -125,7 +125,7 @@ lazy val coreJVM = core.jvm
   .settings(osgiSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "30.1-jre" % "test"
+      "com.google.guava" % "guava" % "30.1.1-jre" % "test"
     ),
     OsgiKeys.privatePackage := Nil,
     OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
