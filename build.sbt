@@ -13,13 +13,11 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-M3", "3.0.0-RC1")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.11", "2.13.3", "3.0.0-RC1")
 
 ThisBuild / strictSemVer := false
 
 ThisBuild / versionIntroduced := Map(
-  "3.0.0-M3" -> "1.1.99",
-  "3.0.0-M2" -> "1.1.99",
   "2.13" -> "1.1.12",
   "2.12" -> "1.1.2",
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
@@ -30,13 +28,6 @@ ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
 ThisBuild / spiewakCiReleaseSnapshots := true
 
 ThisBuild / spiewakMainBranches := List("main")
-
-ThisBuild / githubWorkflowBuild := Seq(
-  WorkflowStep.Sbt(List("compile")),
-  WorkflowStep.Sbt(List("coreJVM/test")),
-  WorkflowStep.Sbt(List("coreJS/test")),
-  WorkflowStep.Sbt(List("+mimaReportBinaryIssues"))
-)
 
 ThisBuild / scmInfo := Some(
   ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")

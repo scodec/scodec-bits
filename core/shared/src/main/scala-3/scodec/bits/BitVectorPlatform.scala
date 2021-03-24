@@ -30,13 +30,15 @@
 
 package scodec.bits
 
-import scala.util.FromDigits
+// import scala.util.FromDigits
 
 private[bits] trait BitVectorPlatform { self: BitVector.type =>
+  /* Disabled because FromDigits is only available in scalac snapshots/nightlies as of https://github.com/lampepfl/dotty/pull/11852
   given FromDigits.WithRadix[BitVector] with {
     def fromDigits(digits: String, radix: Int): BitVector = radix match {
       case 16 => ByteVector.fromValidHex(digits).bits
       case _ => ByteVector.fromValidHex(new java.math.BigInteger(digits, radix).toString(16)).bits
     }
   }
+  */
 }
