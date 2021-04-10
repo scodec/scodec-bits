@@ -30,44 +30,16 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array, TypedArrayBuffer}
+// import scala.util.FromDigits
 
-object js {
-
-  implicit class ByteVectorJSOps(val self: ByteVector) extends AnyVal {
-    def copyToTypedArray(dest: Int8Array, start: Int): Unit = {
-      val len: Int = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
-      self.copyToTypedArray(dest, start, 0, len)
-    }
-
-    def copyToTypedArray(dest: Int8Array, start: Int, offset: Long, size: Int): Unit = {
-      var i = 0
-      while (i < size) {
-        dest(start + i) = self(offset + i)
-        i += 1
+private[bits] trait ByteVectorCompanionScalaVersion { self: ByteVector.type =>
+  /* Disabled because FromDigits is only available in scalac snapshots/nightlies as of https://github.com/lampepfl/dotty/pull/11852
+  given FromDigits.WithRadix[ByteVector] with {
+    def fromDigits(digits: String, radix: Int): ByteVector =
+      radix match {
+        case 16 => ByteVector.fromValidHex(digits)
+        case _  => ByteVector.fromValidHex(new java.math.BigInteger(digits, radix).toString(16))
       }
-    }
-
-    def toTypedArray: Int8Array = {
-      val len = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
-      val dest = new Int8Array(len)
-      self.copyToTypedArray(dest, 0, 0, len)
-      dest
-    }
   }
-
-  implicit class ByteVectorObjJSOps(val self: ByteVector.type) extends AnyVal {
-    def view(typedArray: Int8Array): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(typedArray))
-
-    def view(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
-
-    def fromTypedArray(typedArray: Int8Array): ByteVector = {
-      val copy = new Int8Array(typedArray.length)
-      copy.set(typedArray)
-      ByteVector.view(copy)
-    }
-
-    def fromArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.fromTypedArray(new Int8Array(arrayBuffer))
-  }
-
+  */
 }

@@ -30,4 +30,26 @@
 
 package scodec.bits
 
-private[bits] trait ByteVectorPlatform
+import scala.scalajs.js.typedarray.Int8Array
+
+private[bits] trait ByteVectorPlatform { self: ByteVector =>
+  def copyToTypedArray(dest: Int8Array, start: Int): Unit = {
+    val len: Int = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
+    self.copyToTypedArray(dest, start, 0, len)
+  }
+
+  def copyToTypedArray(dest: Int8Array, start: Int, offset: Long, size: Int): Unit = {
+    var i = 0
+    while (i < size) {
+      dest(start + i) = self(offset + i)
+      i += 1
+    }
+  }
+
+  def toTypedArray: Int8Array = {
+    val len = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
+    val dest = new Int8Array(len)
+    self.copyToTypedArray(dest, 0, 0, len)
+    dest
+  }
+}
