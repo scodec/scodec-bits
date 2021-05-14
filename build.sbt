@@ -13,7 +13,7 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5", "3.0.0-RC2", "3.0.0-RC3")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5", "3.0.0")
 
 ThisBuild / strictSemVer := false
 
@@ -94,7 +94,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     },
     buildInfoPackage := "scodec.bits",
     buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
-    unmanagedResources in Compile ++= {
+    Compile / unmanagedResources ++= {
       val base = baseDirectory.value
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
@@ -108,7 +108,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
   .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
   .settings(
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.25" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.26" % "test"
   )
 
 lazy val coreJVM = core.jvm
