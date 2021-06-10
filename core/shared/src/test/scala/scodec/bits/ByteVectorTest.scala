@@ -33,7 +33,7 @@ package scodec.bits
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.{Arrays, UUID}
-
+import scala.io.Source
 import Arbitraries._
 import org.scalacheck._
 import Prop.forAll
@@ -699,5 +699,54 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector(1, 2) < ByteVector(2))
     assert(ByteVector(2) > ByteVector(1, 2))
     assert(ByteVector(100) < ByteVector(200))
+  }
+
+  test("toInputStream") {
+    {
+      val is = ByteVector(0, 1, 2).toInputStream
+      assert(is.available() == 3)
+      assert(Source.fromInputStream(is).map(_.toInt.toString).mkString == "012")
+    }
+    {
+      val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 10)
+      is.readNBytes(5)
+      assert(is.available() == 5)
+      is.readNBytes(0)
+      assert(is.available() == 5)
+      assert(Source.fromInputStream(is).map(_.toInt.toString).mkString == "56789")
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 15)
+      is.readNBytes(5)
+      assert(is.available() == 10)
+      is.readNBytes(5)
+      assert(is.available() == 5)
+      assert(Source.fromInputStream(is).map(_.toInt.toString).mkString == "1011121314")
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
+
+      assert(is.readAllBytes().map(_.toInt.toString).mkString == "01234567891011121314")
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector.empty.toInputStream
+
+      assert(is.available() == 0)
+      assert(is.readAllBytes().isEmpty)
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 10)
+      assert(is.readNBytes(15).map(_.toInt).mkString == "0123456789")
+      assert(is.available() == 0)
+      is.readNBytes(0)
+      assert(is.available() == 0)
+    }
   }
 }
