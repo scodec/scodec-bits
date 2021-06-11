@@ -104,10 +104,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       List(CrossType.Pure, CrossType.Full).flatMap(
         _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
       )
-    }
-  )
-  .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
-  .settings(
+    },
     libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.26" % "test"
   )
 
