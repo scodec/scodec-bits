@@ -710,9 +710,9 @@ class ByteVectorTest extends BitsSuite {
     {
       val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
       assert(is.available() == 10)
-      is.readNBytes(5)
+      is.read(Array.fill(5)(0.toByte))
       assert(is.available() == 5)
-      is.readNBytes(0)
+      is.read(Array.empty)
       assert(is.available() == 5)
       assert(Source.fromInputStream(is).map(_.toInt.toString).mkString == "56789")
       assert(is.available() == 0)
@@ -720,9 +720,9 @@ class ByteVectorTest extends BitsSuite {
     {
       val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
       assert(is.available() == 15)
-      is.readNBytes(5)
+      is.read(Array.fill(5)(0.toByte))
       assert(is.available() == 10)
-      is.readNBytes(5)
+      is.read(Array.fill(5)(0.toByte))
       assert(is.available() == 5)
       assert(Source.fromInputStream(is).map(_.toInt.toString).mkString == "1011121314")
       assert(is.available() == 0)
@@ -730,22 +730,29 @@ class ByteVectorTest extends BitsSuite {
     {
       val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
 
-      assert(is.readAllBytes().map(_.toInt.toString).mkString == "01234567891011121314")
+      val a = Array.fill(500)(0.toByte)
+      assert(is.read(a) == 15)
+      assert(a.take(15).map(_.toInt.toString).mkString == "01234567891011121314")
+      a.drop(15).foreach(b => assert(b == 0))
       assert(is.available() == 0)
     }
     {
       val is = ByteVector.empty.toInputStream
 
       assert(is.available() == 0)
-      assert(is.readAllBytes().isEmpty)
+      val a = Array.empty[Byte]
+      assert(is.read(a) == -1)
       assert(is.available() == 0)
     }
     {
       val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
       assert(is.available() == 10)
-      assert(is.readNBytes(15).map(_.toInt).mkString == "0123456789")
+      val a = Array.fill(500)(0.toByte)
+      assert(is.read(a) == 10)
+      assert(a.take(10).map(_.toInt.toString).mkString == "0123456789")
+      a.drop(10).foreach(b => assert(b == 0))
       assert(is.available() == 0)
-      is.readNBytes(0)
+      assert(is.read(a) == -1)
       assert(is.available() == 0)
     }
   }
