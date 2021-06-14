@@ -42,6 +42,7 @@ import java.security.{
 }
 import java.util.UUID
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import java.util.function.IntUnaryOperator
 import java.util.zip.{DataFormatException, Deflater, Inflater}
 
 import javax.crypto.Cipher
@@ -2342,11 +2343,13 @@ object ByteVector extends ByteVectorPlatform {
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
 
-      val cpos: Int = pos.getAndUpdate { (cpos: Int) =>
-        l = Math.min(len, bvlen - cpos)
+      val cpos: Int = pos.getAndUpdate(new IntUnaryOperator {
+        override def applyAsInt(cpos: Int): Int = {
+          l = Math.min(len, bvlen - cpos)
 
-        cpos + l
-      }
+          cpos + l
+        }
+      })
 
       if (cpos >= bvlen) return -1
 
