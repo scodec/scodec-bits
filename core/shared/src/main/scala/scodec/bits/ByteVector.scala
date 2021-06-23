@@ -78,7 +78,7 @@ import scala.annotation.tailrec
   * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] to generate a new strict vector.
   */
 sealed abstract class ByteVector
-    extends ByteVectorPlatform
+    extends ByteVectorCrossPlatform
     with BitwiseOperations[ByteVector, Long]
     with Ordered[ByteVector]
     with Serializable {
@@ -1379,7 +1379,7 @@ sealed abstract class ByteVector
   * @groupname base Base Conversions
   * @groupprio base 3
   */
-object ByteVector extends ByteVectorCompanionPlatform {
+object ByteVector extends ByteVectorCompanionCrossPlatform {
 
   // various specialized function types
 

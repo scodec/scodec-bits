@@ -30,18 +30,26 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.Int8Array
 
-private[bits] trait ByteVectorCompanionPlatform extends ByteVectorCompanionScalaVersion { self: ByteVector.type =>
-  def view(typedArray: Int8Array): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(typedArray))
-
-  def view(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
-
-  def fromTypedArray(typedArray: Int8Array): ByteVector = {
-    val copy = new Int8Array(typedArray.length)
-    copy.set(typedArray)
-    ByteVector.view(copy)
+private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
+  def copyToTypedArray(dest: Int8Array, start: Int): Unit = {
+    val len: Int = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
+    self.copyToTypedArray(dest, start, 0, len)
   }
 
-  def fromArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.fromTypedArray(new Int8Array(arrayBuffer))
+  def copyToTypedArray(dest: Int8Array, start: Int, offset: Long, size: Int): Unit = {
+    var i = 0
+    while (i < size) {
+      dest(start + i) = self(offset + i)
+      i += 1
+    }
+  }
+
+  def toTypedArray: Int8Array = {
+    val len = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
+    val dest = new Int8Array(len)
+    self.copyToTypedArray(dest, 0, 0, len)
+    dest
+  }
 }

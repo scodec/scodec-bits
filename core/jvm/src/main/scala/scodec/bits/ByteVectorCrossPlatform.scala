@@ -30,5 +30,5 @@
 
 package scodec.bits
 
-private[bits] trait ByteVectorPlatform { self: ByteVector =>
+private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 }

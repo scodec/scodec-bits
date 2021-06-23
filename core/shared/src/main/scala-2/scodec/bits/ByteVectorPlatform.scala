@@ -30,5 +30,4 @@
 
 package scodec.bits
 
-private[bits] trait BitVectorCompanionPlatform extends BitVectorCompanionScalaVersion { self: BitVector.type =>
-}
+private[bits] trait ByteVectorPlatform
