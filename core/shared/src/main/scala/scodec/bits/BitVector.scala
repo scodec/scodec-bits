@@ -471,7 +471,7 @@ sealed abstract class BitVector
     * @group collection
     */
   final def reverseBitOrder: BitVector =
-    BitVector(compact.underlying.map(reverseBitsInByte _)).drop(8 - validBitsInLastByte(size))
+    BitVector(compact.underlying.map(reverseBitsInByte _)).dropRight(8 - validBitsInLastByte(size))
 
   /** Returns the number of bits that are high.
     *

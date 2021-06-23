@@ -739,4 +739,10 @@ class BitVectorTest extends BitsSuite {
     assert(BitVector(1, 2) < BitVector(2))
     assert(BitVector(2) > BitVector(1, 2))
   }
+
+  property("reverseBitOrder") {
+    forAll { (b: BitVector) =>
+      assertEquals(b.reverseBitOrder.reverseBitOrder, b)
+    }
+  }
 }
