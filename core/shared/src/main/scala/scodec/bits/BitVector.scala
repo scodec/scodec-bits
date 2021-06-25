@@ -1306,7 +1306,7 @@ sealed abstract class BitVector
   * @groupname base Base Conversions
   * @groupprio base 3
   */
-object BitVector extends BitVectorPlatform {
+object BitVector extends BitVectorCompanionCrossPlatform {
 
   /** Empty bit vector.
     * @group constants
