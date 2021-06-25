@@ -33,7 +33,6 @@ package scodec.bits
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.util.{Arrays, UUID}
-
 import Arbitraries._
 import org.scalacheck._
 import Prop.forAll
@@ -699,5 +698,67 @@ class ByteVectorTest extends BitsSuite {
     assert(ByteVector(1, 2) < ByteVector(2))
     assert(ByteVector(2) > ByteVector(1, 2))
     assert(ByteVector(100) < ByteVector(200))
+  }
+
+  test("toInputStream") {
+    {
+      val is = ByteVector(0, 1, 2).toInputStream
+      assert(is.available() == 3)
+      val a = Array.fill(50)(0.toByte)
+      assert(is.read(a) == 3)
+      assert(a.take(3).map(_.toInt.toString).mkString == "012")
+    }
+    {
+      val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 10)
+      is.read(Array.fill(5)(0.toByte))
+      assert(is.available() == 5)
+      is.read(Array.empty)
+      assert(is.available() == 5)
+      val a = Array.fill(50)(0.toByte)
+      assert(is.read(a) == 5)
+      assert(a.take(5).map(_.toInt.toString).mkString == "56789")
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 15)
+      is.read(Array.fill(5)(0.toByte))
+      assert(is.available() == 10)
+      is.read(Array.fill(5)(0.toByte))
+      assert(is.available() == 5)
+      val a = Array.fill(50)(0.toByte)
+      assert(is.read(a) == 5)
+      assert(a.take(5).map(_.toInt.toString).mkString == "1011121314")
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 14).toArray.map(_.toByte)).toInputStream
+
+      val a = Array.fill(500)(0.toByte)
+      assert(is.read(a) == 15)
+      assert(a.take(15).map(_.toInt.toString).mkString == "01234567891011121314")
+      a.drop(15).foreach(b => assert(b == 0))
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector.empty.toInputStream
+
+      assert(is.available() == 0)
+      val a = Array.empty[Byte]
+      assert(is.read(a) == -1)
+      assert(is.available() == 0)
+    }
+    {
+      val is = ByteVector((0 to 9).toArray.map(_.toByte)).toInputStream
+      assert(is.available() == 10)
+      val a = Array.fill(500)(0.toByte)
+      assert(is.read(a) == 10)
+      assert(a.take(10).map(_.toInt.toString).mkString == "0123456789")
+      a.drop(10).foreach(b => assert(b == 0))
+      assert(is.available() == 0)
+      assert(is.read(a) == -1)
+      assert(is.available() == 0)
+    }
   }
 }

@@ -30,7 +30,7 @@
 
 package scodec.bits
 
-import java.io.OutputStream
+import java.io.{InputStream, OutputStream}
 import java.nio.{ByteBuffer, CharBuffer}
 import java.nio.charset.{CharacterCodingException, Charset}
 import java.security.{
@@ -41,7 +41,8 @@ import java.security.{
   SecureRandom
 }
 import java.util.UUID
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
+import java.util.function.IntUnaryOperator
 import java.util.zip.{DataFormatException, Deflater, Inflater}
 
 import javax.crypto.Cipher
@@ -641,6 +642,11 @@ sealed abstract class ByteVector
     */
   final def copyToStream(s: OutputStream): Unit =
     foreachV(_.copyToStream(s))
+
+  /** Creates new `InputStream` reading data from this `ByteVector`.
+    */
+  final def toInputStream: InputStream =
+    new ByteVectorInputStream(this)
 
   /** Converts the contents of this vector to an `IndexedSeq`.
     *
@@ -2327,5 +2333,49 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       * @group collection
       */
     final def grouped(chunkSize: Long): Iterator[ByteVector] = self.groupedIterator(chunkSize)
+  }
+
+  private class ByteVectorInputStream(bv: ByteVector) extends InputStream {
+    private val bvlen = bv.size.toInt
+    private val pos = new CustomAtomicInteger(0)
+
+    override def read(): Int = bv.get(pos.getAndIncrement().toLong)
+
+    override def read(b: Array[Byte], off: Int, len: Int): Int = {
+      var l: Int = -1
+
+      val cpos: Int = pos.getAndUpdate_(new IntUnaryOperator {
+        override def applyAsInt(cpos: Int): Int = {
+          l = Math.min(len, bvlen - cpos)
+
+          cpos + l
+        }
+      })
+
+      if (cpos >= bvlen) return -1
+
+      bv.copyToArray(b, off, cpos.toLong, l)
+
+      l
+    }
+
+    override def available(): Int = bvlen - pos.get()
+
+    /* This is quite a hack. The problem is that the code has to be Scala-agnostic but Scala.js implementation of `AtomicInteger` differs
+     * from the JVM standard one and it doesn't contain `getAndUpdate` method. So I took the method and put here the code with a different name
+     * which adds the method on all platforms and everybody is happy. */
+    private class CustomAtomicInteger(v: Int) extends AtomicInteger(v) {
+      def getAndUpdate_(updateFunction: IntUnaryOperator): Int = {
+        var prev = get;
+        var next = updateFunction.applyAsInt(prev);
+
+        while (!compareAndSet(prev, next)) {
+          prev = get
+          next = updateFunction.applyAsInt(prev)
+        }
+
+        prev
+      }
+    }
   }
 }
