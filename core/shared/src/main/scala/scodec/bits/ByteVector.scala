@@ -2336,14 +2336,14 @@ object ByteVector extends ByteVectorPlatform {
 
   private class ByteVectorInputStream(bv: ByteVector) extends InputStream {
     private val bvlen = bv.size.toInt
-    private val pos = new AtomicInteger(0)
+    private val pos = new CustomAtomicInteger(0)
 
-    override def read(): Int = bv.get(pos.getAndIncrement())
+    override def read(): Int = bv.get(pos.getAndIncrement().toLong)
 
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
 
-      val cpos: Int = pos.getAndUpdate(new IntUnaryOperator {
+      val cpos: Int = pos.getAndUpdate_(new IntUnaryOperator {
         override def applyAsInt(cpos: Int): Int = {
           l = Math.min(len, bvlen - cpos)
 
@@ -2353,11 +2353,28 @@ object ByteVector extends ByteVectorPlatform {
 
       if (cpos >= bvlen) return -1
 
-      bv.copyToArray(b, off, cpos, l)
+      bv.copyToArray(b, off, cpos.toLong, l)
 
       l
     }
 
     override def available(): Int = bvlen - pos.get()
+
+    /* This is quite a hack. The problem is that the code has to be Scala-agnostic but Scala.js implementation of `AtomicInteger` differs
+     * from the JVM standard one and it doesn't contain `getAndUpdate` method. So I took the method and put here the code with a different name
+     * which adds the method on all platforms and everybody is happy. */
+    private class CustomAtomicInteger(v: Int) extends AtomicInteger(v) {
+      def getAndUpdate_(updateFunction: IntUnaryOperator): Int = {
+        var prev = get;
+        var next = updateFunction.applyAsInt(prev);
+
+        while (!compareAndSet(prev, next)) {
+          prev = get
+          next = updateFunction.applyAsInt(prev)
+        }
+
+        prev
+      }
+    }
   }
 }
