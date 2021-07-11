@@ -105,7 +105,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
         _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
       )
     },
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.26" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.27" % "test"
   )
 
 lazy val coreJVM = core.jvm
