@@ -47,19 +47,28 @@ import javax.crypto.Cipher
   *
   * Bits are numbered left to right, starting at 0.
   *
-  * @groupname collection Collection Like Methods
-  * @groupprio collection 0
+  * @groupname collection
+  *   Collection Like Methods
+  * @groupprio collection
+  *   0
   *
-  * @groupname bitwise Bitwise Operations
-  * @groupprio bitwise 1
+  * @groupname bitwise
+  *   Bitwise Operations
+  * @groupprio bitwise
+  *   1
   *
-  * @groupname conversions Conversions
-  * @groupprio conversions 2
+  * @groupname conversions
+  *   Conversions
+  * @groupprio conversions
+  *   2
   *
-  * @groupname crypto Cryptography
-  * @groupprio crypto 3
+  * @groupname crypto
+  *   Cryptography
+  * @groupprio crypto
+  *   3
   *
-  * @define bitwiseOperationsReprDescription bit vector
+  * @define bitwiseOperationsReprDescription
+  *   bit vector
   */
 sealed abstract class BitVector
     extends BitwiseOperations[BitVector, Long]
@@ -90,37 +99,36 @@ sealed abstract class BitVector
     */
   final def nonEmpty: Boolean = !isEmpty
 
-  /** Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this
-    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+  /** Returns `true` if the size of this `BitVector` is greater than `n`. Unlike `size`, this forces
+    * this `BitVector` from left to right, halting as soon as it has a definite answer.
     *
     * @group collection
     */
   final def sizeGreaterThan(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n)
 
-  /** Returns `true` if the size of this `BitVector` is greater than or equal to `n`. Unlike `size`, this
-    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+  /** Returns `true` if the size of this `BitVector` is greater than or equal to `n`. Unlike `size`,
+    * this forces this `BitVector` from left to right, halting as soon as it has a definite answer.
     *
     * @group collection
     */
   final def sizeGreaterThanOrEqual(n: Long): Boolean = n < 0 || !sizeLessThanOrEqual(n - 1)
 
-  /** Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this
-    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+  /** Returns `true` if the size of this `BitVector` is less than `n`. Unlike `size`, this forces
+    * this `BitVector` from left to right, halting as soon as it has a definite answer.
     *
     * @group collection
     */
   def sizeLessThan(n: Long): Boolean
 
-  /** Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`, this
-    * forces this `BitVector` from left to right, halting as soon as it has a definite answer.
+  /** Returns `true` if the size of this `BitVector` is less than or equal to `n`. Unlike `size`,
+    * this forces this `BitVector` from left to right, halting as soon as it has a definite answer.
     *
     * @group collection
     */
   final def sizeLessThanOrEqual(n: Long): Boolean =
     n == Long.MaxValue || sizeLessThan(n + 1)
 
-  /** Returns the number of bits in this vector, or `None` if the size does not
-    * fit into an `Int`.
+  /** Returns the number of bits in this vector, or `None` if the size does not fit into an `Int`.
     *
     * @group collection
     */
@@ -128,7 +136,8 @@ sealed abstract class BitVector
 
   /** Returns true if the `n`th bit is high, false otherwise.
     *
-    * @throws NoSuchElementException if `n >= size`
+    * @throws NoSuchElementException
+    *   if `n >= size`
     *
     * @group collection
     */
@@ -136,7 +145,8 @@ sealed abstract class BitVector
 
   /** Returns the `n`th byte, 0-indexed.
     *
-    * @throws NoSuchElementException if `n >= bytes.size`
+    * @throws NoSuchElementException
+    *   if `n >= bytes.size`
     *
     * @group collection
     */
@@ -145,11 +155,13 @@ sealed abstract class BitVector
   /** Alias for `get`.
     *
     * @group collection
-    * @see get(Long)
+    * @see
+    *   get(Long)
     */
   final def apply(n: Long): Boolean = get(n)
 
-  /** Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >= size`.
+  /** Returns `Some(true)` if the `n`th bit is high, `Some(false)` if low, and `None` if `n >=
+    * size`.
     *
     * @group collection
     */
@@ -195,7 +207,8 @@ sealed abstract class BitVector
     */
   final def clear(n: Long): BitVector = update(n, false)
 
-  /** Returns a new bit vector representing this vector's contents followed by the specified vector's contents.
+  /** Returns a new bit vector representing this vector's contents followed by the specified
+    * vector's contents.
     *
     * @group collection
     */
@@ -247,7 +260,8 @@ sealed abstract class BitVector
     *
     * Note: if an `n`-bit vector is required, use the `acquire` method instead.
     *
-    * @see acquire
+    * @see
+    *   acquire
     * @group collection
     */
   def take(n: Long): BitVector
@@ -268,8 +282,8 @@ sealed abstract class BitVector
     */
   final def splitAt(n: Long): (BitVector, BitVector) = (take(n), drop(n))
 
-  /** Returns a vector made up of the bits starting at index `from` up to index `until`,
-    * not including the index `until`.
+  /** Returns a vector made up of the bits starting at index `from` up to index `until`, not
+    * including the index `until`.
     *
     * @group collection
     */
@@ -280,7 +294,8 @@ sealed abstract class BitVector
     *
     * If this vector does not contain at least `n` bits, an error message is returned.
     *
-    * @see take
+    * @see
+    *   take
     * @group collection
     */
   def acquire(n: Long): Either[String, BitVector] =
@@ -289,7 +304,8 @@ sealed abstract class BitVector
 
   /** Like `aquire`, but immediately consumes the `Either` via the pair of functions `err` and `f`.
     *
-    * @see acquire
+    * @see
+    *   acquire
     * @group collection
     */
   final def acquireThen[R](n: Long)(err: String => R, f: BitVector => R): R =
@@ -297,8 +313,8 @@ sealed abstract class BitVector
     else err(s"cannot acquire $n bits from a vector that contains $size bits")
 
   /** Consumes the first `n` bits of this vector and decodes them with the specified function,
-    * resulting in a vector of the remaining bits and the decoded value. If this vector
-    * does not have `n` bits or an error occurs while decoding, an error is returned instead.
+    * resulting in a vector of the remaining bits and the decoded value. If this vector does not
+    * have `n` bits or an error occurs while decoding, an error is returned instead.
     *
     * @group collection
     */
@@ -310,12 +326,12 @@ sealed abstract class BitVector
       decoded <- decode(toDecode)
     } yield (drop(n), decoded)
 
-  /** If this vector has at least `n` bits, returns `f(take(n),drop(n))`,
-    * otherwise calls `err` with a meaningful error message. This function can be used
-    * to avoid intermediate allocations of `Either` objects when using `acquire` or `consume`
-    * directly.
+  /** If this vector has at least `n` bits, returns `f(take(n),drop(n))`, otherwise calls `err` with
+    * a meaningful error message. This function can be used to avoid intermediate allocations of
+    * `Either` objects when using `acquire` or `consume` directly.
     *
-    * @see acquireThen
+    * @see
+    *   acquireThen
     * @group collection
     */
   final def consumeThen[R](n: Long)(err: String => R, f: (BitVector, BitVector) => R): R =
@@ -335,13 +351,15 @@ sealed abstract class BitVector
     takeRight(b.size) === b
 
   /** Finds the first index of the specified bit pattern in this vector.
-    * @return index of slice or -1 if not found
+    * @return
+    *   index of slice or -1 if not found
     * @group collection
     */
   final def indexOfSlice(slice: BitVector): Long = indexOfSlice(slice, 0)
 
   /** Finds the first index after `from` of the specified bit pattern in this vector.
-    * @return index of slice or -1 if not found
+    * @return
+    *   index of slice or -1 if not found
     * @group collection
     */
   final def indexOfSlice(slice: BitVector, from: Long): Long = {
@@ -399,14 +417,17 @@ sealed abstract class BitVector
 
   /** Alias for `padRight`.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padTo(n: Long): BitVector = padRight(n)
 
-  /** Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+  /** Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's
+    * contents.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padRight(n: Long): BitVector =
@@ -416,9 +437,11 @@ sealed abstract class BitVector
       )
     else this ++ BitVector.fill(n - size)(false)
 
-  /** Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's contents.
+  /** Returns an `n`-bit vector whose contents are 0 or more low bits followed by this vector's
+    * contents.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padLeft(n: Long): BitVector =
@@ -439,8 +462,8 @@ sealed abstract class BitVector
 
   /** Returns a new vector of the same size with the byte order reversed.
     *
-    * Note that `reverseByteOrder.reverseByteOrder == identity` only when `size` is evenly divisble by 8.
-    * To invert `reverseByteOrder` for an arbitrary size, use `invertReverseByteOrder`.
+    * Note that `reverseByteOrder.reverseByteOrder == identity` only when `size` is evenly divisble
+    * by 8. To invert `reverseByteOrder` for an arbitrary size, use `invertReverseByteOrder`.
     *
     * @group collection
     */
@@ -523,12 +546,10 @@ sealed abstract class BitVector
       else takeRight(n0) ++ dropRight(n0)
     }
 
-  /** Return a `BitVector` with the same contents as `this`, but
-    * based off a single `ByteVector`.
+  /** Return a `BitVector` with the same contents as `this`, but based off a single `ByteVector`.
     *
-    * This may involve copying data to a fresh `ByteVector`, but
-    * has the advantage that lookups index directly into a single
-    * `ByteVector` rather than traversing a logarithmic number of nodes
+    * This may involve copying data to a fresh `ByteVector`, but has the advantage that lookups
+    * index directly into a single `ByteVector` rather than traversing a logarithmic number of nodes
     * in this tree.
     *
     * Calling this method on an already compacted vector is a no-op.
@@ -573,19 +594,16 @@ sealed abstract class BitVector
     }
   }
 
-  /** Produce a single flat `Bytes` by interpreting
-    * any non-byte-aligned appends or drops. Unlike
-    * `compact`, the underlying `ByteVector` is not
-    * necessarily copied.
+  /** Produce a single flat `Bytes` by interpreting any non-byte-aligned appends or drops. Unlike
+    * `compact`, the underlying `ByteVector` is not necessarily copied.
     *
     * @group collection
     */
   def align: Bytes
 
-  /** Return a `BitVector` with the same contents as `this`, but
-    * based off a single flat `ByteVector`. This function is guaranteed
-    * to copy all the bytes in this `BitVector`, unlike `compact`, which
-    * may no-op if this `BitVector` already consists of a single `ByteVector`
+  /** Return a `BitVector` with the same contents as `this`, but based off a single flat
+    * `ByteVector`. This function is guaranteed to copy all the bytes in this `BitVector`, unlike
+    * `compact`, which may no-op if this `BitVector` already consists of a single `ByteVector`
     * chunk.
     *
     * @group collection
@@ -618,12 +636,15 @@ sealed abstract class BitVector
     go(Vector(this))
   }
 
-  /** Return the sequence of bits in this vector. The returned
-    * `IndexedSeq` is just a view; nothing is actually copied.
+  /** Return the sequence of bits in this vector. The returned `IndexedSeq` is just a view; nothing
+    * is actually copied.
     *
-    * @throws IllegalArgumentException if this vector's size exceeds Int.MaxValue
-    * @see acquire
-    * @see toIndexedSeq
+    * @throws IllegalArgumentException
+    *   if this vector's size exceeds Int.MaxValue
+    * @see
+    *   acquire
+    * @see
+    *   toIndexedSeq
     * @group conversions
     */
   final def toIndexedSeq: IndexedSeq[Boolean] =
@@ -647,8 +668,8 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a byte vector.
     *
-    * If this vector's size does not divide evenly by 8, the last byte of the returned vector
-    * will be zero-padded to the right.
+    * If this vector's size does not divide evenly by 8, the last byte of the returned vector will
+    * be zero-padded to the right.
     *
     * @group conversions
     */
@@ -662,8 +683,8 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a byte array.
     *
-    * If this vector's size does not divide evenly by 8, the last byte of the returned vector
-    * will be zero-padded to the right.
+    * If this vector's size does not divide evenly by 8, the last byte of the returned vector will
+    * be zero-padded to the right.
     *
     * @group conversions
     */
@@ -672,9 +693,11 @@ sealed abstract class BitVector
   /** Converts the contents of this vector to a `java.nio.ByteBuffer`.
     *
     * The returned buffer is freshly allocated with limit set to the minimum number of bytes needed
-    * to represent the contents of this vector, position set to zero, and remaining set to the limit.
+    * to represent the contents of this vector, position set to zero, and remaining set to the
+    * limit.
     *
-    * @see toByteVector
+    * @see
+    *   toByteVector
     * @group conversions
     */
   final def toByteBuffer: java.nio.ByteBuffer = toByteVector.toByteBuffer
@@ -745,7 +768,8 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a base 58 string.
     *
-    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
+    * the order is assumed to be the same as
+    * (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
     *
     * @group conversions
     */
@@ -753,7 +777,8 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a base 58 string using the specified alphabet.
     *
-    * the order is assumed to be the same as (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
+    * the order is assumed to be the same as
+    * (Bitcoin)[[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]
     *
     * @group conversions
     */
@@ -795,8 +820,10 @@ sealed abstract class BitVector
 
   /** Convert a slice of bits from this vector (`start` until `start+bits`) to a `Byte`.
     *
-    * @param signed whether sign extension should be performed
-    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @param signed
+    *   whether sign extension should be performed
+    * @throws IllegalArgumentException
+    *   if the slice refers to indices that are out of range
     * @group conversions
     */
   final def sliceToByte(start: Long, bits: Int, signed: Boolean = true): Byte =
@@ -818,8 +845,10 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a byte.
     *
-    * @param signed whether sign extension should be performed
-    * @throws IllegalArgumentException if size is greater than 8
+    * @param signed
+    *   whether sign extension should be performed
+    * @throws IllegalArgumentException
+    *   if size is greater than 8
     * @group conversions
     */
   final def toByte(signed: Boolean = true): Byte = {
@@ -830,9 +859,12 @@ sealed abstract class BitVector
 
   /** Convert a slice of bits from this vector (`start` until `start+bits`) to a `Short`.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if the slice refers to indices that are out of range
     * @group conversions
     */
   final def sliceToShort(
@@ -870,9 +902,12 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a short.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 16
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 16
     * @group conversions
     */
   final def toShort(
@@ -887,9 +922,12 @@ sealed abstract class BitVector
 
   /** Convert a slice of bits from this vector (`start` until `start+bits`) to an `Int`.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if the slice refers to indices that are out of range
     * @group conversions
     */
   final def sliceToInt(
@@ -927,9 +965,12 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to an int.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 32
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 32
     * @group conversions
     */
   final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int = {
@@ -962,9 +1003,12 @@ sealed abstract class BitVector
 
   /** Convert a slice of bits from this vector (`start` until `start+bits`) to a `Long`.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if the slice refers to indices that are out of range
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if the slice refers to indices that are out of range
     * @group conversions
     */
   final def sliceToLong(
@@ -1002,9 +1046,12 @@ sealed abstract class BitVector
 
   /** Converts the contents of this vector to a long.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 64
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 64
     * @group conversions
     */
   final def toLong(
@@ -1045,7 +1092,8 @@ sealed abstract class BitVector
 
   /** Converts the contents of this bit vector to a UUID.
     *
-    * @throws IllegalArgumentException if size is not exactly 128.
+    * @throws IllegalArgumentException
+    *   if size is not exactly 128.
     * @group conversions
     */
   final def toUUID: UUID = {
@@ -1083,10 +1131,15 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
-    * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
-    * @param nowrap if true, ZLIB header and checksum will not be used
-    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @param level
+    *   compression level, 0-9, with 0 disabling compression and 9 being highest level of
+    *   compression -- see `java.util.zip.Deflater` for details
+    * @param strategy
+    *   compression strategy -- see `java.util.zip.Deflater` for details
+    * @param nowrap
+    *   if true, ZLIB header and checksum will not be used
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
     * @group conversions
     */
   final def deflate(
@@ -1101,7 +1154,8 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
     * @group conversions
     */
   final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
@@ -1113,7 +1167,8 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param algorithm digest algorithm to use
+    * @param algorithm
+    *   digest algorithm to use
     * @group crypto
     */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
@@ -1124,7 +1179,8 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param digest digest to use
+    * @param digest
+    *   digest to use
     * @group crypto
     */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
@@ -1133,10 +1189,14 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param ci cipher to use for encryption
-    * @param key key to encrypt with
-    * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for encryption
+    * @param key
+    *   key to encrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for encryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
@@ -1148,10 +1208,14 @@ sealed abstract class BitVector
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param ci cipher to use for decryption
-    * @param key key to decrypt with
-    * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for decryption
+    * @param key
+    *   key to decrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for decryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
@@ -1181,7 +1245,8 @@ sealed abstract class BitVector
     }
 
   /** Returns true if the specified value is a `BitVector` with the same contents as this vector.
-    * @see [[BitVector.===]]
+    * @see
+    *   [[BitVector.===]]
     * @group collection
     */
   override final def equals(other: Any): Boolean =
@@ -1205,15 +1270,14 @@ sealed abstract class BitVector
     go(this, stringHash("BitVector"), 1)
   }
 
-  /** Display the size and bytes of this `BitVector`.
-    * For bit vectors beyond a certain size, only a hash of the
-    * contents are shown.
+  /** Display the size and bytes of this `BitVector`. For bit vectors beyond a certain size, only a
+    * hash of the contents are shown.
     * @group collection
     */
   override final def toString =
     if (isEmpty) "BitVector(empty)"
-    else if (sizeLessThan(513)) s"BitVector($size bits, 0x${toHex})"
-    else s"BitVector($size bits, #${hashCode})"
+    else if (sizeLessThan(513)) s"BitVector($size bits, 0x$toHex)"
+    else s"BitVector($size bits, #$hashCode)"
 
   // impl details
 
@@ -1294,17 +1358,25 @@ sealed abstract class BitVector
 
 /** Companion for [[BitVector]].
   *
-  * @groupname constants Constants
-  * @groupprio constants 0
+  * @groupname constants
+  *   Constants
+  * @groupprio constants
+  *   0
   *
-  * @groupname constructors Constructors
-  * @groupprio constructors 1
+  * @groupname constructors
+  *   Constructors
+  * @groupprio constructors
+  *   1
   *
-  * @groupname numeric Numeric Conversions
-  * @groupprio numeric 2
+  * @groupname numeric
+  *   Numeric Conversions
+  * @groupprio numeric
+  *   2
   *
-  * @groupname base Base Conversions
-  * @groupprio base 3
+  * @groupname base
+  *   Base Conversions
+  * @groupprio base
+  *   3
   */
 object BitVector extends BitVectorCompanionCrossPlatform {
 
@@ -1354,22 +1426,19 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     */
   def low(n: Long): BitVector = fill(n)(false)
 
-  /** Constructs a `BitVector` from a `ByteVector`.
-    * This method has runtime O(1).
+  /** Constructs a `BitVector` from a `ByteVector`. This method has runtime O(1).
     * @group constructors
     */
   def apply(bs: ByteVector): BitVector = toBytes(bs, bs.size.toLong * 8)
 
-  /** Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is
-    * is copied to ensure the resulting `BitVector` is immutable.
-    * If this is not desired, use `BitVector.view`.
+  /** Constructs a `BitVector` from a `ByteBuffer`. The given `ByteBuffer` is is copied to ensure
+    * the resulting `BitVector` is immutable. If this is not desired, use `BitVector.view`.
     * @group constructors
     */
   def apply(buffer: ByteBuffer): BitVector = apply(ByteVector(buffer))
 
-  /** Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is
-    * is copied to ensure the resulting `BitVector` is immutable.
-    * If this is not desired, use `BitVector.view`.
+  /** Constructs a `BitVector` from an `Array[Byte]`. The given `Array[Byte]` is is copied to ensure
+    * the resulting `BitVector` is immutable. If this is not desired, use `BitVector.view`.
     * @group constructors
     */
   def apply(bs: Array[Byte]): BitVector = toBytes(ByteVector(bs), bs.size.toLong * 8)
@@ -1379,38 +1448,38 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     */
   def apply(bs: IterableOnce[Byte]): BitVector = apply(ByteVector(bs))
 
-  /** Constructs a `BitVector` from a list of literal bytes. Only the least significant
-    * byte is used of each integral value.
+  /** Constructs a `BitVector` from a list of literal bytes. Only the least significant byte is used
+    * of each integral value.
     * @group constructors
     */
   def apply[A: Integral](bytes: A*): BitVector = apply(ByteVector(bytes: _*))
 
-  /** Constructs a `BitVector` from a `ByteBuffer` using the buffer limit * 8 as the size.
-    * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
-    * not to modify the contents of the buffer passed to this function.
+  /** Constructs a `BitVector` from a `ByteBuffer` using the buffer limit * 8 as the size. Unlike
+    * `apply`, this does not make a copy of the input buffer, so callers should take care not to
+    * modify the contents of the buffer passed to this function.
     * @group constructors
     */
   def view(buffer: ByteBuffer): BitVector =
     toBytes(ByteVector.view(buffer), buffer.limit().toLong * 8)
 
-  /** Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`.
-    * Unlike `apply`, this does not make a copy of the input buffer, so callers should take care
-    * not to modify the contents of the buffer passed to this function.
+  /** Constructs a `BitVector` from the first `sizeInBits` of the `ByteBuffer`. Unlike `apply`, this
+    * does not make a copy of the input buffer, so callers should take care not to modify the
+    * contents of the buffer passed to this function.
     * @group constructors
     */
   def view(buffer: ByteBuffer, sizeInBits: Long): BitVector =
     toBytes(ByteVector.view(buffer), sizeInBits)
 
-  /** Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
-    * does not make a copy of the input array, so callers should take care
-    * not to modify the contents of the array passed to this function.
+  /** Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this does not make a copy of
+    * the input array, so callers should take care not to modify the contents of the array passed to
+    * this function.
     * @group constructors
     */
   def view(bs: Array[Byte]): BitVector = view(bs, bs.size.toLong * 8)
 
-  /** Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this
-    * does not make a copy of the input array, so callers should take care
-    * not to modify the contents of the array passed to this function.
+  /** Constructs a `BitVector` from an `Array[Byte]`. Unlike `apply`, this does not make a copy of
+    * the input array, so callers should take care not to modify the contents of the array passed to
+    * this function.
     * @group constructors
     */
   def view(bs: Array[Byte], sizeInBits: Long): BitVector = toBytes(ByteVector.view(bs), sizeInBits)
@@ -1425,8 +1494,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified byte.
-    * @param b value to encode
-    * @param size size of vector (<= 8)
+    * @param b
+    *   value to encode
+    * @param size
+    *   size of vector (<= 8)
     * @group numeric
     */
   def fromByte(b: Byte, size: Int = 8): BitVector = {
@@ -1435,9 +1506,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified value.
-    * @param s value to encode
-    * @param size size of vector (<= 16)
-    * @param ordering byte ordering of vector
+    * @param s
+    *   value to encode
+    * @param size
+    *   size of vector (<= 16)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromShort(
@@ -1453,9 +1527,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified value.
-    * @param i value to encode
-    * @param size size of vector (<= 32)
-    * @param ordering byte ordering of vector
+    * @param i
+    *   value to encode
+    * @param size
+    *   size of vector (<= 32)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromInt(
@@ -1471,9 +1548,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified value.
-    * @param l value to encode
-    * @param size size of vector (<= 64)
-    * @param ordering byte ordering of vector
+    * @param l
+    *   value to encode
+    * @param size
+    *   size of vector (<= 64)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromLong(
@@ -1488,10 +1568,11 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
-  /** Constructs a bit vector containing the binary representation of the specified UUID.
-    * The bits are in MSB-to-LSB order.
+  /** Constructs a bit vector containing the binary representation of the specified UUID. The bits
+    * are in MSB-to-LSB order.
     *
-    * @param u value to encode
+    * @param u
+    *   value to encode
     * @group conversions
     */
   final def fromUUID(u: UUID): BitVector = {
@@ -1502,7 +1583,8 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     view(buf.array())
   }
 
-  /** Constructs a `BitVector` from a binary string or returns an error message if the string is not valid binary.
+  /** Constructs a `BitVector` from a binary string or returns an error message if the string is not
+    * valid binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     * @group base
@@ -1520,7 +1602,8 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       bytes.toBitVector.drop(toDrop.toLong)
     }
 
-  /** Constructs a `BitVector` from a binary string or returns `None` if the string is not valid binary.
+  /** Constructs a `BitVector` from a binary string or returns `None` if the string is not valid
+    * binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     * @group base
@@ -1530,11 +1613,13 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
   ): Option[BitVector] = fromBinDescriptive(str, alphabet).toOption
 
-  /** Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
+  /** Constructs a `BitVector` from a binary string or throws an IllegalArgumentException if the
+    * string is not valid binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     *
-    * @throws IllegalArgumentException if the string is not valid hexadecimal
+    * @throws IllegalArgumentException
+    *   if the string is not valid hexadecimal
     * @group base
     */
   def fromValidBin(
@@ -1543,7 +1628,8 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   ): BitVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `BitVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
+  /** Constructs a `BitVector` from a hexadecimal string or returns an error message if the string
+    * is not valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     * @group base
@@ -1557,7 +1643,8 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       bytes.toBitVector.drop(toDrop.toLong)
     }
 
-  /** Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
+  /** Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not
+    * valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     * @group base
@@ -1567,11 +1654,13 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Option[BitVector] = fromHexDescriptive(str, alphabet).toOption
 
-  /** Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
+  /** Constructs a `BitVector` from a hexadecimal string or throws an IllegalArgumentException if
+    * the string is not valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     *
-    * @throws IllegalArgumentException if the string is not valid hexadecimal
+    * @throws IllegalArgumentException
+    *   if the string is not valid hexadecimal
     * @group base
     */
   def fromValidHex(
@@ -1580,9 +1669,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   ): BitVector =
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `BitVector` from a base 32 string or returns an error message if the string is not valid base 32.
-    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 32 string or returns an error message if the string is
+    * not valid base 32. Details pertaining to base 32 decoding can be found in the comment for
+    * ByteVector.fromBase32Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase32Descriptive(
@@ -1591,9 +1681,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   ): Either[String, BitVector] =
     ByteVector.fromBase32Descriptive(str, alphabet).map(_.toBitVector)
 
-  /** Constructs a `BitVector` from a base 32 string or returns `None` if the string is not valid base 32.
-    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 32 string or returns `None` if the string is not valid
+    * base 32. Details pertaining to base 32 decoding can be found in the comment for
+    * ByteVector.fromBase32Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase32(
@@ -1601,11 +1692,13 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
   ): Option[BitVector] = fromBase32Descriptive(str, alphabet).toOption
 
-  /** Constructs a `BitVector` from a base 32 string or throws an IllegalArgumentException if the string is not valid base 32.
-    * Details pertaining to base 32 decoding can be found in the comment for ByteVector.fromBase32Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 32 string or throws an IllegalArgumentException if the
+    * string is not valid base 32. Details pertaining to base 32 decoding can be found in the
+    * comment for ByteVector.fromBase32Descriptive. The string may contain whitespace characters
+    * which are ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 32
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 32
     * @group base
     */
   def fromValidBase32(
@@ -1615,9 +1708,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     fromBase32Descriptive(str, alphabet)
       .fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `BitVector` from a base 58 string or returns an error message if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 58 string or returns an error message if the string is
+    * not valid base 58. Details pertaining to base 58 decoding can be found in the comment for
+    * ByteVector.fromBase58Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase58Descriptive(
@@ -1626,9 +1720,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   ): Either[String, BitVector] =
     ByteVector.fromBase58Descriptive(str, alphabet).map(_.toBitVector)
 
-  /** Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 58 string or returns `None` if the string is not valid
+    * base 58. Details pertaining to base 58 decoding can be found in the comment for
+    * ByteVector.fromBase58Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase58(
@@ -1636,20 +1731,23 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       alphabet: Bases.Alphabet = Bases.Alphabets.Base58
   ): Option[BitVector] = fromBase58Descriptive(str, alphabet).toOption
 
-  /** Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for ByteVector.fromBase58Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 58 string or throws an IllegalArgumentException if the
+    * string is not valid base 58. Details pertaining to base 58 decoding can be found in the
+    * comment for ByteVector.fromBase58Descriptive. The string may contain whitespace characters
+    * which are ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 58
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 58
     * @group base
     */
   def fromValidBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): BitVector =
     fromBase58Descriptive(str, alphabet)
       .fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `BitVector` from a base 64 string or returns an error message if the string is not valid base 64.
-    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 64 string or returns an error message if the string is
+    * not valid base 64. Details pertaining to base 64 decoding can be found in the comment for
+    * ByteVector.fromBase64Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase64Descriptive(
@@ -1658,9 +1756,10 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   ): Either[String, BitVector] =
     ByteVector.fromBase64Descriptive(str, alphabet).map(_.toBitVector)
 
-  /** Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid base 64.
-    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 64 string or returns `None` if the string is not valid
+    * base 64. Details pertaining to base 64 decoding can be found in the comment for
+    * ByteVector.fromBase64Descriptive. The string may contain whitespace characters which are
+    * ignored.
     * @group base
     */
   def fromBase64(
@@ -1668,11 +1767,13 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
   ): Option[BitVector] = fromBase64Descriptive(str, alphabet).toOption
 
-  /** Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
-    * Details pertaining to base 64 decoding can be found in the comment for ByteVector.fromBase64Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `BitVector` from a base 64 string or throws an IllegalArgumentException if the
+    * string is not valid base 64. Details pertaining to base 64 decoding can be found in the
+    * comment for ByteVector.fromBase64Descriptive. The string may contain whitespace characters
+    * which are ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 64
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 64
     * @group base
     */
   def fromValidBase64(
@@ -1712,15 +1813,13 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   def concat(bvs: IterableOnce[BitVector]): BitVector =
     bvs.iterator.foldLeft(BitVector.empty)(_ ++ _)
 
-  /** Create a lazy `BitVector` by repeatedly extracting chunks from `S`.
-    * The returned `BitVector` will have the structure of a fully lazy
-    * right-associated cons list. Thus, `get`, `take`, and `drop` will
-    * be efficient when operating on the head of the list, but accessing
-    * later indices (for `takeRight`, say, or `get(size-1)` will require
-    * forcing the stream up to that point.
+  /** Create a lazy `BitVector` by repeatedly extracting chunks from `S`. The returned `BitVector`
+    * will have the structure of a fully lazy right-associated cons list. Thus, `get`, `take`, and
+    * `drop` will be efficient when operating on the head of the list, but accessing later indices
+    * (for `takeRight`, say, or `get(size-1)` will require forcing the stream up to that point.
     *
-    * Use `force` if you wish to convert the result to an in-memory strict
-    * `BitVector` backed by a balanced tree.
+    * Use `force` if you wish to convert the result to an in-memory strict `BitVector` backed by a
+    * balanced tree.
     *
     * @group constructors
     */
@@ -1731,19 +1830,19 @@ object BitVector extends BitVectorCompanionCrossPlatform {
         .getOrElse(BitVector.empty)
     }
 
-  /** Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes`
-    * to control the number of bytes read in each chunk (defaulting to 16MB).
-    * This simply calls [[scodec.bits.BitVector.unfold]] with a function to extract a series
-    * of flat byte arrays from the `InputStream`.
+  /** Produce a lazy `BitVector` from the given `InputStream`, using `chunkSizeInBytes` to control
+    * the number of bytes read in each chunk (defaulting to 16MB). This simply calls
+    * [[scodec.bits.BitVector.unfold]] with a function to extract a series of flat byte arrays from
+    * the `InputStream`.
     *
-    * This function does not handle closing the `InputStream` and has all the usual
-    * drawbacks of lazy I/O - `I/O` exceptions may be raised unexpectedly in pure code as
-    * chunks are forced, and it must memoize the results to prevent the underlying side
-    * effects from being observed. Streaming applications should take care to ensure
-    * that the head of the stream is not left on the stack, as this will cause the entire
-    * stream to be retained in memory.
+    * This function does not handle closing the `InputStream` and has all the usual drawbacks of
+    * lazy I/O - `I/O` exceptions may be raised unexpectedly in pure code as chunks are forced, and
+    * it must memoize the results to prevent the underlying side effects from being observed.
+    * Streaming applications should take care to ensure that the head of the stream is not left on
+    * the stack, as this will cause the entire stream to be retained in memory.
     *
-    * @param chunkSizeInBytes the number of bytes to read in each chunk
+    * @param chunkSizeInBytes
+    *   the number of bytes to read in each chunk
     * @group constructors
     */
   def fromInputStream(
@@ -1758,16 +1857,18 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       else Some((BitVector(buf.take(nRead): Array[Byte]), in))
     }
 
-  /** Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes`
-    * to control the number of bytes read in each chunk (defaulting to 16MB). This function
-    * does lazy I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct`
-    * parameter, if `true`, allows for (but does not enforce) using a 'direct' `java.nio.ByteBuffer`
-    * for each chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a
-    * 'view' rather than an in-memory array. This may be more efficient for some workloads. See
+  /** Produce a lazy `BitVector` from the given `ReadableByteChannel`, using `chunkSizeInBytes` to
+    * control the number of bytes read in each chunk (defaulting to 16MB). This function does lazy
+    * I/O, see [[scodec.bits.BitVector.fromInputStream]] for caveats. The `direct` parameter, if
+    * `true`, allows for (but does not enforce) using a 'direct' `java.nio.ByteBuffer` for each
+    * chunk, which means the buffer and corresponding `BitVector` chunk may be backed by a 'view'
+    * rather than an in-memory array. This may be more efficient for some workloads. See
     * `java.nio.ByteBuffer` for more information.
     *
-    * @param chunkSizeInBytes the number of bytes to read in each chunk
-    * @param direct true if we should attempt to use a 'direct' `java.nio.ByteBuffer` for reads
+    * @param chunkSizeInBytes
+    *   the number of bytes to read in each chunk
+    * @param direct
+    *   true if we should attempt to use a 'direct' `java.nio.ByteBuffer` for reads
     * @group constructors
     */
   def fromChannel(
@@ -1785,15 +1886,16 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       else None
     }
 
-  /** Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes`
-    * to control the number of bytes read in each chunk (defaulting to 16MB). Unlike
-    * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying
-    * them explicitly.
+  /** Produce a lazy `BitVector` from the given `FileChannel`, using `chunkSizeInBytes` to control
+    * the number of bytes read in each chunk (defaulting to 16MB). Unlike
+    * [[scodec.bits.BitVector.fromChannel]], this memory-maps chunks in, rather than copying them
+    * explicitly.
     *
-    * Behavior is unspecified if this function is used concurrently with the underlying
-    * file being written.
+    * Behavior is unspecified if this function is used concurrently with the underlying file being
+    * written.
     *
-    * @param chunkSizeInBytes the number of bytes to read in each chunk
+    * @param chunkSizeInBytes
+    *   the number of bytes to read in each chunk
     * @group constructors
     */
   def fromMmap(
@@ -2036,9 +2138,8 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     def align = underlying.align
   }
 
-  /** A vector of chunks of exponentially decreasing size. Supports
-    * amortized constant time `++` and logarithmic time for all other
-    * operations.
+  /** A vector of chunks of exponentially decreasing size. Supports amortized constant time `++` and
+    * logarithmic time for all other operations.
     */
   private[scodec] case class Chunks(chunks: Append) extends BitVector {
 
@@ -2383,14 +2484,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       bytes
   }
 
-  /** Do a 'balanced' reduction of `v`. Provided `f` is associative, this
-    * returns the same result as `v.reduceLeft(f)`, but uses a balanced
-    * tree of concatenations, which is more efficient for operations that
-    * must copy both `A` values to combine them in `f`.
+  /** Do a 'balanced' reduction of `v`. Provided `f` is associative, this returns the same result as
+    * `v.reduceLeft(f)`, but uses a balanced tree of concatenations, which is more efficient for
+    * operations that must copy both `A` values to combine them in `f`.
     *
-    * Implementation uses a stack that combines the top two elements of the
-    * stack using `f` if the top element is more than half the size of the
-    * element below it.
+    * Implementation uses a stack that combines the top two elements of the stack using `f` if the
+    * top element is more than half the size of the element below it.
     */
   private[bits] def reduceBalanced[A](v: Iterable[A])(size: A => Long)(f: (A, A) => A): A = {
     @annotation.tailrec
