@@ -34,10 +34,10 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array}
 
 class ByteVectorJsTest extends BitsSuite {
   private def setDEADBEEF(int8Array: Int8Array): Unit = {
-    int8Array(0) = 0xDE.toByte
-    int8Array(1) = 0xAD.toByte
-    int8Array(2) = 0xBE.toByte
-    int8Array(3) = 0xEF.toByte
+    int8Array(0) = 0xde.toByte
+    int8Array(1) = 0xad.toByte
+    int8Array(2) = 0xbe.toByte
+    int8Array(3) = 0xef.toByte
   }
 
   test("view(Int8Array)") {
@@ -45,7 +45,7 @@ class ByteVectorJsTest extends BitsSuite {
     setDEADBEEF(int8Array)
     val byteVector: ByteVector = ByteVector.view(int8Array)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    int8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeee")
   }
 
@@ -55,7 +55,7 @@ class ByteVectorJsTest extends BitsSuite {
     setDEADBEEF(int8Array)
     val byteVector: ByteVector = ByteVector.view(arrayBuffer)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    int8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeee")
   }
 
@@ -64,7 +64,7 @@ class ByteVectorJsTest extends BitsSuite {
     setDEADBEEF(int8Array)
     val byteVector: ByteVector = ByteVector.fromTypedArray(int8Array)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    int8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeef")
   }
 
@@ -74,14 +74,14 @@ class ByteVectorJsTest extends BitsSuite {
     setDEADBEEF(int8Array)
     val byteVector: ByteVector = ByteVector.fromArrayBuffer(arrayBuffer)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    int8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeef")
   }
 
   test("copyToTypedArray") {
     val int8Array = new Int8Array(6)
-    int8Array(0) = 0xAA.toByte
-    int8Array(5) = 0xFF.toByte
+    int8Array(0) = 0xaa.toByte
+    int8Array(5) = 0xff.toByte
     hex"bbccdeadbeefee".copyToTypedArray(int8Array, 1, 2, 4)
     assert(ByteVector.view(int8Array) === hex"aadeadbeefff")
   }

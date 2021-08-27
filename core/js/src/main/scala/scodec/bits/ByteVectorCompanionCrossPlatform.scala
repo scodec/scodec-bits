@@ -32,10 +32,12 @@ package scodec.bits
 
 import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array, TypedArrayBuffer}
 
-private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform { self: ByteVector.type =>
+private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform {
+  self: ByteVector.type =>
   def view(typedArray: Int8Array): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(typedArray))
 
-  def view(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
+  def view(arrayBuffer: ArrayBuffer): ByteVector =
+    ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
 
   def fromTypedArray(typedArray: Int8Array): ByteVector = {
     val copy = new Int8Array(typedArray.length)
@@ -43,5 +45,6 @@ private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform 
     ByteVector.view(copy)
   }
 
-  def fromArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.fromTypedArray(new Int8Array(arrayBuffer))
+  def fromArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector =
+    ByteVector.fromTypedArray(new Int8Array(arrayBuffer))
 }

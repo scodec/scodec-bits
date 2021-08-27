@@ -40,5 +40,5 @@ private[bits] trait BitVectorPlatform { self: BitVector.type =>
       case _ => ByteVector.fromValidHex(new java.math.BigInteger(digits, radix).toString(16)).bits
     }
   }
-  */
+   */
 }

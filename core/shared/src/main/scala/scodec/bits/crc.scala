@@ -32,15 +32,20 @@ package scodec.bits
 
 /** Provides support for calculating cyclic redundancy checks.
   *
-  * @see http://www.repairfaq.org/filipg/LINK/F_crc_v3.html
+  * @see
+  *   http://www.repairfaq.org/filipg/LINK/F_crc_v3.html
   */
 object crc {
 
-  /** 32-bit CRC using poly 0x04c11db7, initial 0xffffffff, reflected input/output, and final xor 0xffffffff. */
+  /** 32-bit CRC using poly 0x04c11db7, initial 0xffffffff, reflected input/output, and final xor
+    * 0xffffffff.
+    */
   lazy val crc32: BitVector => BitVector =
     int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
-  /** 32-bit CRC using poly 0x1edc6f41, initial 0xffffffff, reflected input/output, and final xor 0xffffffff. */
+  /** 32-bit CRC using poly 0x1edc6f41, initial 0xffffffff, reflected input/output, and final xor
+    * 0xffffffff.
+    */
   lazy val crc32c: BitVector => BitVector =
     int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
@@ -48,7 +53,8 @@ object crc {
     *
     * Each of the input vectors must be the same size.
     *
-    * @return function that calculates a `n`-bit CRC where `n = poly.size`
+    * @return
+    *   function that calculates a `n`-bit CRC where `n = poly.size`
     */
   def apply(
       poly: BitVector,
@@ -145,7 +151,8 @@ object crc {
 
   /** Constructs a 32-bit, table-based CRC function using the specified polynomial.
     *
-    * @return function that calculates a 32-bit CRC
+    * @return
+    *   function that calculates a 32-bit CRC
     */
   def int32(
       poly: Int,
@@ -215,10 +222,11 @@ object crc {
 
   /** Calculates a bitwise CRC of the specified value.
     *
-    * If calculating a lot of CRCs, prefer the `apply` method, which precomputes a lookup table
-    * and uses it in each CRC calculation.
+    * If calculating a lot of CRCs, prefer the `apply` method, which precomputes a lookup table and
+    * uses it in each CRC calculation.
     *
-    * @return function that calculates a `n`-bit CRC where `n = poly.size`
+    * @return
+    *   function that calculates a `n`-bit CRC where `n = poly.size`
     */
   def bitwise(
       poly: BitVector,
