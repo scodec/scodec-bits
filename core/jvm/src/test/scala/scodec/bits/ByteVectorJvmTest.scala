@@ -143,7 +143,7 @@ class ByteVectorJvmTest extends BitsSuite {
   property("digest") {
     forAll { (x: ByteVector) =>
       val sha256 = java.security.MessageDigest.getInstance("SHA-256")
-      assert(x.digest("SHA-256") == ByteVector.view(sha256.digest(x.toArray)))
+      assert(x.sha256 == ByteVector.view(sha256.digest(x.toArray)))
     }
   }
 

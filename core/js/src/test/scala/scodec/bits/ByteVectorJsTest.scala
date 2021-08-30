@@ -30,63 +30,63 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array}
+import scala.scalajs.js.typedarray.{ArrayBuffer, Uint8Array}
 
 class ByteVectorJsTest extends BitsSuite {
-  private def setDEADBEEF(int8Array: Int8Array): Unit = {
-    int8Array(0) = 0xDE.toByte
-    int8Array(1) = 0xAD.toByte
-    int8Array(2) = 0xBE.toByte
-    int8Array(3) = 0xEF.toByte
+  private def setDEADBEEF(uint8Array: Uint8Array): Unit = {
+    uint8Array(0) = 0xde.toByte
+    uint8Array(1) = 0xad.toByte
+    uint8Array(2) = 0xbe.toByte
+    uint8Array(3) = 0xef.toByte
   }
 
-  test("view(Int8Array)") {
-    val int8Array = new Int8Array(4)
-    setDEADBEEF(int8Array)
-    val byteVector: ByteVector = ByteVector.view(int8Array)
+  test("view(Uint8Array)") {
+    val uint8Array = new Uint8Array(4)
+    setDEADBEEF(uint8Array)
+    val byteVector: ByteVector = ByteVector.view(uint8Array)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    uint8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeee")
   }
 
   test("view(ArrayBuffer)") {
     val arrayBuffer = new ArrayBuffer(4)
-    val int8Array = new Int8Array(arrayBuffer)
-    setDEADBEEF(int8Array)
+    val uint8Array = new Uint8Array(arrayBuffer)
+    setDEADBEEF(uint8Array)
     val byteVector: ByteVector = ByteVector.view(arrayBuffer)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    uint8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeee")
   }
 
   test("fromTypedArray") {
-    val int8Array = new Int8Array(4)
-    setDEADBEEF(int8Array)
-    val byteVector: ByteVector = ByteVector.fromTypedArray(int8Array)
+    val uint8Array = new Uint8Array(4)
+    setDEADBEEF(uint8Array)
+    val byteVector: ByteVector = ByteVector.fromUint8Array(uint8Array)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    uint8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeef")
   }
 
   test("fromArrayBuffer") {
     val arrayBuffer = new ArrayBuffer(4)
-    val int8Array = new Int8Array(arrayBuffer)
-    setDEADBEEF(int8Array)
-    val byteVector: ByteVector = ByteVector.fromArrayBuffer(arrayBuffer)
+    val uint8Array = new Uint8Array(arrayBuffer)
+    setDEADBEEF(uint8Array)
+    val byteVector: ByteVector = ByteVector.fromJSArrayBuffer(arrayBuffer)
     assert(byteVector === hex"deadbeef")
-    int8Array(3) = 0xEE.toByte
+    uint8Array(3) = 0xee.toByte
     assert(byteVector === hex"deadbeef")
   }
 
   test("copyToTypedArray") {
-    val int8Array = new Int8Array(6)
-    int8Array(0) = 0xAA.toByte
-    int8Array(5) = 0xFF.toByte
-    hex"bbccdeadbeefee".copyToTypedArray(int8Array, 1, 2, 4)
-    assert(ByteVector.view(int8Array) === hex"aadeadbeefff")
+    val uint8Array = new Uint8Array(6)
+    uint8Array(0) = 0xaa.toByte
+    uint8Array(5) = 0xff.toByte
+    hex"bbccdeadbeefee".copyToUint8Array(uint8Array, 1, 2, 4)
+    assert(ByteVector.view(uint8Array) === hex"aadeadbeefff")
   }
 
   test("toTypedArray") {
-    assert(ByteVector.view(hex"deadbeef".toTypedArray) === hex"deadbeef")
+    assert(ByteVector.view(hex"deadbeef".toUint8Array) === hex"deadbeef")
   }
 }
