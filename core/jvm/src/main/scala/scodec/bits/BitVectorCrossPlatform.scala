@@ -37,13 +37,14 @@ import java.security.{
   MessageDigest,
   SecureRandom
 }
-import java.util.zip.{DataFormatException, Deflater, Inflater}
-
+import java.util.zip.{DataFormatException, Deflater}
 import javax.crypto.Cipher
 
-private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
+private[bits] trait BitVectorCrossPlatform { self: BitVector =>
 
   /** Compresses this vector using ZLIB.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
     *
     * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
     * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
@@ -56,91 +57,44 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
       strategy: Int = Deflater.DEFAULT_STRATEGY,
       nowrap: Boolean = false,
       chunkSize: Int = 4096
-  ): ByteVector =
-    if (isEmpty) this
-    else {
-      val deflater = new Deflater(level, nowrap)
-      try {
-        deflater.setStrategy(strategy)
-
-        val buffer = new Array[Byte](chunkSize.toLong.min(size).toInt)
-        def loop(acc: ByteVector, fin: Boolean): ByteVector =
-          if ((fin && deflater.finished) || (!fin && deflater.needsInput)) acc
-          else {
-            val count = deflater.deflate(buffer)
-            loop(acc ++ ByteVector(buffer, 0, count), fin)
-          }
-
-        var result = ByteVector.empty
-
-        foreachV { v =>
-          deflater.setInput(v.toArray)
-          result = result ++ loop(ByteVector.empty, false)
-        }
-
-        deflater.setInput(Array.empty[Byte])
-        deflater.finish()
-        result ++ loop(ByteVector.empty, true)
-      } finally deflater.end()
-    }
+  ): BitVector =
+    bytes.deflate(level, strategy, nowrap, chunkSize).bits
 
   /** Decompresses this vector using ZLIB.
     *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
     * @param chunkSize buffer size, in bytes, to use when compressing
-    * @param nowrap if true, will assume no ZLIB header and checksum
     * @group conversions
     */
-  final def inflate(
-      chunkSize: Int = 4096,
-      nowrap: Boolean = false
-  ): Either[DataFormatException, ByteVector] =
-    if (isEmpty) Right(this)
-    else {
-      val arr = toArray
+  final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
+    bytes.inflate(chunkSize).map(_.bits)
 
-      val inflater = new Inflater(nowrap)
-      try {
-        inflater.setInput(arr)
-        try {
-          val buffer = new Array[Byte](chunkSize.min(arr.length))
-          def loop(acc: ByteVector): ByteVector =
-            if (inflater.finished || inflater.needsInput) acc
-            else {
-              val count = inflater.inflate(buffer)
-              loop(acc ++ ByteVector(buffer, 0, count))
-            }
-          val inflated = loop(ByteVector.empty)
-          if (inflater.finished) Right(inflated)
-          else
-            Left(
-              new DataFormatException(
-                "Insufficient data -- inflation reached end of input without completing inflation - " + inflated
-              )
-            )
-        } catch {
-          case e: DataFormatException => Left(e)
-        }
-      } finally inflater.end()
-    }
-
-  /** Computes a digest of this byte vector.
+  /** Computes a digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
     * @param algorithm digest algorithm to use
-    * @group conversions
+    * @group crypto
     */
-  final def digest(algorithm: String): ByteVector = digest(MessageDigest.getInstance(algorithm))
+  final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
 
-  /** Computes a digest of this byte vector.
+  /** Computes a digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
     * @param digest digest to use
-    * @group conversions
+    * @group crypto
     */
-  final def digest(digest: MessageDigest): ByteVector = {
-    foreachV { v =>
-      digest.update(v.toArray)
-    }
-    ByteVector.view(digest.digest)
-  }
+  final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
 
-  /** Encrypts this byte vector using the specified cipher and key.
+  /** Encrypts this bit vector using the specified cipher and key.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
     *
     * @param ci cipher to use for encryption
     * @param key key to encrypt with
@@ -150,10 +104,12 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
     */
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
       sr: SecureRandom
-  ): Either[GeneralSecurityException, ByteVector] =
-    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
+  ): Either[GeneralSecurityException, BitVector] =
+    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
 
-  /** Decrypts this byte vector using the specified cipher and key.
+  /** Decrypts this bit vector using the specified cipher and key.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
     *
     * @param ci cipher to use for decryption
     * @param key key to decrypt with
@@ -163,23 +119,15 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
     */
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
       sr: SecureRandom
-  ): Either[GeneralSecurityException, ByteVector] =
-    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
+  ): Either[GeneralSecurityException, BitVector] =
+    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
 
   private[bits] def cipher(
       ci: Cipher,
       key: Key,
       opmode: Int,
       aparams: Option[AlgorithmParameters] = None
-  )(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
-    try {
-      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view =>
-        ci.update(view.toArrayUnsafe); ()
-      }
-      Right(ByteVector.view(ci.doFinal()))
-    } catch {
-      case e: GeneralSecurityException => Left(e)
-    }
+  )(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
+    bytes.cipher(ci, key, opmode, aparams)(sr).map(_.bits)
 
 }
