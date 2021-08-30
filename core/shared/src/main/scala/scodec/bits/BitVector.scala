@@ -32,16 +32,7 @@ package scodec.bits
 
 import java.nio.{ByteBuffer, ByteOrder}
 import java.nio.charset.{CharacterCodingException, Charset}
-import java.security.{
-  AlgorithmParameters,
-  GeneralSecurityException,
-  Key,
-  MessageDigest,
-  SecureRandom
-}
 import java.util.UUID
-import java.util.zip.{DataFormatException, Deflater}
-import javax.crypto.Cipher
 
 /** Persistent vector of bits, stored as bytes.
   *
@@ -72,6 +63,7 @@ import javax.crypto.Cipher
   */
 sealed abstract class BitVector
     extends BitwiseOperations[BitVector, Long]
+    with BitVectorCrossPlatform
     with Ordered[BitVector]
     with Serializable {
   import BitVector._
@@ -1127,102 +1119,6 @@ sealed abstract class BitVector
   final def decodeAscii: Either[CharacterCodingException, String] =
     bytes.decodeAscii
 
-  /** Compresses this vector using ZLIB.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param level
-    *   compression level, 0-9, with 0 disabling compression and 9 being highest level of
-    *   compression -- see `java.util.zip.Deflater` for details
-    * @param strategy
-    *   compression strategy -- see `java.util.zip.Deflater` for details
-    * @param nowrap
-    *   if true, ZLIB header and checksum will not be used
-    * @param chunkSize
-    *   buffer size, in bytes, to use when compressing
-    * @group conversions
-    */
-  final def deflate(
-      level: Int = Deflater.DEFAULT_COMPRESSION,
-      strategy: Int = Deflater.DEFAULT_STRATEGY,
-      nowrap: Boolean = false,
-      chunkSize: Int = 4096
-  ): BitVector =
-    bytes.deflate(level, strategy, nowrap, chunkSize).bits
-
-  /** Decompresses this vector using ZLIB.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param chunkSize
-    *   buffer size, in bytes, to use when compressing
-    * @group conversions
-    */
-  final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
-    bytes.inflate(chunkSize).map(_.bits)
-
-  /** Computes a digest of this bit vector.
-    *
-    * Exceptions thrown from the underlying JCA API are propagated.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param algorithm
-    *   digest algorithm to use
-    * @group crypto
-    */
-  final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
-
-  /** Computes a digest of this bit vector.
-    *
-    * Exceptions thrown from the underlying JCA API are propagated.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param digest
-    *   digest to use
-    * @group crypto
-    */
-  final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
-
-  /** Encrypts this bit vector using the specified cipher and key.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param ci
-    *   cipher to use for encryption
-    * @param key
-    *   key to encrypt with
-    * @param aparams
-    *   optional algorithm paramaters used for encryption (e.g., initialization vector)
-    * @param sr
-    *   secure random
-    * @group crypto
-    */
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
-      sr: SecureRandom
-  ): Either[GeneralSecurityException, BitVector] =
-    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)(sr)
-
-  /** Decrypts this bit vector using the specified cipher and key.
-    *
-    * The last byte is zero padded if the size is not evenly divisible by 8.
-    *
-    * @param ci
-    *   cipher to use for decryption
-    * @param key
-    *   key to decrypt with
-    * @param aparams
-    *   optional algorithm paramaters used for decryption (e.g., initialization vector)
-    * @param sr
-    *   secure random
-    * @group crypto
-    */
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
-      sr: SecureRandom
-  ): Either[GeneralSecurityException, BitVector] =
-    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)(sr)
-
   /** Returns true if the specified `BitVector` has the same contents as this vector.
     * @group collection
     */
@@ -1295,14 +1191,6 @@ sealed abstract class BitVector
       case s @ Suspend(_) => Suspend(() => s.underlying.mapBytes(f))
       case c: Chunks      => Chunks(Append(c.chunks.left.mapBytes(f), c.chunks.right.mapBytes(f)))
     }
-
-  private[bits] def cipher(
-      ci: Cipher,
-      key: Key,
-      opmode: Int,
-      aparams: Option[AlgorithmParameters] = None
-  )(implicit sr: SecureRandom): Either[GeneralSecurityException, BitVector] =
-    bytes.cipher(ci, key, opmode, aparams)(sr).map(_.bits)
 
   /** Pretty print this `BitVector`.
     */
