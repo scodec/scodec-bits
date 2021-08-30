@@ -123,6 +123,21 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
       } finally inflater.end()
     }
 
+  /** Computes a SHA-1 digest of this byte vector.
+    * @group conversions
+    */
+  final def sha1: ByteVector = digest("SHA-1")
+
+  /** Computes a SHA-256 digest of this byte vector.
+    * @group conversions
+    */
+  final def sha256: ByteVector = digest("SHA-256")
+
+  /** Computes an MD5 digest of this byte vector.
+    * @group conversions
+    */
+  final def md5: ByteVector = digest("MD5")
+
   /** Computes a digest of this byte vector.
     * @param algorithm digest algorithm to use
     * @group conversions

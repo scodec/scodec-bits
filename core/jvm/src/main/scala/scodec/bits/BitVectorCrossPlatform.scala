@@ -70,6 +70,36 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
   final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
     bytes.inflate(chunkSize).map(_.bits)
 
+  /** Computes a SHA-1 digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @group crypto
+    */
+  final def sha1: BitVector = digest("SHA-1")
+
+  /** Computes a SHA-256 digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @group crypto
+    */
+  final def sha256: BitVector = digest("SHA-256")
+
+  /** Computes an MD5 digest of this bit vector.
+    *
+    * Exceptions thrown from the underlying JCA API are propagated.
+    *
+    * The last byte is zero padded if the size is not evenly divisible by 8.
+    *
+    * @group crypto
+    */
+  final def md5: BitVector = digest("MD5")
+
   /** Computes a digest of this bit vector.
     *
     * Exceptions thrown from the underlying JCA API are propagated.
