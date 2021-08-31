@@ -35,7 +35,8 @@ import scala.scalajs.js.typedarray.{ArrayBuffer, Uint8Array, TypedArrayBuffer}
 private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform { self: ByteVector.type =>
   def view(typedArray: Uint8Array): ByteVector = ByteVector.view(typedArray.buffer)
 
-  def view(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
+  def view(arrayBuffer: ArrayBuffer): ByteVector =
+    ByteVector.view(TypedArrayBuffer.wrap(arrayBuffer))
 
   def fromUint8Array(typedArray: Uint8Array): ByteVector = {
     val copy = new Uint8Array(typedArray.length)

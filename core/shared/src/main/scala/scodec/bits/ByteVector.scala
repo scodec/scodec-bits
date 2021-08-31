@@ -39,34 +39,45 @@ import java.util.function.IntUnaryOperator
 
 import scala.annotation.tailrec
 
-/** An immutable vector of bytes, backed by a balanced binary tree of
-  * chunks. Most operations are logarithmic in the depth of this tree,
-  * including `++`, `:+`, `+:`, `update`, and `insert`. Where possible,
-  * operations return lazy views rather than copying any underlying bytes.
-  * Use `copy` to copy all underlying bytes to a fresh, array-backed `ByteVector`.
+/** An immutable vector of bytes, backed by a balanced binary tree of chunks. Most operations are
+  * logarithmic in the depth of this tree, including `++`, `:+`, `+:`, `update`, and `insert`. Where
+  * possible, operations return lazy views rather than copying any underlying bytes. Use `copy` to
+  * copy all underlying bytes to a fresh, array-backed `ByteVector`.
   *
-  * Unless otherwise noted, operations follow the same naming as the scala
-  * standard library collections, though this class does not extend any of the
-  * standard scala collections. Use `toIndexedSeq`, `toSeq`, or `toIterable`
-  * to obtain a regular `scala.collection` type.
+  * Unless otherwise noted, operations follow the same naming as the scala standard library
+  * collections, though this class does not extend any of the standard scala collections. Use
+  * `toIndexedSeq`, `toSeq`, or `toIterable` to obtain a regular `scala.collection` type.
   *
-  * @groupname collection Collection Like Methods
-  * @groupprio collection 0
+  * @groupname collection
+  *   Collection Like Methods
+  * @groupprio collection
+  *   0
   *
-  * @groupname bitwise Bitwise Operations
-  * @groupprio bitwise 1
+  * @groupname bitwise
+  *   Bitwise Operations
+  * @groupprio bitwise
+  *   1
   *
-  * @groupname conversions Conversions
-  * @groupprio conversions 2
+  * @groupname conversions
+  *   Conversions
+  * @groupprio conversions
+  *   2
   *
-  * @groupname buffer Buffering
-  * @groupprio buffer 3
+  * @groupname buffer
+  *   Buffering
+  * @groupprio buffer
+  *   3
   *
-  * @groupname crypto Cryptography
-  * @groupprio crypto 4
+  * @groupname crypto
+  *   Cryptography
+  * @groupprio crypto
+  *   4
   *
-  * @define bitwiseOperationsReprDescription bit vector
-  * @define returnsView This method returns a view and hence, is O(1). Call [[compact]] to generate a new strict vector.
+  * @define bitwiseOperationsReprDescription
+  *   bit vector
+  * @define returnsView
+  *   This method returns a view and hence, is O(1). Call [[compact]] to generate a new strict
+  *   vector.
   */
 sealed abstract class ByteVector
     extends ByteVectorCrossPlatform
@@ -81,8 +92,7 @@ sealed abstract class ByteVector
     */
   def size: Long
 
-  /** Returns the number of bytes in this vector, or `None` if the size does not
-    * fit into an `Int`.
+  /** Returns the number of bytes in this vector, or `None` if the size does not fit into an `Int`.
     *
     * @group collection
     */
@@ -104,7 +114,8 @@ sealed abstract class ByteVector
   final def nonEmpty: Boolean = !isEmpty
 
   /** Gets the byte at the specified index.
-    * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
+    * @throws IndexOutOfBoundsException
+    *   if the specified index is not in `[0, size)`
     * @group collection
     */
   def get(index: Long): Byte = {
@@ -115,7 +126,8 @@ sealed abstract class ByteVector
   protected def getImpl(index: Long): Byte
 
   /** Alias for [[get]].
-    * @throws IndexOutOfBoundsException if the specified index is not in `[0, size)`
+    * @throws IndexOutOfBoundsException
+    *   if the specified index is not in `[0, size)`
     * @group collection
     */
   final def apply(index: Long): Byte = get(index)
@@ -153,7 +165,8 @@ sealed abstract class ByteVector
   final def patch(idx: Long, b: ByteVector): ByteVector =
     take(idx) ++ b ++ drop(idx + b.size)
 
-  /** Returns a new byte vector representing this vector's contents followed by the specified vector's contents.
+  /** Returns a new byte vector representing this vector's contents followed by the specified
+    * vector's contents.
     * @group collection
     */
   def ++(other: ByteVector): ByteVector =
@@ -207,7 +220,8 @@ sealed abstract class ByteVector
   final def dropRight(n: Long): ByteVector =
     take(size - n.max(0))
 
-  /** Drops the longest prefix of this vector such that every byte of the prefix satisfies the specific predicate.
+  /** Drops the longest prefix of this vector such that every byte of the prefix satisfies the
+    * specific predicate.
     *
     * @group collection
     */
@@ -229,7 +243,8 @@ sealed abstract class ByteVector
     *
     * Note: if an `n`-byte vector is required, use the `acquire` method instead.
     *
-    * @see acquire
+    * @see
+    *   acquire
     * @group collection
     */
   def take(n: Long): ByteVector = {
@@ -260,7 +275,8 @@ sealed abstract class ByteVector
   final def takeRight(n: Long): ByteVector =
     drop(size - n)
 
-  /** Returns the longest prefix of this vector such that every byte satisfies the specific predicate.
+  /** Returns the longest prefix of this vector such that every byte satisfies the specific
+    * predicate.
     *
     * @group collection
     */
@@ -291,7 +307,8 @@ sealed abstract class ByteVector
     *
     * If this vector does not contain at least `n` bytes, an error message is returned.
     *
-    * @see take
+    * @see
+    *   take
     * @group collection
     */
   def acquire(n: Long): Either[String, ByteVector] =
@@ -299,8 +316,8 @@ sealed abstract class ByteVector
     else Left(s"cannot acquire $n bytes from a vector that contains $size bytes")
 
   /** Consumes the first `n` bytes of this vector and decodes them with the specified function,
-    * resulting in a vector of the remaining bytes and the decoded value. If this vector
-    * does not have `n` bytes or an error occurs while decoding, an error is returned instead.
+    * resulting in a vector of the remaining bytes and the decoded value. If this vector does not
+    * have `n` bytes or an error occurs while decoding, an error is returned instead.
     *
     * @group collection
     */
@@ -312,9 +329,12 @@ sealed abstract class ByteVector
       decoded <- decode(toDecode)
     } yield (drop(n), decoded)
 
-  /** Applies a binary operator to a start value and all elements of this vector, going left to right.
-    * @param z starting value
-    * @param f operator to apply
+  /** Applies a binary operator to a start value and all elements of this vector, going left to
+    * right.
+    * @param z
+    *   starting value
+    * @param f
+    *   operator to apply
     * @group collection
     */
   final def foldLeft[A](z: A)(f: (A, Byte) => A): A = {
@@ -323,25 +343,31 @@ sealed abstract class ByteVector
     acc
   }
 
-  /** Applies a binary operator to a start value and all elements of this vector, going right to left.
-    * @param z starting value
-    * @param f operator to apply
+  /** Applies a binary operator to a start value and all elements of this vector, going right to
+    * left.
+    * @param z
+    *   starting value
+    * @param f
+    *   operator to apply
     * @group collection
     */
   final def foldRight[A](z: A)(f: (Byte, A) => A): A =
     reverse.foldLeft(z)((tl, h) => f(h, tl))
 
-  /** Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going left to right.
-    * @param z    Starting value
-    * @param f    operator to apply
+  /** Applies a binary operator to a start value and all segments(views) of this ByteVector
+    * expressed as read-only ByteBuffer, going left to right.
+    * @param z
+    *   Starting value
+    * @param f
+    *   operator to apply
     * @group collection
     */
   final def foldLeftBB[A](z: A)(f: (A, ByteBuffer) => A): A = {
     @annotation.tailrec
     def go(rem: List[ByteVector], a: A): A =
       rem match {
-        case Chunk(bs) :: rem            => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
-        case Append(l, r) :: rem         => go(l :: r :: rem, a)
+        case Chunk(bs) :: rem    => go(rem, f(a, bs.at.asByteBuffer(bs.offset, bs.size.toInt)))
+        case Append(l, r) :: rem => go(l :: r :: rem, a)
         case Chunks(Append(l, r)) :: rem => go(l :: r :: rem, a)
         case (b: Buffer) :: rem          => go(b.unbuffer :: rem, a)
         case Nil                         => a
@@ -349,9 +375,12 @@ sealed abstract class ByteVector
     go(this :: Nil, z)
   }
 
-  /** Applies a binary operator to a start value and all segments(views) of this ByteVector expressed as read-only ByteBuffer, going right ot left.
-    * @param z    Starting value
-    * @param f    operator to apply
+  /** Applies a binary operator to a start value and all segments(views) of this ByteVector
+    * expressed as read-only ByteBuffer, going right ot left.
+    * @param z
+    *   Starting value
+    * @param f
+    *   operator to apply
     * @group collection
     */
   final def foldRightBB[A](z: A)(f: (ByteBuffer, A) => A): A =
@@ -405,13 +434,15 @@ sealed abstract class ByteVector
     takeRight(b.size) === b
 
   /** Finds the first index of the specified byte pattern in this vector.
-    * @return index of slice or -1 if not found
+    * @return
+    *   index of slice or -1 if not found
     * @group collection
     */
   final def indexOfSlice(slice: ByteVector): Long = indexOfSlice(slice, 0)
 
   /** Finds the first index after `from` of the specified byte pattern in this vector.
-    * @return index of slice or -1 if not found
+    * @return
+    *   index of slice or -1 if not found
     * @group collection
     */
   final def indexOfSlice(slice: ByteVector, from: Long): Long = {
@@ -470,39 +501,44 @@ sealed abstract class ByteVector
 
   /** Alias for `padRight`.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padTo(n: Long): ByteVector = padRight(n)
 
-  /** Returns an `n`-byte vector whose contents are this vector's contents followed by 0 or more zero bytes.
+  /** Returns an `n`-byte vector whose contents are this vector's contents followed by 0 or more
+    * zero bytes.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padRight(n: Long): ByteVector =
     if (n < size) throw new IllegalArgumentException(s"ByteVector.padRight($n)")
     else this ++ ByteVector.fill(n - size)(0)
 
-  /** Returns an `n`-bytes vector whose contents are 0 or more zero bytes followed by this vector's contents.
+  /** Returns an `n`-bytes vector whose contents are 0 or more zero bytes followed by this vector's
+    * contents.
     *
-    * @throws IllegalArgumentException if `n < size`
+    * @throws IllegalArgumentException
+    *   if `n < size`
     * @group collection
     */
   final def padLeft(n: Long): ByteVector =
     if (n < size) throw new IllegalArgumentException(s"ByteVector.padLeft($n)")
     else ByteVector.fill(n - size)(0) ++ this
 
-  /** Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
-    * $returnsView
+  /** Returns a vector where each byte is the result of applying the specified function to the
+    * corresponding byte in this vector. $returnsView
     * @group collection
     */
   final def map(f: Byte => Byte): ByteVector =
     ByteVector.viewAt((i: Long) => f(apply(i)), size)
 
-  /** Returns a vector where each byte is the result of applying the specified function to the corresponding byte in this vector.
-    * Only the least significant byte is used (the three most significant bytes are ignored).
-    * $returnsView
+  /** Returns a vector where each byte is the result of applying the specified function to the
+    * corresponding byte in this vector. Only the least significant byte is used (the three most
+    * significant bytes are ignored). $returnsView
     * @group collection
     */
   final def mapI(f: Byte => Int): ByteVector =
@@ -511,8 +547,7 @@ sealed abstract class ByteVector
   private[scodec] final def mapS(f: F1B): ByteVector =
     ByteVector.view(new At { def apply(i: Long) = f(ByteVector.this(i)) }, size)
 
-  /** Returns a vector with the bytes of this vector in reverse order.
-    * $returnsView
+  /** Returns a vector with the bytes of this vector in reverse order. $returnsView
     * @group collection
     */
   final def reverse: ByteVector =
@@ -551,12 +586,12 @@ sealed abstract class ByteVector
   final def partialCompact(chunkSize: Long): ByteVector =
     this match {
       case small if small.size <= chunkSize => small.compact
-      case Append(l, r)                     => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
-      case _                                => this
+      case Append(l, r) => Append(l.partialCompact(chunkSize), r.partialCompact(chunkSize))
+      case _            => this
     }
 
-  /** Returns a vector with the same contents as this vector but with a single compacted node made up
-    * by evaluating all internal nodes and concatenating their values.
+  /** Returns a vector with the same contents as this vector but with a single compacted node made
+    * up by evaluating all internal nodes and concatenating their values.
     * @group collection
     */
   final def copy: ByteVector = {
@@ -589,7 +624,8 @@ sealed abstract class ByteVector
     }
   }
 
-  /** Copies `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at index `start`.
+  /** Copies `size` bytes of this vector, starting at index `offset`, to array `xs`, beginning at
+    * index `start`.
     *
     * @group conversions
     */
@@ -609,11 +645,13 @@ sealed abstract class ByteVector
     }
   }
 
-  /** Copies as many bytes as possible to the given [[ByteBuffer]], starting from its
-    * current position. This method will not overflow the buffer.
+  /** Copies as many bytes as possible to the given [[ByteBuffer]], starting from its current
+    * position. This method will not overflow the buffer.
     *
-    * @param buffer a ByteBuffer to copy bytes to
-    * @return the number of bytes actually copied
+    * @param buffer
+    *   a ByteBuffer to copy bytes to
+    * @return
+    *   the number of bytes actually copied
     * @group conversions
     */
   final def copyToBuffer(buffer: ByteBuffer): Int = {
@@ -671,24 +709,21 @@ sealed abstract class ByteVector
     */
   final def bits: BitVector = toBitVector
 
-  /** Allocate (unobservable) mutable scratch space at the end of this
-    * `ByteVector`, which will be used to support fast `:+` and `++`
-    * of small vectors. A default chunk size is used.
+  /** Allocate (unobservable) mutable scratch space at the end of this `ByteVector`, which will be
+    * used to support fast `:+` and `++` of small vectors. A default chunk size is used.
     *
-    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer`
-    * are guaranteed to return another buffered `ByteVector`.
+    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer` are guaranteed to return
+    * another buffered `ByteVector`.
     *
     * @group buffer
     */
   final def buffer: ByteVector = bufferBy(1024)
 
-  /** Allocate (unobservable) mutable scratch space at the end of this
-    * `ByteVector`, with chunks of the given size, which will be used to
-    * support fast `:+` and `++` of small vectors.
+  /** Allocate (unobservable) mutable scratch space at the end of this `ByteVector`, with chunks of
+    * the given size, which will be used to support fast `:+` and `++` of small vectors.
     *
-    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer`
-    * are guaranteed to return another buffered `ByteVector`, with the
-    * same size scratch space.
+    * Note that `:+`, `++`, and `drop` on the result of a call to `buffer` are guaranteed to return
+    * another buffered `ByteVector`, with the same size scratch space.
     *
     * @group buffer
     */
@@ -700,8 +735,8 @@ sealed abstract class ByteVector
       case _ => Buffer(new AtomicLong(0), 0, this, new Array[Byte](chunkSize), 0)
     }
 
-  /** Collapse any buffered chunks at the end of this `ByteVector`,
-    * resulting in an unbuffered `ByteVector`.
+  /** Collapse any buffered chunks at the end of this `ByteVector`, resulting in an unbuffered
+    * `ByteVector`.
     *
     * @group buffer
     */
@@ -952,8 +987,10 @@ sealed abstract class ByteVector
 
   /** Converts the contents of this vector to a byte.
     *
-    * @param signed whether sign extension should be performed
-    * @throws IllegalArgumentException if size is greater than 8
+    * @param signed
+    *   whether sign extension should be performed
+    * @throws IllegalArgumentException
+    *   if size is greater than 8
     * @group conversions
     */
   final def toByte(signed: Boolean = true): Byte =
@@ -961,9 +998,12 @@ sealed abstract class ByteVector
 
   /** Converts the contents of this vector to a short.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 16
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 16
     * @group conversions
     */
   final def toShort(
@@ -974,9 +1014,12 @@ sealed abstract class ByteVector
 
   /** Converts the contents of this vector to an int.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 32
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 32
     * @group conversions
     */
   final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int =
@@ -984,9 +1027,12 @@ sealed abstract class ByteVector
 
   /** Converts the contents of this vector to an int.
     *
-    * @param signed whether sign extension should be performed
-    * @param ordering order bytes should be processed in
-    * @throws IllegalArgumentException if size is greater than 64
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if size is greater than 64
     * @group conversions
     */
   final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long =
@@ -994,7 +1040,8 @@ sealed abstract class ByteVector
 
   /** Converts the contents of this byte vector to a UUID.
     *
-    * @throws IllegalArgumentException if size is not exactly 16.
+    * @throws IllegalArgumentException
+    *   if size is not exactly 16.
     * @group conversions
     */
   final def toUUID: UUID = {
@@ -1045,16 +1092,14 @@ sealed abstract class ByteVector
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b ^ b2).toByte })
 
   /** Returns a new vector where each byte is the result of evaluating the specified function
-    * against the bytes of this vector and the specified vector at the corresponding index.
-    * The resulting vector has size `this.size min other.size`.
-    * $returnsView
+    * against the bytes of this vector and the specified vector at the corresponding index. The
+    * resulting vector has size `this.size min other.size`. $returnsView
     * @group collection
     */
   final def zipWith(other: ByteVector)(f: (Byte, Byte) => Byte): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = f(b, b2) })
 
-  /** See [[zipWith]]
-    * $returnsView
+  /** See [[zipWith]] $returnsView
     * @group collection
     */
   final def zipWith2(other: ByteVector, other2: ByteVector)(
@@ -1062,8 +1107,7 @@ sealed abstract class ByteVector
   ): ByteVector =
     zipWithS(other, other2)(new F3B { def apply(b: Byte, b2: Byte, b3: Byte) = f(b, b2, b3) })
 
-  /** See [[zipWith]]
-    * $returnsView
+  /** See [[zipWith]] $returnsView
     * @group collection
     */
   final def zipWith3(other: ByteVector, other2: ByteVector, other3: ByteVector)(
@@ -1091,17 +1135,15 @@ sealed abstract class ByteVector
   }
 
   /** Returns a new vector where each byte is the result of evaluating the specified function
-    * against the bytes of this vector and the specified vector at the corresponding index.
-    * The resulting vector has size `this.size min other.size`.
-    * Only the least significant byte is used (the three most significant bytes are ignored).
-    * $returnsView
+    * against the bytes of this vector and the specified vector at the corresponding index. The
+    * resulting vector has size `this.size min other.size`. Only the least significant byte is used
+    * (the three most significant bytes are ignored). $returnsView
     * @group collection
     */
   final def zipWithI(other: ByteVector)(op: (Byte, Byte) => Int): ByteVector =
     zipWith(other) { case (l, r) => op(l, r).toByte }
 
-  /** See [[zipWithI]]
-    * $returnsView
+  /** See [[zipWithI]] $returnsView
     * @group collection
     */
   final def zipWithI2(other: ByteVector, other2: ByteVector)(
@@ -1109,8 +1151,7 @@ sealed abstract class ByteVector
   ): ByteVector =
     zipWith2(other, other2) { case (l, r1, r2) => op(l, r1, r2).toByte }
 
-  /** See [[zipWithI]]
-    * $returnsView
+  /** See [[zipWithI]] $returnsView
     * @group collection
     */
   final def zipWithI3(other: ByteVector, other2: ByteVector, other3: ByteVector)(
@@ -1157,7 +1198,8 @@ sealed abstract class ByteVector
     }
 
   /** Returns true if the specified value is a `ByteVector` with the same contents as this vector.
-    * @see [[ByteVector.===]]
+    * @see
+    *   [[ByteVector.===]]
     * @group collection
     */
   override def equals(other: Any) =
@@ -1166,15 +1208,14 @@ sealed abstract class ByteVector
       case _                => false
     }
 
-  /** Display the size and bytes of this `ByteVector`.
-    * For bit vectors beyond a certain size, only a hash of the
-    * contents are shown.
+  /** Display the size and bytes of this `ByteVector`. For bit vectors beyond a certain size, only a
+    * hash of the contents are shown.
     * @group collection
     */
   override def toString: String =
     if (isEmpty) "ByteVector(empty)"
-    else if (size < 512) s"ByteVector($size bytes, 0x${toHex})"
-    else s"ByteVector($size bytes, #${hashCode})"
+    else if (size < 512) s"ByteVector($size bytes, 0x$toHex)"
+    else s"ByteVector($size bytes, #$hashCode)"
 
   private[bits] def pretty(prefix: String): String =
     this match {
@@ -1224,17 +1265,25 @@ sealed abstract class ByteVector
 
 /** Companion for [[ByteVector]].
   *
-  * @groupname constants Constants
-  * @groupprio constants 0
+  * @groupname constants
+  *   Constants
+  * @groupprio constants
+  *   0
   *
-  * @groupname constructors Constructors
-  * @groupprio constructors 1
+  * @groupname constructors
+  *   Constructors
+  * @groupprio constructors
+  *   1
   *
-  * @groupname numeric Numeric Conversions
-  * @groupprio numeric 2
+  * @groupname numeric
+  *   Numeric Conversions
+  * @groupprio numeric
+  *   2
   *
-  * @groupname base Base Conversions
-  * @groupprio base 3
+  * @groupname base
+  *   Base Conversions
+  * @groupprio base
+  *   3
   */
 object ByteVector extends ByteVectorCompanionCrossPlatform {
 
@@ -1406,8 +1455,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     */
   val empty: ByteVector = Chunk(View(AtEmpty, 0, 0))
 
-  /** Constructs a `ByteVector` from a list of literal bytes. Only the least significant
-    * byte is used of each integral value.
+  /** Constructs a `ByteVector` from a list of literal bytes. Only the least significant byte is
+    * used of each integral value.
     * @group constructors
     */
   def apply[A: Integral](bytes: A*): ByteVector = {
@@ -1426,9 +1475,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     */
   def apply(bytes: Vector[Byte]): ByteVector = viewAt(idx => bytes(idx.toInt), bytes.size.toLong)
 
-  /** Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]`
-    * is copied to ensure the resulting `ByteVector` is immutable.
-    * If this is not desired, use `ByteVector.view`.
+  /** Constructs a `ByteVector` from an `Array[Byte]`. The given `Array[Byte]` is copied to ensure
+    * the resulting `ByteVector` is immutable. If this is not desired, use `ByteVector.view`.
     * @group constructors
     */
   def apply(bytes: Array[Byte]): ByteVector = {
@@ -1436,9 +1484,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     view(copy)
   }
 
-  /** Constructs a `ByteVector` from an `Array[Byte]`, an offset, and a length.
-    * The given `Array[Byte]` is copied to ensure the resulting `ByteVector` is immutable.
-    * If this is not desired, use `ByteVector.view`.
+  /** Constructs a `ByteVector` from an `Array[Byte]`, an offset, and a length. The given
+    * `Array[Byte]` is copied to ensure the resulting `ByteVector` is immutable. If this is not
+    * desired, use `ByteVector.view`.
     * @group constructors
     */
   def apply(bytes: Array[Byte], offset: Int, length: Int): ByteVector = {
@@ -1447,12 +1495,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     view(fresh)
   }
 
-  /** Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is
-    * is copied to ensure the resulting `ByteVector` is immutable.
-    * If this is not desired, use `ByteVector.view`.
+  /** Constructs a `ByteVector` from a `ByteBuffer`. The given `ByteBuffer` is is copied to ensure
+    * the resulting `ByteVector` is immutable. If this is not desired, use `ByteVector.view`.
     *
-    * The returned vector is a copy of a subsequence of the buffer, with bounds
-    * determined by the buffer's position and limit at the time this method is called.
+    * The returned vector is a copy of a subsequence of the buffer, with bounds determined by the
+    * buffer's position and limit at the time this method is called.
     *
     * @group constructors
     */
@@ -1469,29 +1516,28 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   def apply(bs: IterableOnce[Byte]): ByteVector =
     view(bs.iterator.toArray[Byte])
 
-  /** Constructs a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this
-    * does not make a copy of the input array, so callers should take care
-    * not to modify the contents of the array passed to this function.
+  /** Constructs a `ByteVector` from an `Array[Byte]`. Unlike `apply`, this does not make a copy of
+    * the input array, so callers should take care not to modify the contents of the array passed to
+    * this function.
     * @group constructors
     */
   def view(bytes: Array[Byte]): ByteVector =
     Chunk(View(new AtArray(bytes), 0, bytes.length.toLong))
 
-  /** Constructs a `ByteVector` from a slice of an `Array[Byte]`.
-    * Unlike `apply`, this does not make a copy of the input array, so
-    * callers should take care not to modify the contents of the array
+  /** Constructs a `ByteVector` from a slice of an `Array[Byte]`. Unlike `apply`, this does not make
+    * a copy of the input array, so callers should take care not to modify the contents of the array
     * passed to this function.
     * @group constructors
     */
   def view(bytes: Array[Byte], offset: Int, size: Int): ByteVector =
     Chunk(View(new AtArray(bytes), offset.toLong, size.toLong))
 
-  /** Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this
-    * does not make a copy of the input buffer, so callers should take care
-    * not to modify the contents of the buffer passed to this function.
+  /** Constructs a `ByteVector` from a `ByteBuffer`. Unlike `apply`, this does not make a copy of
+    * the input buffer, so callers should take care not to modify the contents of the buffer passed
+    * to this function.
     *
-    * The returned vector is a view of a subsequence of the buffer, with bounds
-    * determined by the buffer's position and limit at the time this method is called.
+    * The returned vector is a view of a subsequence of the buffer, with bounds determined by the
+    * buffer's position and limit at the time this method is called.
     *
     * @group constructors
     */
@@ -1511,8 +1557,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   private[scodec] def view(at: At, size: Long): ByteVector =
     Chunk(View(at, 0, size))
 
-  /** Constructs a `ByteVector` from a function from `Long => Int` and a size,
-    * where the `Int` returned by `at` must fit in a `Byte`.
+  /** Constructs a `ByteVector` from a function from `Long => Int` and a size, where the `Int`
+    * returned by `at` must fit in a `Byte`.
     * @group constructors
     */
   def viewI(at: Long => Int, size: Long): ByteVector =
@@ -1538,16 +1584,20 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   def high(size: Long): ByteVector = fill(size)(0xff)
 
   /** Constructs a `ByteVector` vector with the 2's complement encoding of the specified byte.
-    * @param b value to encode
+    * @param b
+    *   value to encode
     * @group numeric
     */
   def fromByte(b: Byte): ByteVector =
     BitVector.fromByte(b, 8).bytes
 
   /** Constructs a `ByteVector` vector with the 2's complement encoding of the specified value.
-    * @param s value to encode
-    * @param size size of vector (<= 2)
-    * @param ordering byte ordering of vector
+    * @param s
+    *   value to encode
+    * @param size
+    *   size of vector (<= 2)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromShort(
@@ -1558,18 +1608,24 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     BitVector.fromShort(s, size * 8, ordering).bytes
 
   /** Constructs a `ByteVector` with the 2's complement encoding of the specified value.
-    * @param i value to encode
-    * @param size size of vector (<= 4)
-    * @param ordering byte ordering of vector
+    * @param i
+    *   value to encode
+    * @param size
+    *   size of vector (<= 4)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromInt(i: Int, size: Int = 4, ordering: ByteOrdering = ByteOrdering.BigEndian): ByteVector =
     BitVector.fromInt(i, size * 8, ordering).bytes
 
   /** Constructs a `ByteVector` with the 2's complement encoding of the specified value.
-    * @param l value to encode
-    * @param size size of vector (<= 8)
-    * @param ordering byte ordering of vector
+    * @param l
+    *   value to encode
+    * @param size
+    *   size of vector (<= 8)
+    * @param ordering
+    *   byte ordering of vector
     * @group numeric
     */
   def fromLong(
@@ -1579,10 +1635,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   ): ByteVector =
     BitVector.fromLong(l, size * 8, ordering).bytes
 
-  /** Constructs a `ByteVector` containing the binary representation of the specified UUID.
-    * The bytes are in MSB-to-LSB order.
+  /** Constructs a `ByteVector` containing the binary representation of the specified UUID. The
+    * bytes are in MSB-to-LSB order.
     *
-    * @param u value to encode
+    * @param u
+    *   value to encode
     * @group conversions
     */
   final def fromUUID(u: UUID): ByteVector = {
@@ -1593,7 +1650,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     view(buf.array())
   }
 
-  /** Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string is not valid hexadecimal.
+  /** Constructs a `ByteVector` from a hexadecimal string or returns an error message if the string
+    * is not valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     * @group base
@@ -1650,7 +1708,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     else Left(err)
   }
 
-  /** Constructs a `ByteVector` from a hexadecimal string or returns `None` if the string is not valid hexadecimal.
+  /** Constructs a `ByteVector` from a hexadecimal string or returns `None` if the string is not
+    * valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     * @group base
@@ -1660,11 +1719,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Option[ByteVector] = fromHexDescriptive(str, alphabet).toOption
 
-  /** Constructs a `ByteVector` from a hexadecimal string or throws an IllegalArgumentException if the string is not valid hexadecimal.
+  /** Constructs a `ByteVector` from a hexadecimal string or throws an IllegalArgumentException if
+    * the string is not valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
     *
-    * @throws IllegalArgumentException if the string is not valid hexadecimal
+    * @throws IllegalArgumentException
+    *   if the string is not valid hexadecimal
     * @group base
     */
   def fromValidHex(
@@ -1673,7 +1734,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   ): ByteVector =
     fromHexDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `ByteVector` from a binary string or returns an error message if the string is not valid binary.
+  /** Constructs a `ByteVector` from a binary string or returns an error message if the string is
+    * not valid binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     * @group base
@@ -1727,7 +1789,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     else Left(err)
   }
 
-  /** Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid binary.
+  /** Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid
+    * binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     * @group base
@@ -1737,11 +1800,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
   ): Option[ByteVector] = fromBinDescriptive(str, alphabet).toOption
 
-  /** Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the string is not valid binary.
+  /** Constructs a `ByteVector` from a binary string or throws an IllegalArgumentException if the
+    * string is not valid binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
     *
-    * @throws IllegalArgumentException if the string is not valid binary
+    * @throws IllegalArgumentException
+    *   if the string is not valid binary
     * @group base
     */
   def fromValidBin(
@@ -1750,9 +1815,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   ): ByteVector =
     fromBinDescriptive(str, alphabet).fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `ByteVector` from a base 32 string or returns an error message if the string is not valid base 32.
-    * An empty input string results in an empty ByteVector.
-    * The string may contain whitespace characters and hyphens which are ignored.
+  /** Constructs a `ByteVector` from a base 32 string or returns an error message if the string is
+    * not valid base 32. An empty input string results in an empty ByteVector. The string may
+    * contain whitespace characters and hyphens which are ignored.
     * @group base
     */
   def fromBase32Descriptive(
@@ -1813,9 +1878,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     Right(bytes)
   }
 
-  /** Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 32.
-    * Details pertaining to base 32 decoding can be found in the comment for fromBase32Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid
+    * base 32. Details pertaining to base 32 decoding can be found in the comment for
+    * fromBase32Descriptive. The string may contain whitespace characters which are ignored.
     * @group base
     */
   def fromBase32(
@@ -1823,11 +1888,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       alphabet: Bases.Base32Alphabet = Bases.Alphabets.Base32
   ): Option[ByteVector] = fromBase32Descriptive(str, alphabet).toOption
 
-  /** Constructs a `ByteVector` from a base 32 string or throws an IllegalArgumentException if the string is not valid base 32.
-    * Details pertaining to base 32 decoding can be found in the comment for fromBase32Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 32 string or throws an IllegalArgumentException if the
+    * string is not valid base 32. Details pertaining to base 32 decoding can be found in the
+    * comment for fromBase32Descriptive. The string may contain whitespace characters which are
+    * ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 32
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 32
     * @group base
     */
   def fromValidBase32(
@@ -1837,14 +1904,15 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     fromBase32Descriptive(str, alphabet)
       .fold(msg => throw new IllegalArgumentException(msg), identity)
 
-  /** Constructs a `ByteVector` from a base 58 string or returns an error message if the string is not valid base 58.
-    * It is similar to Base64 but has been modified to avoid both non-alphanumeric characters and letters which might look ambiguous when printed.
-    * It is therefore designed for human users who manually enter the data, copying from some visual source
-    * Compared to Base64, the following similar-looking letters are omitted: 0 (zero), O (capital o), I (capital i) and l (lower case L)
-    * as well as the non-alphanumeric characters + (plus) and / (slash).
-    * The actual order of letters in the alphabet depends on the application, the default order is the same used in Bitcoin
-    * An empty input string results in an empty ByteVector.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 58 string or returns an error message if the string is
+    * not valid base 58. It is similar to Base64 but has been modified to avoid both
+    * non-alphanumeric characters and letters which might look ambiguous when printed. It is
+    * therefore designed for human users who manually enter the data, copying from some visual
+    * source Compared to Base64, the following similar-looking letters are omitted: 0 (zero), O
+    * (capital o), I (capital i) and l (lower case L) as well as the non-alphanumeric characters +
+    * (plus) and / (slash). The actual order of letters in the alphabet depends on the application,
+    * the default order is the same used in Bitcoin An empty input string results in an empty
+    * ByteVector. The string may contain whitespace characters which are ignored.
     * @group base
     */
   def fromBase58Descriptive(
@@ -1874,9 +1942,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     }
   }
 
-  /** Constructs a `ByteVector` from a base 58 string or returns `None` if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 58 string or returns `None` if the string is not valid
+    * base 58. Details pertaining to base 58 decoding can be found in the comment for
+    * fromBase58Descriptive. The string may contain whitespace characters which are ignored.
     * @group base
     */
   def fromBase58(
@@ -1884,11 +1952,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       alphabet: Bases.Alphabet = Bases.Alphabets.Base58
   ): Option[ByteVector] = fromBase58Descriptive(str, alphabet).toOption
 
-  /** Constructs a `ByteVector` from a base 58 string or throws an IllegalArgumentException if the string is not valid base 58.
-    * Details pertaining to base 58 decoding can be found in the comment for fromBase58Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 58 string or throws an IllegalArgumentException if the
+    * string is not valid base 58. Details pertaining to base 58 decoding can be found in the
+    * comment for fromBase58Descriptive. The string may contain whitespace characters which are
+    * ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 58
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 58
     * @group base
     */
   def fromValidBase58(str: String, alphabet: Bases.Alphabet = Bases.Alphabets.Base58): ByteVector =
@@ -1899,14 +1969,15 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
   )
 
-  /** Constructs a `ByteVector` from a base 64 string or returns an error message if the string is not valid base 64.
-    * If the final encoding quantum does not contain 4 characters, i.e. the total number of characters is not evenly divisible
-    * by 4, padding is inferred if the final quantum contains 2 or 3 characters. This is to say that padding is optional as
-    * long as the inferred padding would yield a valid base 64 string. The input is considered invalid if the final quantum
-    * only contains a single character. If padding characters are present, they must be used in accordance with the base 64
-    * specification and no padding characters will be inferred.
-    * An empty input string results in an empty ByteVector.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 64 string or returns an error message if the string is
+    * not valid base 64. If the final encoding quantum does not contain 4 characters, i.e. the total
+    * number of characters is not evenly divisible by 4, padding is inferred if the final quantum
+    * contains 2 or 3 characters. This is to say that padding is optional as long as the inferred
+    * padding would yield a valid base 64 string. The input is considered invalid if the final
+    * quantum only contains a single character. If padding characters are present, they must be used
+    * in accordance with the base 64 specification and no padding characters will be inferred. An
+    * empty input string results in an empty ByteVector. The string may contain whitespace
+    * characters which are ignored.
     * @group base
     */
   def fromBase64Descriptive(
@@ -1947,7 +2018,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           }
           mod match {
             case 0 =>
-              buffer = (cidx & 0x3f)
+              buffer = cidx & 0x3f
               mod += 1
             case 1 =>
               buffer = (buffer << 6) | (cidx & 0x3f)
@@ -1986,9 +2057,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       }
   }
 
-  /** Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid base 64.
-    * Details pertaining to base 64 decoding can be found in the comment for fromBase64Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 64 string or returns `None` if the string is not valid
+    * base 64. Details pertaining to base 64 decoding can be found in the comment for
+    * fromBase64Descriptive. The string may contain whitespace characters which are ignored.
     * @group base
     */
   def fromBase64(
@@ -1996,11 +2067,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       alphabet: Bases.Base64Alphabet = Bases.Alphabets.Base64
   ): Option[ByteVector] = fromBase64Descriptive(str, alphabet).toOption
 
-  /** Constructs a `ByteVector` from a base 64 string or throws an IllegalArgumentException if the string is not valid base 64.
-    * Details pertaining to base 64 decoding can be found in the comment for fromBase64Descriptive.
-    * The string may contain whitespace characters which are ignored.
+  /** Constructs a `ByteVector` from a base 64 string or throws an IllegalArgumentException if the
+    * string is not valid base 64. Details pertaining to base 64 decoding can be found in the
+    * comment for fromBase64Descriptive. The string may contain whitespace characters which are
+    * ignored.
     *
-    * @throws IllegalArgumentException if the string is not valid base 64
+    * @throws IllegalArgumentException
+    *   if the string is not valid base 64
     * @group base
     */
   def fromValidBase64(

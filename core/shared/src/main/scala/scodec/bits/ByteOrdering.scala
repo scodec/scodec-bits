@@ -41,7 +41,8 @@ sealed trait ByteOrdering {
 object ByteOrdering {
 
   /** Converts the specified byte order to a [[ByteOrdering]].
-    * @throws IllegalArgumentException if the order cannot be converted
+    * @throws IllegalArgumentException
+    *   if the order cannot be converted
     */
   def fromJava(bo: ByteOrder): ByteOrdering =
     if (bo == ByteOrder.BIG_ENDIAN) ByteOrdering.BigEndian

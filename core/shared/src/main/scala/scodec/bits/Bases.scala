@@ -38,12 +38,14 @@ object Bases {
   trait Alphabet {
 
     /** Converts the specified index to a character.
-      * @throws IndexOutOfBoundsException if the specified byte is not supported by this alphabet
+      * @throws IndexOutOfBoundsException
+      *   if the specified byte is not supported by this alphabet
       */
     def toChar(index: Int): Char
 
     /** Converts the specified char to an index.
-      * @throws IllegalArgumentException if the specified char is not supported by this alphabet
+      * @throws IllegalArgumentException
+      *   if the specified char is not supported by this alphabet
       */
     def toIndex(c: Char): Int
 
@@ -98,7 +100,8 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
-    /** Abstract hex alphabet that supports `{0-9, A-F, a-f}` for looking up an index from a char. */
+    /** Abstract hex alphabet that supports `{0-9, A-F, a-f}` for looking up an index from a char.
+      */
     private[bits] abstract class LenientHex extends HexAlphabet {
       def toIndex(c: Char) =
         c match {
@@ -132,7 +135,9 @@ object Bases {
       (indicesMin, indices)
     }
 
-    /** Base 32 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored. */
+    /** Base 32 alphabet, with padding, as defined by
+      * [[https://tools.ietf.org/html/rfc4648#section-6 RF4648 section 4]]. Whitespace is ignored.
+      */
     object Base32 extends Base32Alphabet {
       private val Chars: Array[Char] = (('A' to 'Z') ++ ('2' to '7')).toArray
       private val (indicesMin, indices) = charIndicesLookupArray(Chars.zipWithIndex.toMap)
@@ -147,7 +152,9 @@ object Bases {
       def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]]. Whitespace and hyphen is ignored. */
+    /** Base 32 Crockford alphabet as defined by [[https://www.crockford.com/base32.html]].
+      * Whitespace and hyphen is ignored.
+      */
     object Base32Crockford extends Base32Alphabet {
       private val Chars: Array[Char] =
         (('0' to '9') ++ ('A' to 'H') ++ ('J' to 'K') ++ ('M' to 'N') ++ ('P' to 'T') ++ ('V' to 'Z')).toArray
@@ -173,7 +180,10 @@ object Bases {
       def ignore(c: Char) = c == '-' || c.isWhitespace
     }
 
-    /** Base 58 alphabet as defined by [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses the same order. */
+    /** Base 58 alphabet as defined by
+      * [[https://en.bitcoin.it/wiki/Base58Check_encoding#Base58_symbol_chart]]. IPFS hashes uses
+      * the same order.
+      */
     object Base58 extends Alphabet {
       private val Chars = (('1' to '9') ++ ('A' to 'Z') ++ ('a' to 'z'))
         .filterNot(c => List('O', 'I', 'l').contains(c))
@@ -212,10 +222,14 @@ object Bases {
       override def ignore(c: Char) = c.isWhitespace
     }
 
-    /** Base 64 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
+    /** Base 64 alphabet, with padding, as defined by
+      * [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored.
+      */
     object Base64 extends Base64Base with PaddedAlphabet
 
-    /** Base 64 alphabet, without padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored. */
+    /** Base 64 alphabet, without padding, as defined by
+      * [[https://tools.ietf.org/html/rfc4648#section-4 RF4648 section 4]]. Whitespace is ignored.
+      */
     object Base64NoPad extends Base64Base {
       override val pad = 0.toChar
     }
@@ -224,7 +238,9 @@ object Bases {
       private val Chars = (('A' to 'Z') ++ ('a' to 'z') ++ ('0' to '9') :+ '-' :+ '_').toArray
     }
 
-    /** Base 64 alphabet, with padding, as defined by [[https://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored. */
+    /** Base 64 alphabet, with padding, as defined by
+      * [[https://tools.ietf.org/html/rfc4648#section-5 RF4648 section 5]]. Whitespace is ignored.
+      */
     sealed trait Base64UrlBase extends Base64Alphabet {
       override val pad = '='
       override def toChar(i: Int) = Base64UrlBase.Chars(i)
