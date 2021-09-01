@@ -30,7 +30,7 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.Uint8Array
+import scala.scalajs.js.typedarray.{ArrayBuffer, Uint8Array}
 
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
   def copyToUint8Array(dest: Uint8Array, start: Int): Unit = {
@@ -52,4 +52,12 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
     self.copyToUint8Array(dest, 0, 0, len)
     dest
   }
+
+  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int): Unit =
+    copyToUint8Array(new Uint8Array(dest), start)
+
+  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int, offset: Long, size: Int): Unit =
+    copyToUint8Array(new Uint8Array(dest), start, offset, size)
+
+  def toJSArrayBuffer: ArrayBuffer = toUint8Array.buffer
 }
