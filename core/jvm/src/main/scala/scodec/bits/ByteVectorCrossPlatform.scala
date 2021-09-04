@@ -45,10 +45,15 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
   /** Compresses this vector using ZLIB.
     *
-    * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
-    * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
-    * @param nowrap if true, ZLIB header and checksum will not be used
-    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @param level
+    *   compression level, 0-9, with 0 disabling compression and 9 being highest level of
+    *   compression -- see `java.util.zip.Deflater` for details
+    * @param strategy
+    *   compression strategy -- see `java.util.zip.Deflater` for details
+    * @param nowrap
+    *   if true, ZLIB header and checksum will not be used
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
     * @group conversions
     */
   final def deflate(
@@ -86,8 +91,10 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
   /** Decompresses this vector using ZLIB.
     *
-    * @param chunkSize buffer size, in bytes, to use when compressing
-    * @param nowrap if true, will assume no ZLIB header and checksum
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
+    * @param nowrap
+    *   if true, will assume no ZLIB header and checksum
     * @group conversions
     */
   final def inflate(
@@ -139,13 +146,15 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
   final def md5: ByteVector = digest("MD5")
 
   /** Computes a digest of this byte vector.
-    * @param algorithm digest algorithm to use
+    * @param algorithm
+    *   digest algorithm to use
     * @group conversions
     */
   final def digest(algorithm: String): ByteVector = digest(MessageDigest.getInstance(algorithm))
 
   /** Computes a digest of this byte vector.
-    * @param digest digest to use
+    * @param digest
+    *   digest to use
     * @group conversions
     */
   final def digest(digest: MessageDigest): ByteVector = {
@@ -157,10 +166,14 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
   /** Encrypts this byte vector using the specified cipher and key.
     *
-    * @param ci cipher to use for encryption
-    * @param key key to encrypt with
-    * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for encryption
+    * @param key
+    *   key to encrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for encryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
@@ -170,10 +183,14 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
   /** Decrypts this byte vector using the specified cipher and key.
     *
-    * @param ci cipher to use for decryption
-    * @param key key to decrypt with
-    * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for decryption
+    * @param key
+    *   key to decrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for decryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit

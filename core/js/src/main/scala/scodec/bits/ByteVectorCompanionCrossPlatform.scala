@@ -30,9 +30,10 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, Uint8Array, TypedArrayBuffer}
+import scala.scalajs.js.typedarray.{ArrayBuffer, TypedArrayBuffer, Uint8Array}
 
-private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform { self: ByteVector.type =>
+private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform {
+  self: ByteVector.type =>
   def view(typedArray: Uint8Array): ByteVector = ByteVector.view(typedArray.buffer)
 
   def view(arrayBuffer: ArrayBuffer): ByteVector =
@@ -44,5 +45,6 @@ private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform 
     ByteVector.view(copy)
   }
 
-  def fromJSArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector = ByteVector.fromUint8Array(new Uint8Array(arrayBuffer))
+  def fromJSArrayBuffer(arrayBuffer: ArrayBuffer): ByteVector =
+    ByteVector.fromUint8Array(new Uint8Array(arrayBuffer))
 }
