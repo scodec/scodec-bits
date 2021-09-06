@@ -30,34 +30,47 @@
 
 package scodec.bits
 
-import scala.scalajs.js.typedarray.{ArrayBuffer, Uint8Array}
+import scala.scalajs.js.typedarray.{ArrayBuffer, Int8Array, Uint8Array}
+import scala.scalajs.js.typedarray.TypedArrayBuffer
+import scala.scalajs.js.typedarray.TypedArrayBufferOps._
 
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
-  def copyToUint8Array(dest: Uint8Array, start: Int): Unit = {
-    val len: Int = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
-    self.copyToUint8Array(dest, start, 0, len)
-  }
+  import ByteVector._
 
-  def copyToUint8Array(dest: Uint8Array, start: Int, offset: Long, size: Int): Unit = {
+  def copyToUint8Array(dest: Uint8Array, start: Int): Unit =
+    copyToUint8Array(dest, start, 0, toIntSize(size))
+
+  def copyToUint8Array(dest: Uint8Array, start: Int, offset: Long, size: Int): Unit =
+    copyToJSArrayBuffer(dest.buffer, start + dest.byteOffset, offset, dest.byteLength min size)
+
+  def toUint8Array: Uint8Array = new Uint8Array(toJSArrayBuffer)
+
+  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int): Unit =
+    copyToJSArrayBuffer(dest, start, 0, toIntSize(size))
+
+  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int, offset: Long, size: Int): Unit = {
     var i = 0
-    while (i < size) {
-      dest(start + i) = self(offset + i)
+    val n = dest.byteLength min size
+    val out = new Int8Array(dest)
+    while (i < n) {
+      out(start + i) = self(offset + i)
       i += 1
     }
   }
 
-  def toUint8Array: Uint8Array = {
-    val len = self.intSize.getOrElse(throw new RuntimeException("ByteVector too large!"))
-    val dest = new Uint8Array(len)
-    self.copyToUint8Array(dest, 0, 0, len)
-    dest
+  def toJSArrayBuffer: ArrayBuffer = this match {
+    case Chunk(v) =>
+      val bb = v.asByteBuffer
+      if (bb.hasArrayBuffer())
+        bb.arrayBuffer()
+      else {
+        val ab = new ArrayBuffer(bb.remaining())
+        TypedArrayBuffer.wrap(ab).put(bb)
+        ab
+      }
+    case _ =>
+      val dest = new ArrayBuffer(toIntSize(size))
+      self.copyToJSArrayBuffer(dest, 0)
+      dest
   }
-
-  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int): Unit =
-    copyToUint8Array(new Uint8Array(dest), start)
-
-  def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int, offset: Long, size: Int): Unit =
-    copyToUint8Array(new Uint8Array(dest), start, offset, size)
-
-  def toJSArrayBuffer: ArrayBuffer = toUint8Array.buffer
 }
