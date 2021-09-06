@@ -46,10 +46,15 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param level compression level, 0-9, with 0 disabling compression and 9 being highest level of compression -- see `java.util.zip.Deflater` for details
-    * @param strategy compression strategy -- see `java.util.zip.Deflater` for details
-    * @param nowrap if true, ZLIB header and checksum will not be used
-    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @param level
+    *   compression level, 0-9, with 0 disabling compression and 9 being highest level of
+    *   compression -- see `java.util.zip.Deflater` for details
+    * @param strategy
+    *   compression strategy -- see `java.util.zip.Deflater` for details
+    * @param nowrap
+    *   if true, ZLIB header and checksum will not be used
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
     * @group conversions
     */
   final def deflate(
@@ -64,7 +69,8 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param chunkSize buffer size, in bytes, to use when compressing
+    * @param chunkSize
+    *   buffer size, in bytes, to use when compressing
     * @group conversions
     */
   final def inflate(chunkSize: Int = 4096): Either[DataFormatException, BitVector] =
@@ -106,7 +112,8 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param algorithm digest algorithm to use
+    * @param algorithm
+    *   digest algorithm to use
     * @group crypto
     */
   final def digest(algorithm: String): BitVector = digest(MessageDigest.getInstance(algorithm))
@@ -117,7 +124,8 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param digest digest to use
+    * @param digest
+    *   digest to use
     * @group crypto
     */
   final def digest(digest: MessageDigest): BitVector = BitVector(bytes.digest(digest))
@@ -126,10 +134,14 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param ci cipher to use for encryption
-    * @param key key to encrypt with
-    * @param aparams optional algorithm paramaters used for encryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for encryption
+    * @param key
+    *   key to encrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for encryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
@@ -141,10 +153,14 @@ private[bits] trait BitVectorCrossPlatform { self: BitVector =>
     *
     * The last byte is zero padded if the size is not evenly divisible by 8.
     *
-    * @param ci cipher to use for decryption
-    * @param key key to decrypt with
-    * @param aparams optional algorithm paramaters used for decryption (e.g., initialization vector)
-    * @param sr secure random
+    * @param ci
+    *   cipher to use for decryption
+    * @param key
+    *   key to decrypt with
+    * @param aparams
+    *   optional algorithm paramaters used for decryption (e.g., initialization vector)
+    * @param sr
+    *   secure random
     * @group crypto
     */
   final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
