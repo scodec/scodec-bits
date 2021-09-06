@@ -2241,7 +2241,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       new Buffer(id, stamp, hd.unbuffer, lastChunk, lastSize)
   }
 
-  private def toIntSize(size: Long): Int =
+  private[bits] def toIntSize(size: Long): Int =
     if (size <= Int.MaxValue) size.toInt
     else throw new IllegalArgumentException(s"size must be <= Int.MaxValue but is $size")
 
