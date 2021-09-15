@@ -228,7 +228,7 @@ object crc {
     calculateTableIndex(0)
 
     final class Builder(initial: Int) extends CrcBuilder[Int] {
-      def update(input: scodec.bits.BitVector): Builder = {
+      def update(input: BitVector): Builder = {
         var crcreg = initial
         val size = input.size
         val byteAligned = size % 8 == 0
