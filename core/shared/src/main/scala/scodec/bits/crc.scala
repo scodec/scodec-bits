@@ -84,6 +84,7 @@ object crc {
       builder(poly, initial, reflectInput, reflectOutput, finalXor).update(_).output
   }
 
+  /** Constructs a table-based CRC builder using the specified polynomial. */
   def builder(
       poly: BitVector,
       initial: BitVector,
