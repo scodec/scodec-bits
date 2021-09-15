@@ -80,8 +80,10 @@ object crc {
       int32(poly.toInt(), initial.toInt(), reflectInput, reflectOutput, finalXor.toInt()).andThen {
         i => BitVector.fromInt(i)
       }
-    else
-      builder(poly, initial, reflectInput, reflectOutput, finalXor).update(_).output
+    else {
+      val b = builder(poly, initial, reflectInput, reflectOutput, finalXor)
+      b.update(_).output
+    }
   }
 
   /** Constructs a table-based CRC builder using the specified polynomial. */
@@ -192,8 +194,10 @@ object crc {
       reflectInput: Boolean,
       reflectOutput: Boolean,
       finalXor: Int
-  ): BitVector => Int =
-    builder32(poly, initial, reflectInput, reflectOutput, finalXor).update(_).output
+  ): BitVector => Int = {
+    val b = builder32(poly, initial, reflectInput, reflectOutput, finalXor)
+    b.update(_).output
+  }
 
   /** Constructs a 32-bit, table-based CRC builder using the specified polynomial.
     */
