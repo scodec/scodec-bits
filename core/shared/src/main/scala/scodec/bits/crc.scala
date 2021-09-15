@@ -49,6 +49,13 @@ object crc {
   lazy val crc32c: BitVector => BitVector =
     int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
 
+  /** An immutable "builder" to incrementally compute a CRC.
+    */
+  sealed trait CrcBuilder[Out] {
+    def update(data: BitVector): CrcBuilder[Out]
+    def output: Out
+  }
+
   /** Constructs a table-based CRC function using the specified polynomial.
     *
     * Each of the input vectors must be the same size.
@@ -74,16 +81,16 @@ object crc {
         i => BitVector.fromInt(i)
       }
     else
-      vectorTable(poly, initial, reflectInput, reflectOutput, finalXor)
+      builder(poly, initial, reflectInput, reflectOutput, finalXor).update(_).output
   }
 
-  private[bits] def vectorTable(
+  def builder(
       poly: BitVector,
       initial: BitVector,
       reflectInput: Boolean,
       reflectOutput: Boolean,
       finalXor: BitVector
-  ): BitVector => BitVector = {
+  ): CrcBuilder[BitVector] = {
     val table = new Array[BitVector](256)
     val zeroed = BitVector.fill(poly.size - 8)(false)
     val m = 8L
@@ -105,37 +112,42 @@ object crc {
       }
     calculateTableIndex(0)
 
-    def output(crcreg: BitVector): BitVector =
-      (if (reflectOutput) crcreg.reverse else crcreg).xor(finalXor)
+    final class Builder(initial: BitVector) extends CrcBuilder[BitVector] {
 
-    def calculate(input: BitVector, initial: BitVector): BitVector = {
-      var crcreg = initial
-      val size = input.size
-      val byteAligned = size % 8 == 0
-      val data = if (byteAligned) input.bytes else input.bytes.init
-      if (reflectInput)
-        data.foreach { inputByte =>
-          val index = crcreg.take(8) ^ BitVector(inputByte).reverse
-          val indexAsInt = index.bytes.head.toInt & 0x0ff
-          crcreg = (crcreg << 8) ^ table(indexAsInt)
+      def update(input: BitVector): Builder =
+        if (poly.size < 8)
+          new Builder(goBitwise(poly, if (reflectInput) input.reverseBitOrder else input, initial))
+        else {
+          var crcreg = initial
+          val size = input.size
+          val byteAligned = size % 8 == 0
+          val data = if (byteAligned) input.bytes else input.bytes.init
+          if (reflectInput)
+            data.foreach { inputByte =>
+              val index = crcreg.take(8) ^ BitVector(inputByte).reverse
+              val indexAsInt = index.bytes.head.toInt & 0x0ff
+              crcreg = (crcreg << 8) ^ table(indexAsInt)
+            }
+          else
+            data.foreach { inputByte =>
+              val index = crcreg.take(8) ^ BitVector(inputByte)
+              val indexAsInt = index.bytes.head.toInt & 0x0ff
+              crcreg = (crcreg << 8) ^ table(indexAsInt)
+            }
+          if (byteAligned)
+            new Builder(crcreg)
+          else {
+            val trailer = input.takeRight(size % 8)
+            new Builder(
+              goBitwise(poly, if (reflectInput) trailer.reverseBitOrder else trailer, crcreg)
+            )
+          }
         }
-      else
-        data.foreach { inputByte =>
-          val index = crcreg.take(8) ^ BitVector(inputByte)
-          val indexAsInt = index.bytes.head.toInt & 0x0ff
-          crcreg = (crcreg << 8) ^ table(indexAsInt)
-        }
-      if (byteAligned)
-        output(crcreg)
-      else {
-        val trailer = input.takeRight(size % 8)
-        output(goBitwise(poly, if (reflectInput) trailer.reverseBitOrder else trailer, crcreg))
-      }
+
+      def output: BitVector = (if (reflectOutput) initial.reverse else initial).xor(finalXor)
     }
 
-    if (poly.size < 8)
-      a => output(goBitwise(poly, if (reflectInput) a.reverseBitOrder else a, initial))
-    else a => calculate(a, initial)
+    new Builder(initial)
   }
 
   private def goBitwise(poly: BitVector, remaining: BitVector, crcreg: BitVector): BitVector =
