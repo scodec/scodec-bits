@@ -76,9 +76,9 @@ class CrcTest extends ScalaCheckSuite {
     val builder32 = crc.builder(poly, hex"ffffffff".bits, false, false, hex"00000000".bits)
     forAll { (bvs: Vector[BitVector]) =>
       assert(
-        bvs.foldLeft(builder32)(_.update(_)).output == builder32
-          .update(BitVector.concat(bvs))
-          .output
+        bvs.foldLeft(builder32)(_.updated(_)).result == builder32
+          .updated(BitVector.concat(bvs))
+          .result
       )
     }
   }

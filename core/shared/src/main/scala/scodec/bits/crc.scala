@@ -51,9 +51,9 @@ object crc {
 
   /** An immutable "builder" to incrementally compute a CRC.
     */
-  sealed trait CrcBuilder[Out] {
-    def update(data: BitVector): CrcBuilder[Out]
-    def output: Out
+  sealed trait CrcBuilder[R] {
+    def updated(data: BitVector): CrcBuilder[R]
+    def result: R
   }
 
   /** Constructs a table-based CRC function using the specified polynomial.
@@ -82,7 +82,7 @@ object crc {
       }
     else {
       val b = builder(poly, initial, reflectInput, reflectOutput, finalXor)
-      b.update(_).output
+      b.updated(_).result
     }
   }
 
@@ -96,8 +96,8 @@ object crc {
   ): CrcBuilder[BitVector] =
     if (poly.size == 32L) {
       final class Builder(inner: CrcBuilder[Int]) extends CrcBuilder[BitVector] {
-        def update(input: BitVector): Builder = new Builder(inner.update(input))
-        def output: BitVector = BitVector.fromInt(inner.output)
+        def updated(input: BitVector): Builder = new Builder(inner.updated(input))
+        def result: BitVector = BitVector.fromInt(inner.result)
       }
       new Builder(
         builder32(poly.toInt(), initial.toInt(), reflectInput, reflectOutput, finalXor.toInt())
@@ -134,7 +134,7 @@ object crc {
 
     final class Builder(initial: BitVector) extends CrcBuilder[BitVector] {
 
-      def update(input: BitVector): Builder =
+      def updated(input: BitVector): Builder =
         if (poly.size < 8)
           new Builder(
             goBitwise(poly, if (reflectInput) input.reverseBitOrder else input, initial)
@@ -166,7 +166,7 @@ object crc {
           }
         }
 
-      def output: BitVector = (if (reflectOutput) initial.reverse else initial).xor(finalXor)
+      def result: BitVector = (if (reflectOutput) initial.reverse else initial).xor(finalXor)
     }
 
     new Builder(initial)
@@ -196,7 +196,7 @@ object crc {
       finalXor: Int
   ): BitVector => Int = {
     val b = builder32(poly, initial, reflectInput, reflectOutput, finalXor)
-    b.update(_).output
+    b.updated(_).result
   }
 
   /** Constructs a 32-bit, table-based CRC builder using the specified polynomial.
@@ -228,7 +228,7 @@ object crc {
     calculateTableIndex(0)
 
     final class Builder(initial: Int) extends CrcBuilder[Int] {
-      def update(input: BitVector): Builder = {
+      def updated(input: BitVector): Builder = {
         var crcreg = initial
         val size = input.size
         val byteAligned = size % 8 == 0
@@ -253,7 +253,7 @@ object crc {
         }
       }
 
-      def output: Int =
+      def result: Int =
         (if (reflectOutput) BitVector.fromInt(initial).reverse.toInt() else initial) ^ finalXor
     }
 
