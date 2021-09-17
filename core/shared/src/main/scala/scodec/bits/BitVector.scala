@@ -1202,7 +1202,7 @@ sealed abstract class BitVector
           r.internalPretty(prefix + "  ")
       case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
       case Drop(u, n) =>
-        prefix + s"drop ${n}\n" +
+        prefix + s"drop $n\n" +
           u.internalPretty(prefix + "  ")
       case s @ Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
       case c: Chunks =>
