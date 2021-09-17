@@ -41,19 +41,39 @@ object crc {
     * 0xffffffff.
     */
   lazy val crc32: BitVector => BitVector =
-    int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
+    crc32Builder.updated(_).result
 
   /** 32-bit CRC using poly 0x1edc6f41, initial 0xffffffff, reflected input/output, and final xor
     * 0xffffffff.
     */
   lazy val crc32c: BitVector => BitVector =
-    int32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
+    crc32cBuilder.updated(_).result
+
+  /** Builder for 32-bit CRC using poly 0x04c11db7, initial 0xffffffff, reflected input/output, and
+    * final xor 0xffffffff.
+    */
+  lazy val crc32Builder: CrcBuilder[BitVector] =
+    builder32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).mapResult(BitVector.fromInt(_))
+
+  /** Builder for 32-bit CRC using poly 0x1edc6f41, initial 0xffffffff, reflected input/output, and
+    * final xor 0xffffffff.
+    */
+  lazy val crc32cBuilder: CrcBuilder[BitVector] =
+    builder32(0x1edc6f41, 0xffffffff, true, true, 0xffffffff).mapResult(BitVector.fromInt(_))
 
   /** An immutable "builder" to incrementally compute a CRC.
     */
   sealed trait CrcBuilder[R] {
     def updated(data: BitVector): CrcBuilder[R]
     def result: R
+
+    private[crc] def mapResult[S](f: R => S): CrcBuilder[S] = {
+      class Builder(inner: CrcBuilder[R]) extends CrcBuilder[S] {
+        def updated(data: BitVector): CrcBuilder[S] = new Builder(inner.updated(data))
+        def result: S = f(inner.result)
+      }
+      new Builder(this)
+    }
   }
 
   /** Constructs a table-based CRC function using the specified polynomial.
@@ -94,15 +114,10 @@ object crc {
       reflectOutput: Boolean,
       finalXor: BitVector
   ): CrcBuilder[BitVector] =
-    if (poly.size == 32L) {
-      final class Builder(inner: CrcBuilder[Int]) extends CrcBuilder[BitVector] {
-        def updated(input: BitVector): Builder = new Builder(inner.updated(input))
-        def result: BitVector = BitVector.fromInt(inner.result)
-      }
-      new Builder(
-        builder32(poly.toInt(), initial.toInt(), reflectInput, reflectOutput, finalXor.toInt())
-      )
-    } else builderGeneric(poly, initial, reflectInput, reflectOutput, finalXor)
+    if (poly.size == 32L)
+      builder32(poly.toInt(), initial.toInt(), reflectInput, reflectOutput, finalXor.toInt())
+        .mapResult(BitVector.fromInt(_))
+    else builderGeneric(poly, initial, reflectInput, reflectOutput, finalXor)
 
   private[bits] def builderGeneric(
       poly: BitVector,
