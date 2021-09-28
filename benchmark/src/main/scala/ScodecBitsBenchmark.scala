@@ -129,8 +129,11 @@ class ScodecBitsBenchmark {
     java.util.Base64.getDecoder.decode(bitVector_M_b64)
 
   private val crc32 = crc(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
-  private val crc32v =
-    crc.vectorTable(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
+  private val crc32v = (a: BitVector) =>
+    crc
+      .builderGeneric(hex"04c11db7".bits, hex"ffffffff".bits, true, true, hex"ffffffff".bits)
+      .updated(a)
+      .result
   private val crc32i =
     crc.int32(0x04c11db7, 0xffffffff, true, true, 0xffffffff).andThen(i => BitVector.fromInt(i))
   @Benchmark def crc32_M(): BitVector = crc32(bitVector_M)
