@@ -13,7 +13,7 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.15", "2.13.5", "3.0.2")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5", "3.1.0")
 
 ThisBuild / strictSemVer := false
 
@@ -113,7 +113,7 @@ lazy val coreJVM = core.jvm
   .settings(osgiSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "30.1.1-jre" % "test"
+      "com.google.guava" % "guava" % "31.0.1-jre" % "test"
     ),
     OsgiKeys.privatePackage := Nil,
     OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
