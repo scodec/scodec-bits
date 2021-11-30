@@ -13,7 +13,7 @@ ThisBuild / organizationName := "Scodec"
 ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.5", "3.0.2")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.13", "2.13.7", "3.1.0")
 
 ThisBuild / strictSemVer := false
 
@@ -36,8 +36,6 @@ ThisBuild / scmInfo := Some(
 ThisBuild / licenses := List(
   ("BSD-3-Clause", url("https://github.com/scodec/scodec-bits/blob/main/LICENSE"))
 )
-
-ThisBuild / testFrameworks += new TestFramework("munit.Framework")
 
 ThisBuild / publishGithubUser := "mpilquist"
 ThisBuild / publishFullName := "Michael Pilquist"
@@ -109,19 +107,10 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
   )
 
 lazy val coreJVM = core.jvm
-  .enablePlugins(SbtOsgi)
-  .settings(osgiSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "30.1.1-jre" % "test"
-    ),
-    OsgiKeys.privatePackage := Nil,
-    OsgiKeys.exportPackage := Seq("scodec.bits.*;version=${Bundle-Version}"),
-    OsgiKeys.importPackage := Seq(
-      """scala.*;version="$<range;[==,=+)>"""",
-      "*"
-    ),
-    OsgiKeys.additionalHeaders := Map("-removeheaders" -> "Include-Resource,Private-Package")
+      "com.google.guava" % "guava" % "31.0.1-jre" % "test"
+    )
   )
 
 lazy val coreJS = core.js.settings(

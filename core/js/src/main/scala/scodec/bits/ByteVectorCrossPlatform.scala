@@ -41,7 +41,7 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
     copyToUint8Array(dest, start, 0, toIntSize(size))
 
   def copyToUint8Array(dest: Uint8Array, start: Int, offset: Long, size: Int): Unit =
-    copyToJSArrayBuffer(dest.buffer, start + dest.byteOffset, offset, dest.byteLength min size)
+    copyToJSArrayBuffer(dest.buffer, start + dest.byteOffset, offset, dest.byteLength.min(size))
 
   def toUint8Array: Uint8Array = new Uint8Array(toJSArrayBuffer)
 
@@ -50,7 +50,7 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
   def copyToJSArrayBuffer(dest: ArrayBuffer, start: Int, offset: Long, size: Int): Unit = {
     var i = 0
-    val n = dest.byteLength min size
+    val n = dest.byteLength.min(size)
     val out = new Int8Array(dest)
     while (i < n) {
       out(start + i) = self(offset + i)

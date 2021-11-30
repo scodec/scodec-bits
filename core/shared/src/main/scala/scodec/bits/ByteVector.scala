@@ -1936,7 +1936,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       else
         Right(
           zeroes ++ ByteVector(decoded.toByteArray.dropWhile(_ == 0))
-        ) //drop because toByteArray sometimes prepends a zero
+        ) // drop because toByteArray sometimes prepends a zero
     } catch {
       case e: IllegalArgumentException => Left(e.getMessage)
     }

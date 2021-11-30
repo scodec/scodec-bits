@@ -71,6 +71,18 @@ class CrcTest extends ScalaCheckSuite {
     }
   }
 
+  property("streaming result should be same as all-at-once result") {
+    val poly = hex"04C11DB7".bits
+    val builder32 = crc.builder(poly, hex"ffffffff".bits, false, false, hex"00000000".bits)
+    forAll { (bvs: Vector[BitVector]) =>
+      assert(
+        bvs.foldLeft(builder32)(_.updated(_)).result == builder32
+          .updated(BitVector.concat(bvs))
+          .result
+      )
+    }
+  }
+
   val checkBytes = BitVector("123456789".getBytes("US-ASCII"))
   def check(crc: BitVector => BitVector, expected: String) =
     assert(crc(checkBytes) == BitVector.fromValidHex(expected))
