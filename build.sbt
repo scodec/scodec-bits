@@ -23,7 +23,7 @@ ThisBuild / versionIntroduced := Map(
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
 )
 
-ThisBuild / githubWorkflowJavaVersions := Seq("adopt@1.8")
+ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"))
 
 ThisBuild / spiewakCiReleaseSnapshots := true
 
