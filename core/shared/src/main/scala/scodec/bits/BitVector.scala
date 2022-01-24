@@ -1899,7 +1899,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
         val shiftedByWholeBytes: ByteVector =
           underlying.underlying.slice(lowByte, lowByte + bytesNeededForBits(newSize) + 1)
         val bitsToShiftEachByte = (low % 8).toInt
-        val newBytes = {
+        val newBytes =
           if (bitsToShiftEachByte == 0) shiftedByWholeBytes
           else
             shiftedByWholeBytes.zipWithI(shiftedByWholeBytes.drop(1) :+ (0: Byte)) { case (a, b) =>
@@ -1908,7 +1908,6 @@ object BitVector extends BitVectorCompanionCrossPlatform {
                 ((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte)
               hi | low
             }
-        }
         toBytes(
           if (newSize <= (newBytes.size - 1) * 8) newBytes.dropRight(1) else newBytes,
           newSize

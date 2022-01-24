@@ -32,27 +32,27 @@ package scodec.bits
 
 import scala.quoted.*
 
-/**
-  * Provides the `hex` string interpolator, which returns `ByteVector` instances from hexadecimal strings.
-  * 
+/** Provides the `hex` string interpolator, which returns `ByteVector` instances from hexadecimal strings.
+  *
   * @example {{{
   * scala> val b = hex"deadbeef"
   * val b: scodec.bits.ByteVector = ByteVector(4 bytes, 0xdeadbeef)
   * }}}
   */
-extension (inline ctx: StringContext) inline def hex (inline args: Any*): ByteVector =
-  ${Literals.Hex('ctx, 'args)}
+extension (inline ctx: StringContext)
+  inline def hex(inline args: Any*): ByteVector =
+    ${ Literals.Hex('ctx, 'args) }
 
-/**
-  * Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
+/** Provides the `bin` string interpolator, which returns `BitVector` instances from binary strings.
   *
   * @example {{{
   * scala> val b = bin"1010101010"
   * val b: scodec.bits.BitVector = BitVector(10 bits, 0xaa8)
   * }}}
   */
-extension (inline ctx: StringContext) inline def bin (inline args: Any*): BitVector =
-  ${Literals.Bin('ctx, 'args)}
+extension (inline ctx: StringContext)
+  inline def bin(inline args: Any*): BitVector =
+    ${ Literals.Bin('ctx, 'args) }
 
 object Literals:
 
@@ -78,15 +78,15 @@ object Literals:
       else
         quotes.reflect.report.error("interpolation not supported", argsExpr)
         ???
-  
+
   object Hex extends Validator[ByteVector]:
     def validate(s: String)(using Quotes): Either[String, Expr[ByteVector]] =
       ByteVector.fromHex(s) match
-        case None => Left("hexadecimal string literal may only contain characters [0-9a-fA-f]")
-        case Some(_) => Right('{ByteVector.fromValidHex(${Expr(s)})})
+        case None    => Left("hexadecimal string literal may only contain characters [0-9a-fA-f]")
+        case Some(_) => Right('{ ByteVector.fromValidHex(${ Expr(s) }) })
 
   object Bin extends Validator[BitVector]:
     def validate(s: String)(using Quotes): Either[String, Expr[BitVector]] =
       ByteVector.fromBin(s) match
-        case None => Left("binary string literal may only contain characters [0, 1]")
-        case Some(_) => Right('{BitVector.fromValidBin(${Expr(s)})})
+        case None    => Left("binary string literal may only contain characters [0, 1]")
+        case Some(_) => Right('{ BitVector.fromValidBin(${ Expr(s) }) })
