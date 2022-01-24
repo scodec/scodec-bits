@@ -1,23 +1,19 @@
 import com.typesafe.tools.mima.core._
-import sbtcrossproject.CrossPlugin.autoImport.{CrossType, crossProject}
-import com.typesafe.sbt.SbtGit.GitKeys.{gitCurrentBranch, gitHeadCommit}
 
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
-ThisBuild / baseVersion := "1.1"
+ThisBuild / tlBaseVersion := "1.1"
 
 ThisBuild / organization := "org.scodec"
 ThisBuild / organizationName := "Scodec"
 
-ThisBuild / homepage := Some(url("https://github.com/scodec/scodec-bits"))
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.15", "2.13.7", "3.1.0")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.15", "2.13.8", "3.1.0")
 
-ThisBuild / strictSemVer := false
-
-ThisBuild / versionIntroduced := Map(
+ThisBuild / tlVersionIntroduced := Map(
+  "3" -> "1.1.27",
   "2.13" -> "1.1.12",
   "2.12" -> "1.1.2",
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
@@ -25,9 +21,7 @@ ThisBuild / versionIntroduced := Map(
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"))
 
-ThisBuild / spiewakCiReleaseSnapshots := true
-
-ThisBuild / spiewakMainBranches := List("main")
+ThisBuild / tlFatalWarningsInCi := false
 
 ThisBuild / scmInfo := Some(
   ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
@@ -37,16 +31,10 @@ ThisBuild / licenses := List(
   ("BSD-3-Clause", url("https://github.com/scodec/scodec-bits/blob/main/LICENSE"))
 )
 
-ThisBuild / publishGithubUser := "mpilquist"
-ThisBuild / publishFullName := "Michael Pilquist"
 ThisBuild / developers ++= List(
-  "mpilquist" -> "Michael Pilquist",
-  "pchiusano" -> "Paul Chiusano"
-).map { case (username, fullName) =>
-  Developer(username, fullName, s"@$username", url(s"https://github.com/$username"))
-}
-
-ThisBuild / fatalWarningsInCI := false
+  tlGitHubDev("mpilquist", "Michael Pilquist"),
+  tlGitHubDev("pchiusano", "Paul Chiusano")
+)
 
 ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.grouped"),
@@ -73,36 +61,27 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.LiteralSyntaxMacros$blackbox$"),
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ScalaVersionSpecific"),
-  ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced")
+  ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced"),
+  ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BuildInfo"),
+  ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BuildInfo$"),
+  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.crc.vectorTable")
 )
 
-lazy val root = project
-  .in(file("."))
-  .aggregate(coreJVM, coreJS, benchmark)
-  .enablePlugins(NoPublishPlugin, SonatypeCiReleasePlugin)
+lazy val root = tlCrossRootProject.aggregate(core, benchmark)
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
-  .enablePlugins(BuildInfoPlugin)
   .settings(
     name := "scodec-bits",
     libraryDependencies ++= {
-      if (isDotty.value) Nil
+      if (tlIsScala3.value) Nil
       else Seq("org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided")
     },
-    buildInfoPackage := "scodec.bits",
-    buildInfoKeys := Seq[BuildInfoKey](version, scalaVersion, gitHeadCommit),
     Compile / unmanagedResources ++= {
       val base = baseDirectory.value
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
-    Compile / unmanagedSourceDirectories ++= {
-      val major = if (isDotty.value) "-3" else "-2"
-      List(CrossType.Pure, CrossType.Full).flatMap(
-        _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
-      )
-    },
     libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.29" % "test"
   )
 
@@ -114,7 +93,44 @@ lazy val coreJVM = core.jvm
   )
 
 lazy val coreJS = core.js.settings(
-  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+  scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
+  // Override JS versions, as older stuff built for SJS 0.6
+  tlVersionIntroduced := tlVersionIntroduced.value ++ Map(
+    "2.13" -> "1.1.14",
+    "2.12" -> "1.1.14"
+  ),
+  mimaBinaryIssueFilters ++= Seq(
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.deflate"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.deflate$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.deflate$default$2"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.deflate$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.deflate$default$4"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.inflate"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.inflate$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.digest"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.digest"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.encrypt"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.encrypt$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.decrypt"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.decrypt$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.deflate"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.deflate$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.deflate$default$2"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.deflate$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.deflate$default$4"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.inflate"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.inflate$default$1"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.inflate$default$2"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.digest"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.encrypt"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.encrypt$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.decrypt"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.decrypt$default$3"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.cipher"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.cipher$default$4"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher"),
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher$default$4")
+  )
 )
 
 lazy val benchmark: Project = project
