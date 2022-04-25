@@ -2262,7 +2262,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     private val bvlen = bv.size.toInt
     private val pos = new CustomAtomicInteger(0)
 
-    override def read(): Int = bv.get(pos.getAndIncrement().toLong)
+    override def read(): Int =
+      if (pos.get() >= bvlen) -1 else bv.get(pos.getAndIncrement().toLong) & 0xff
 
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
