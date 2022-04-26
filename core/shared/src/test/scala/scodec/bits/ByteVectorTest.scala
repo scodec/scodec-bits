@@ -763,13 +763,13 @@ class ByteVectorTest extends BitsSuite {
     {
       val is = ByteVector(0, 1, 2).toInputStream
       assert(is.available() == 3)
-      assert(is.read == 0)
+      assert(is.read() == 0)
       assert(is.available() == 2)
-      assert(is.read == 1)
+      assert(is.read() == 1)
       assert(is.available() == 1)
-      assert(is.read == 2)
+      assert(is.read() == 2)
       assert(is.available() == 0)
-      assert(is.read == -1)
+      assert(is.read() == -1)
       assert(is.available() == 0)
     }
   }

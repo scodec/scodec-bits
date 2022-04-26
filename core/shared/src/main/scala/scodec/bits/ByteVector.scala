@@ -2262,8 +2262,10 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     private val bvlen = bv.size.toInt
     private val pos = new CustomAtomicInteger(0)
 
-    override def read(): Int =
-      if (pos.get() >= bvlen) -1 else bv.get(pos.getAndIncrement().toLong) & 0xff
+    override def read(): Int = {
+      val p = pos.getAndIncrement()
+      if (p >= bvlen) -1 else bv.get(p.toLong) & 0xff
+    }
 
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
@@ -2283,7 +2285,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       l
     }
 
-    override def available(): Int = bvlen - pos.get()
+    override def available(): Int = Math.max(bvlen - pos.get(), 0)
 
     /* This is quite a hack. The problem is that the code has to be Scala-agnostic but Scala.js implementation of `AtomicInteger` differs
      * from the JVM standard one and it doesn't contain `getAndUpdate` method. So I took the method and put here the code with a different name
