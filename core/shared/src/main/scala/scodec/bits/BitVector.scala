@@ -222,7 +222,7 @@ sealed abstract class BitVector
     */
   private[bits] def depth: Int =
     this match {
-      case Append(l, r) => 1 + (l.depth.max(r.depth))
+      case Append(l, r) => 1 + l.depth.max(r.depth)
       case c: Chunks    => 1 + c.chunks.depth
       case _            => 0
     }
@@ -280,7 +280,7 @@ sealed abstract class BitVector
     * @group collection
     */
   final def slice(from: Long, until: Long): BitVector =
-    drop(from).take(until - (from.max(0)))
+    drop(from).take(until - from.max(0))
 
   /** Returns a vector whose contents are the results of taking the first `n` bits of this vector.
     *
@@ -826,11 +826,11 @@ sealed abstract class BitVector
   private def getByte(start: Long, bits: Int, signed: Boolean): Byte = {
     require(sizeGreaterThanOrEqual(start + bits) && bits >= 0 && bits <= 8)
     var result = 0x0ff & getByte(start / 8)
-    if (bits != 0) result = result >>> (8 - bits)
+    if (bits != 0) result = result >>> 8 - bits
     // Sign extend if necessary
-    if (signed && bits != 8 && ((1 << (bits - 1)) & result) != 0) {
+    if (signed && bits != 8 && (1 << bits - 1 & result) != 0) {
       val toShift = 32 - bits
-      result = (result << toShift) >> toShift
+      result = result << toShift >> toShift
     }
     result.toByte
   }
@@ -879,15 +879,15 @@ sealed abstract class BitVector
     @annotation.tailrec
     def go(i: Int): Unit =
       if (i < bytesNeeded) {
-        result = (result << 8) | (0x0ff & this.getByte(base + i))
+        result = result << 8 | 0x0ff & this.getByte(base + i)
         go(i + 1)
       }
     go(0)
-    if (mod != 0) result = result >>> (8 - mod)
+    if (mod != 0) result = result >>> 8 - mod
     // Sign extend if necessary
-    if (signed && bits != 16 && ((1 << (bits - 1)) & result) != 0) {
+    if (signed && bits != 16 && (1 << bits - 1 & result) != 0) {
       val toShift = 32 - bits
-      result = (result << toShift) >> toShift
+      result = result << toShift >> toShift
     }
     result.toShort
   }
@@ -942,15 +942,15 @@ sealed abstract class BitVector
     @annotation.tailrec
     def go(i: Int): Unit =
       if (i < bytesNeeded) {
-        result = (result << 8) | (0x0ff & this.getByte(base + i))
+        result = result << 8 | 0x0ff & this.getByte(base + i)
         go(i + 1)
       }
     go(0)
-    if (mod != 0) result = result >>> (8 - mod)
+    if (mod != 0) result = result >>> 8 - mod
     // Sign extend if necessary
-    if (signed && bits != 32 && ((1 << (bits - 1)) & result) != 0) {
+    if (signed && bits != 32 && (1 << bits - 1 & result) != 0) {
       val toShift = 32 - bits
-      result = (result << toShift) >> toShift
+      result = result << toShift >> toShift
     }
     result
   }
@@ -1023,15 +1023,15 @@ sealed abstract class BitVector
     @annotation.tailrec
     def go(i: Int): Unit =
       if (i < bytesNeeded) {
-        result = (result << 8) | (0x0ffL & this.getByte(base + i))
+        result = result << 8 | 0x0ffL & this.getByte(base + i)
         go(i + 1)
       }
     go(0)
-    if (mod != 0) result = result >>> (8 - mod)
+    if (mod != 0) result = result >>> 8 - mod
     // Sign extend if necessary
-    if (signed && bits != 64 && ((1L << (bits - 1)) & result) != 0) {
+    if (signed && bits != 64 && (1L << bits - 1 & result) != 0) {
       val toShift = 64 - bits
-      result = (result << toShift) >> toShift
+      result = result << toShift >> toShift
     }
     result
   }
@@ -1390,7 +1390,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     */
   def fromByte(b: Byte, size: Int = 8): BitVector = {
     require(size <= 8)
-    (BitVector(b) << (8L - size)).take(size.toLong)
+    (BitVector(b) << 8L - size).take(size.toLong)
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified value.
@@ -1410,7 +1410,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     require(size <= 16)
     val buffer = ByteBuffer.allocate(2).order(ByteOrder.BIG_ENDIAN).putShort(s)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (16L - size)).take(size.toLong)
+    val relevantBits = (BitVector.view(buffer) << 16L - size).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1431,7 +1431,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     require(size <= 32)
     val buffer = ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(i)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (32L - size)).take(size.toLong)
+    val relevantBits = (BitVector.view(buffer) << 32L - size).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1452,7 +1452,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     require(size <= 64)
     val buffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(l)
     buffer.flip()
-    val relevantBits = (BitVector.view(buffer) << (64L - size)).take(size.toLong)
+    val relevantBits = (BitVector.view(buffer) << 64L - size).take(size.toLong)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
@@ -1485,7 +1485,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       val toDrop = size match {
         case 0               => 0
         case n if n % 8 == 0 => 0
-        case n               => 8 - (n % 8)
+        case n               => 8 - n % 8
       }
       bytes.toBitVector.drop(toDrop.toLong)
     }
@@ -1854,7 +1854,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
         val bytesCleared = clearUnneededBits(size, underlying) // this is key
         val hi = bytesCleared(bytesCleared.size - 1)
         val lo =
-          (((otherBytes.head & topNBits(invalidBits.toInt)) & 0x000000ff) >>> validBitsInLastByte(
+          ((otherBytes.head & topNBits(invalidBits.toInt) & 0x000000ff) >>> validBitsInLastByte(
             size
           ).toInt).toByte
         val updatedOurBytes = bytesCleared.update(bytesCleared.size - 1, (hi | lo).toByte)
@@ -1905,7 +1905,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
             shiftedByWholeBytes.zipWithI(shiftedByWholeBytes.drop(1) :+ (0: Byte)) { case (a, b) =>
               val hi = a << bitsToShiftEachByte
               val low =
-                ((b & topNBits(bitsToShiftEachByte)) & 0x000000ff) >>> (8 - bitsToShiftEachByte)
+                (b & topNBits(bitsToShiftEachByte) & 0x000000ff) >>> 8 - bitsToShiftEachByte
               hi | low
             }
         toBytes(
@@ -2049,7 +2049,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
             chunks.left match {
               case left: Append =>
                 val rN = chunks.right.size
-                val aligned = (lastN % 8) + (rN % 8) == 0
+                val aligned = lastN % 8 + rN % 8 == 0
                 if (rN <= 256 && aligned)
                   go(left, chunks.right.align.combine(last.align))
                 else
@@ -2078,11 +2078,11 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   // bit twiddling operations
 
   private def getBit(byte: Byte, n: Int): Boolean =
-    ((0x00000080 >> n) & byte) != 0
+    (0x00000080 >> n & byte) != 0
 
   private def setBit(byte: Byte, n: Int, high: Boolean): Byte = {
-    if (high) (0x00000080 >> n) | byte
-    else (~(0x00000080 >> n)) & byte
+    if (high) 0x00000080 >> n | byte
+    else ~(0x00000080 >> n) & byte
   }.toByte
 
   private def validBitsInLastByte(size: Long): Long = {
@@ -2092,7 +2092,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
 
   /** Gets a byte mask with the top `n` bits enabled. */
   private def topNBits(n: Int): Byte =
-    (-1 << (8 - n)).toByte
+    (-1 << 8 - n).toByte
 
   private def bytesNeededForBits(size: Long): Long =
     (size + 7) / 8
@@ -2383,7 +2383,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     def fixup(stack: List[(A, Long)]): List[(A, Long)] =
       stack match {
         // h actually appeared first in `v`, followed by `h2`, preserve this order
-        case (h2, n) :: (h, m) :: t if n > m / 2 =>
+        case h2, n :: h, m :: t if n > m / 2 =>
           fixup((f(h, h2), m + n) :: t)
         case _ => stack
       }

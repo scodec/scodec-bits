@@ -301,7 +301,7 @@ sealed abstract class ByteVector
     * @group collection
     */
   final def slice(from: Long, until: Long): ByteVector =
-    drop(from).take(until - (from.max(0)))
+    drop(from).take(until - from.max(0))
 
   /** Returns a vector whose contents are the results of taking the first `n` bytes of this vector.
     *
@@ -772,7 +772,7 @@ sealed abstract class ByteVector
         def apply(b: Byte) = {
           var n = 7
           while (n >= 0) {
-            val idx = 1 & (b >> n)
+            val idx = 1 & b >> n
             bldr.append(alphabet.toChar(idx))
             n -= 1
           }
@@ -830,13 +830,13 @@ sealed abstract class ByteVector
     val i = (bitIndex / 8).toInt
     if (i >= bytes.length) 0
     else {
-      val off = (bitIndex - (i * 8)).toInt
-      val mask = ((1 << length) - 1) << (8 - length)
-      val half = (bytes(i) << off) & mask
+      val off = (bitIndex - i * 8).toInt
+      val mask = (1 << length) - 1 << 8 - length
+      val half = bytes(i) << off & mask
       val full =
         if (off + length <= 8 || i + 1 >= bytes.length) half
-        else half | ((bytes(i + 1) & ((mask << (8 - off)) & 0xff)) >>> (8 - off))
-      full >>> (8 - length)
+        else half | (bytes(i + 1) & (mask << 8 - off & 0xff)) >>> 8 - off
+      full >>> 8 - length
     }
   }
 
@@ -855,7 +855,7 @@ sealed abstract class ByteVector
 
     {
       var bidx: Long = 0
-      while ((bidx / 8) < bytes.length) {
+      while (bidx / 8 < bytes.length) {
         val char = alphabet.toChar(bitsAtOffset(bytes, bidx, bitsPerChar))
         bldr.append(char)
         bidx += bitsPerChar
@@ -864,7 +864,7 @@ sealed abstract class ByteVector
 
     if (alphabet.pad != 0.toChar) {
       val padLen =
-        (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+        ((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar - bytes.length) * 8 / bitsPerChar
       var i = 0
       while (i < padLen) {
         bldr.append(alphabet.pad)
@@ -916,12 +916,12 @@ sealed abstract class ByteVector
     */
   final def toBase64(alphabet: Bases.Base64Alphabet): String = {
     val bytes = toArray
-    val bldr = CharBuffer.allocate(((bytes.length + 2) / 3) * 4)
+    val bldr = CharBuffer.allocate((bytes.length + 2) / 3 * 4)
     var idx = 0
     val mod = bytes.length % 3
     while (idx < bytes.length - mod) {
       var buffer =
-        ((bytes(idx) & 0x0ff) << 16) | ((bytes(idx + 1) & 0x0ff) << 8) | (bytes(idx + 2) & 0x0ff)
+        (bytes(idx) & 0x0ff) << 16 | (bytes(idx + 1) & 0x0ff) << 8 | bytes(idx + 2) & 0x0ff
       val fourth = buffer & 0x3f
       buffer = buffer >> 6
       val third = buffer & 0x3f
@@ -950,7 +950,7 @@ sealed abstract class ByteVector
           .append(alphabet.pad)
           .append(alphabet.pad)
     } else if (mod == 2) {
-      var buffer = ((bytes(idx) & 0x0ff) << 10) | ((bytes(idx + 1) & 0x0ff) << 2)
+      var buffer = (bytes(idx) & 0x0ff) << 10 | (bytes(idx + 1) & 0x0ff) << 2
       val third = buffer & 0x3f
       buffer = buffer >> 6
       val second = buffer & 0x3f
@@ -1124,14 +1124,14 @@ sealed abstract class ByteVector
 
   private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector)(f: F3B): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i)) }
-    Chunk(View(at, 0, (size.min(other.size)).min(other2.size)))
+    Chunk(View(at, 0, size.min(other.size).min(other2.size)))
   }
 
   private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector, other3: ByteVector)(
       f: F4B
   ): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i), other3(i)) }
-    Chunk(View(at, 0, ((size.min(other.size)).min(other2.size)).min(other3.size)))
+    Chunk(View(at, 0, size.min(other.size).min(other2.size).min(other3.size)))
   }
 
   /** Returns a new vector where each byte is the result of evaluating the specified function
@@ -1666,7 +1666,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.HexAlphabet
   ): Either[String, (ByteVector, Int)] = {
-    val prefixed = (str.startsWith("0x")) || (str.startsWith("0X"))
+    val prefixed = str.startsWith("0x") || str.startsWith("0X")
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, hi, count = 0
     var midByte = false
@@ -1749,7 +1749,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
   ): Either[String, (ByteVector, Int)] = {
-    val prefixed = (str.startsWith("0b")) || (str.startsWith("0B"))
+    val prefixed = str.startsWith("0b") || str.startsWith("0B")
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, byte, bits, count = 0
     var err: String = null
@@ -1758,7 +1758,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       val c = withoutPrefix(idx)
       if (!alphabet.ignore(c))
         try {
-          byte = (byte << 1) | (1 & alphabet.toIndex(c))
+          byte = byte << 1 | 1 & alphabet.toIndex(c)
           bits += 1
           count += 1
         } catch {
@@ -1776,7 +1776,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       Right(
         (
           if (bits > 0) {
-            bldr.put((byte << (8 - bits)).toByte)
+            bldr.put((byte << 8 - bits).toByte)
             bldr.flip()
             ByteVector(bldr).shiftRight((8 - bits).toLong, false)
           } else {
@@ -1849,13 +1849,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
               return Left(s"Invalid base 32 character '$c' at index $idx")
           }
 
-        buffer |= (index << (8 - bitsPerChar) >>> bidx) & 0xff
+        buffer |= index << 8 - bitsPerChar >>> bidx & 0xff
         bidx += bitsPerChar
 
         if (bidx >= 8) {
           bidx -= 8
           acc.put(buffer.toByte)
-          buffer = (index << (8 - bidx)) & 0xff
+          buffer = index << 8 - bidx & 0xff
         }
       }
 
@@ -1869,7 +1869,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     val bytes = ByteVector.view(acc)
 
     val expectedPadding =
-      (((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar) - bytes.length) * 8 / bitsPerChar
+      ((bytes.length + bitsPerChar - 1) / bitsPerChar * bitsPerChar - bytes.length) * 8 / bitsPerChar
     if (padding != 0 && padding != expectedPadding)
       return Left(
         s"Malformed padding - optionally expected $expectedPadding padding characters such that the quantum is completed"
@@ -2020,17 +2020,17 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
               buffer = cidx & 0x3f
               mod += 1
             case 1 =>
-              buffer = (buffer << 6) | (cidx & 0x3f)
+              buffer = buffer << 6 | cidx & 0x3f
               mod += 1
             case 2 =>
-              buffer = (buffer << 6) | (cidx & 0x3f)
+              buffer = buffer << 6 | cidx & 0x3f
               mod += 1
             case 3 =>
-              buffer = (buffer << 6) | (cidx & 0x3f)
+              buffer = buffer << 6 | cidx & 0x3f
               mod = 0
               val c = buffer & 0x0ff
-              val b = (buffer >> 8) & 0x0ff
-              val a = (buffer >> 16) & 0x0ff
+              val b = buffer >> 8 & 0x0ff
+              val a = buffer >> 16 & 0x0ff
               acc(bidx) = a.toByte
               acc(bidx + 1) = b.toByte
               acc(bidx + 2) = c.toByte
@@ -2045,12 +2045,12 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         case 0 => Right(ByteVector(acc).take((bidx - padding).toLong))
         case 1 => Left("Final base 64 quantum had only 1 digit - must have at least 2 digits")
         case 2 =>
-          acc(bidx) = ((buffer >> 4) & 0x0ff).toByte
+          acc(bidx) = (buffer >> 4 & 0x0ff).toByte
           bidx += 1
           Right(ByteVector(acc).take(bidx.toLong))
         case 3 =>
-          acc(bidx) = ((buffer >> 10) & 0x0ff).toByte
-          acc(bidx + 1) = ((buffer >> 2) & 0x0ff).toByte
+          acc(bidx) = (buffer >> 10 & 0x0ff).toByte
+          acc(bidx + 1) = (buffer >> 2 & 0x0ff).toByte
           bidx += 2
           Right(ByteVector(acc).take(bidx.toLong))
       }
@@ -2206,7 +2206,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       if (bs.isEmpty) this
       else
       // threads race to increment id, winner gets to update tl mutably
-      if (id.compareAndSet(stamp, stamp + 1) && (lastChunk.length - lastSize > bs.size)) {
+      if (id.compareAndSet(stamp, stamp + 1) && lastChunk.length - lastSize > bs.size) {
         bs.copyToArray(lastChunk, lastSize)
         Buffer(id, stamp + 1, hd, lastChunk, lastSize + bs.size.toInt)
       } else if (lastSize == 0) // just append directly to `hd`

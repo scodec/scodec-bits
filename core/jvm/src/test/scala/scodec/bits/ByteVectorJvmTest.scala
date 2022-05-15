@@ -135,8 +135,8 @@ class ByteVectorJvmTest extends BitsSuite {
       val b1b3 = new Callable[ByteVector] { def call = b1b ++ b3 }
       val rb1b2 = pool.submit(b1b2)
       val rb1b3 = pool.submit(b1b3)
-      assert(rb1b2.get == (b1 ++ b2))
-      assert(rb1b3.get == (b1 ++ b3))
+      assert(rb1b2.get == b1 ++ b2)
+      assert(rb1b3.get == b1 ++ b3)
     }
   }
 

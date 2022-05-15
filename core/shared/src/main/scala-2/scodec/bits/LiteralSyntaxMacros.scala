@@ -47,7 +47,7 @@ object LiteralSyntaxMacros {
     }
 
     val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
-    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
+    val initialStringBuilder = reify(new StringBuilder.append(headPart.splice))
     val stringBuilder =
       args.zip(partLiterals.tail).foldLeft(initialStringBuilder) { case (sb, (arg, part)) =>
         val partExpr = c.Expr[String](Literal(Constant(part)))
@@ -71,7 +71,7 @@ object LiteralSyntaxMacros {
     }
 
     val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
-    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
+    val initialStringBuilder = reify(new StringBuilder.append(headPart.splice))
     val stringBuilder =
       args.zip(partLiterals.tail).foldLeft(initialStringBuilder) { case (sb, (arg, part)) =>
         val partExpr = c.Expr[String](Literal(Constant(part)))

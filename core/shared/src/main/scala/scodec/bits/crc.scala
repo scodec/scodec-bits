@@ -163,13 +163,13 @@ object crc {
             data.foreach { inputByte =>
               val index = crcreg.take(8) ^ BitVector(inputByte).reverse
               val indexAsInt = index.bytes.head.toInt & 0x0ff
-              crcreg = (crcreg << 8) ^ table(indexAsInt)
+              crcreg = crcreg << 8 ^ table(indexAsInt)
             }
           else
             data.foreach { inputByte =>
               val index = crcreg.take(8) ^ BitVector(inputByte)
               val indexAsInt = index.bytes.head.toInt & 0x0ff
-              crcreg = (crcreg << 8) ^ table(indexAsInt)
+              crcreg = crcreg << 8 ^ table(indexAsInt)
             }
           if (byteAligned)
             new Builder(crcreg)
@@ -250,13 +250,13 @@ object crc {
         val data = if (byteAligned) input.bytes else input.bytes.init
         if (reflectInput)
           data.foreach { inputByte =>
-            val index = (crcreg >>> 24) ^ (BitVector.reverseBitsInByte(inputByte) & 0xff)
-            crcreg = (crcreg << 8) ^ table(index)
+            val index = crcreg >>> 24 ^ BitVector.reverseBitsInByte(inputByte) & 0xff
+            crcreg = crcreg << 8 ^ table(index)
           }
         else
           data.foreach { inputByte =>
-            val index = (crcreg >>> 24) ^ (inputByte & 0xff)
-            crcreg = (crcreg << 8) ^ table(index)
+            val index = crcreg >>> 24 ^ inputByte & 0xff
+            crcreg = crcreg << 8 ^ table(index)
           }
         if (byteAligned)
           new Builder(crcreg)
@@ -282,7 +282,7 @@ object crc {
         poly,
         remaining.tail, {
           val shifted = crcreg << 1
-          if (((crcreg & 0x80000000) != 0) == remaining.head) shifted else shifted ^ poly
+          if ((crcreg & 0x80000000) != 0 == remaining.head) shifted else shifted ^ poly
         }
       )
 

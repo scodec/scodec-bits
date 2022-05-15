@@ -41,7 +41,7 @@ class ByteVectorTest extends BitsSuite {
 
   property("hashCode/equals") {
     forAll(bytesWithIndex) { case (b, m) =>
-      assert((b.take(m) ++ b.drop(m)) == b)
+      assert(b.take(m) ++ b.drop(m) == b)
       assert((b.take(m) ++ b.drop(m)).hashCode == b.hashCode)
       if (b.take(3) == b.drop(3).take(3))
         // kind of weak, since this will only happen 1/8th of attempts on average
@@ -52,11 +52,11 @@ class ByteVectorTest extends BitsSuite {
   test("issue #90") {
     val x = ByteVector.fill(Int.MaxValue.toLong + 1)(0)
     val y = ByteVector.fill(Int.MaxValue.toLong + 1)(1)
-    assert((x === y) == false)
+    assert(x === y == false)
   }
 
   property("=== consistent with ==") {
-    forAll((b: ByteVector, b2: ByteVector) => assert((b == b2) == (b === b2)))
+    forAll((b: ByteVector, b2: ByteVector) => assert(b == b2 == (b === b2)))
   }
 
   test("compact is a no-op for already compact byte vectors") {
@@ -234,7 +234,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fromValidBase32") {
-    assert(ByteVector.fromValidBase32("") == (ByteVector.empty))
+    assert(ByteVector.fromValidBase32("") == ByteVector.empty)
     assert(ByteVector.fromValidBase32("AA======") == hex"00")
     assert(ByteVector.fromValidBase32("ME======") == hex"61")
     assert(ByteVector.fromValidBase32("MJRGE===") == hex"626262")
@@ -287,7 +287,7 @@ class ByteVectorTest extends BitsSuite {
   test("fromValidBase32(Crockford)") {
     import scodec.bits.Bases.Alphabets.{Base32Crockford => Crockford}
 
-    assert(ByteVector.fromValidBase32("", Crockford) == (ByteVector.empty))
+    assert(ByteVector.fromValidBase32("", Crockford) == ByteVector.empty)
     assert(ByteVector.fromValidBase32("00======", Crockford) == hex"00")
     assert(ByteVector.fromValidBase32("ZZZZZZZZ", Crockford) == hex"ffffffffff")
     assert(ByteVector.fromValidBase32("HJKMNPTV", Crockford) == hex"8ca74adb5b")
@@ -317,7 +317,7 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fromValidBase58") {
-    assert(ByteVector.fromValidBase58("") == (ByteVector.empty))
+    assert(ByteVector.fromValidBase58("") == ByteVector.empty)
     assert(ByteVector.fromValidBase58("1") == hex"00")
     assert(ByteVector.fromValidBase58("2g") == hex"61")
     assert(ByteVector.fromValidBase58("a3gV") == hex"626262")
@@ -388,7 +388,7 @@ class ByteVectorTest extends BitsSuite {
       val chunkSize = (n % 50).max(0) + 1
       val b1b = b1.bufferBy(chunkSize)
       val b1b2b3 = (b1b ++ b2).bufferBy(chunkSize + 1) ++ b3
-      assert(b1b2b3 == (b1 ++ b2 ++ b3))
+      assert(b1b2b3 == b1 ++ b2 ++ b3)
     }
   }
 
@@ -441,7 +441,7 @@ class ByteVectorTest extends BitsSuite {
 
   property("copyToStream roundtrip") {
     forAll { (b: ByteVector) =>
-      val os = new ByteArrayOutputStream()
+      val os = new ByteArrayOutputStream
       b.copyToStream(os)
       val fromArr = ByteVector(os.toByteArray)
       assert(b == fromArr)
@@ -503,7 +503,7 @@ class ByteVectorTest extends BitsSuite {
     forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       assert(x.splice(n, ByteVector.empty) == x)
-      assert(x.splice(n, y) == (x.take(n) ++ y ++ x.drop(n)))
+      assert(x.splice(n, y) == x.take(n) ++ y ++ x.drop(n))
     }
   }
 
@@ -511,7 +511,7 @@ class ByteVectorTest extends BitsSuite {
     forAll { (x: ByteVector, y: ByteVector, n0: Int) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0
       assert(x.patch(n, x.slice(n, n)) == x)
-      assert(x.patch(n, y) == (x.take(n) ++ y ++ x.drop(n + y.size)))
+      assert(x.patch(n, y) == x.take(n) ++ y ++ x.drop(n + y.size))
     }
   }
 
@@ -599,7 +599,7 @@ class ByteVectorTest extends BitsSuite {
       buffer.position(initialPosition)
       val copied = b.copyToBuffer(buffer)
       buffer.flip()
-      assert(copied == ((bufferSize.toLong - initialPosition).min(b.size)))
+      assert(copied == (bufferSize.toLong - initialPosition).min(b.size))
       assert(ByteVector.view(buffer).drop(initialPosition.toLong) == b.take(copied.toLong))
     }
   }

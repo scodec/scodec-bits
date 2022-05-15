@@ -79,7 +79,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
     },
     Compile / unmanagedResources ++= {
       val base = baseDirectory.value
-      (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
+      (base / "NOTICE") +: (base / "LICENSE") +: (base / "licenses" * "LICENSE_*").get
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
     libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.29" % "test"

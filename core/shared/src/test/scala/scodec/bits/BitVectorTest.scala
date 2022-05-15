@@ -52,7 +52,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   property("=== consistent with ==") {
-    forAll((b: BitVector, b2: BitVector) => assert((b == b2) == (b === b2)))
+    forAll((b: BitVector, b2: BitVector) => assert(b == b2 == (b === b2)))
   }
 
   test("compact is a no-op for already compact bit vectors") {
@@ -153,7 +153,7 @@ class BitVectorTest extends BitsSuite {
     forAll { (x: BitVector) =>
       val bytes = x.bytes
       val aligned = x.align
-      (0L until ((x.size + 7) / 8)).foreach { i =>
+      (0L until (x.size + 7) / 8).foreach { i =>
         assert(bytes(i) == x.getByte(i))
         assert(aligned.getByte(i) == x.getByte(i))
       }
@@ -273,7 +273,7 @@ class BitVectorTest extends BitsSuite {
 
   property("++ (2)") {
     forAll { (x: BitVector, y: BitVector) =>
-      assert((x ++ y).compact.toIndexedSeq == (x.toIndexedSeq ++ y.toIndexedSeq))
+      assert((x ++ y).compact.toIndexedSeq == x.toIndexedSeq ++ y.toIndexedSeq)
     }
   }
 
@@ -308,7 +308,7 @@ class BitVectorTest extends BitsSuite {
   }
 
   test(">>") {
-    assert((BitVector.high(8) >> 8) == BitVector.high(8))
+    assert(BitVector.high(8) >> 8 == BitVector.high(8))
   }
 
   test(">>>") {
@@ -506,7 +506,7 @@ class BitVectorTest extends BitsSuite {
     forAll { (x: BitVector, y: BitVector, n0: Long) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0L
       assert(x.splice(n, BitVector.empty) == x)
-      assert(x.splice(n, y) == (x.take(n) ++ y ++ x.drop(n)))
+      assert(x.splice(n, y) == x.take(n) ++ y ++ x.drop(n))
     }
   }
 
@@ -514,7 +514,7 @@ class BitVectorTest extends BitsSuite {
     forAll { (x: BitVector, y: BitVector, n0: Long) =>
       val n = if (x.nonEmpty) (n0 % x.size).abs else 0L
       assert(x.patch(n, x.slice(n, n)) == x)
-      assert(x.patch(n, y) == (x.take(n) ++ y ++ x.drop(n + y.size)))
+      assert(x.patch(n, y) == x.take(n) ++ y ++ x.drop(n + y.size))
     }
   }
 
@@ -674,7 +674,7 @@ class BitVectorTest extends BitsSuite {
         BitVector.reduceBalanced(h :: xs)(_.size)(BitVector.Append(_, _))
       val buffered = xs.foldLeft(h)(_ ++ _)
       // sanity check for buffered
-      assert((buffered.take(delta) ++ buffered.drop(delta)) == buffered)
+      assert(buffered.take(delta) ++ buffered.drop(delta) == buffered)
       // checks for consistency:
       assert(buffered == unbuffered)
       // get

@@ -70,7 +70,7 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
         val buffer = new Array[Byte](chunkSize.toLong.min(size).toInt)
         def loop(acc: ByteVector, fin: Boolean): ByteVector =
-          if ((fin && deflater.finished) || (!fin && deflater.needsInput)) acc
+          if (fin && deflater.finished || !fin && deflater.needsInput) acc
           else {
             val count = deflater.deflate(buffer)
             loop(acc ++ ByteVector(buffer, 0, count), fin)
