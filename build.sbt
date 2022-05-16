@@ -134,7 +134,7 @@ lazy val coreJS = core.js.settings(
 )
 
 lazy val coreNative = core.native.settings(
-  tlVersionIntroduced ++= List("2.12", "2.13", "3").map(_ -> "1.1.32")
+  tlVersionIntroduced ++= List("2.12", "2.13", "3").map(_ -> "1.1.32").toMap
 )
 
 lazy val benchmark: Project = project
