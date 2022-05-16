@@ -2270,8 +2270,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       var l: Int = -1
 
       val cpos: Int = pos.getAndUpdate_(cpos =>
-        l = Math.min(len, bvlen - cpos)
-        cpos + l
+        l = Math
+          .min(len, bvlen - cpos)
+          .cpos(+l)
       )
 
       if (cpos >= bvlen) return -1
