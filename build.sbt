@@ -64,12 +64,15 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.BitVector.reduceBalanced"),
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BuildInfo"),
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.BuildInfo$"),
-  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.crc.vectorTable")
+  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.crc.vectorTable"),
+  ProblemFilters.exclude[IncompatibleMethTypeProblem](
+    "scodec.bits.ByteVector#ByteVectorInputStream#CustomAtomicInteger.getAndUpdate_"
+  )
 )
 
 lazy val root = tlCrossRootProject.aggregate(core, benchmark)
 
-lazy val core = crossProject(JVMPlatform, JSPlatform)
+lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   .in(file("core"))
   .settings(
     name := "scodec-bits",
@@ -82,7 +85,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform)
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "0.7.29" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "1.0.0-M4" % "test"
   )
 
 lazy val coreJVM = core.jvm
@@ -131,6 +134,10 @@ lazy val coreJS = core.js.settings(
     ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher$default$4")
   )
+)
+
+lazy val coreNative = core.native.settings(
+  tlVersionIntroduced ++= List("2.12", "2.13", "3").map(_ -> "1.1.32").toMap
 )
 
 lazy val benchmark: Project = project

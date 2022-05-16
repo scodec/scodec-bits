@@ -35,7 +35,6 @@ import java.nio.{ByteBuffer, CharBuffer}
 import java.nio.charset.{CharacterCodingException, Charset}
 import java.util.UUID
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
-import java.util.function.IntUnaryOperator
 
 import scala.annotation.tailrec
 
@@ -2270,13 +2269,10 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
 
-      val cpos: Int = pos.getAndUpdate_(new IntUnaryOperator {
-        override def applyAsInt(cpos: Int): Int = {
-          l = Math.min(len, bvlen - cpos)
-
-          cpos + l
-        }
-      })
+      val cpos: Int = pos.getAndUpdate_ { cpos =>
+        l = Math.min(len, bvlen - cpos)
+        cpos + l
+      }
 
       if (cpos >= bvlen) return -1
 
@@ -2291,15 +2287,13 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
      * from the JVM standard one and it doesn't contain `getAndUpdate` method. So I took the method and put here the code with a different name
      * which adds the method on all platforms and everybody is happy. */
     private class CustomAtomicInteger(v: Int) extends AtomicInteger(v) {
-      def getAndUpdate_(updateFunction: IntUnaryOperator): Int = {
-        var prev = get;
-        var next = updateFunction.applyAsInt(prev);
-
+      def getAndUpdate_(updateFunction: Int => Int): Int = {
+        var prev = get
+        var next = updateFunction(prev)
         while (!compareAndSet(prev, next)) {
           prev = get
-          next = updateFunction.applyAsInt(prev)
+          next = updateFunction(prev)
         }
-
         prev
       }
     }
