@@ -2269,11 +2269,10 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     override def read(b: Array[Byte], off: Int, len: Int): Int = {
       var l: Int = -1
 
-      val cpos: Int = pos.getAndUpdate_(cpos =>
-        l = Math
-          .min(len, bvlen - cpos)
-          .cpos(+l)
-      )
+      val cpos: Int = pos.getAndUpdate_ { cpos =>
+        l = Math.min(len, bvlen - cpos)
+        cpos + l
+      }
 
       if (cpos >= bvlen) return -1
 
