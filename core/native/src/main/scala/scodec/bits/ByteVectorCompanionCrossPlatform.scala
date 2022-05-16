@@ -38,6 +38,6 @@ private[bits] trait ByteVectorCompanionCrossPlatform extends ByteVectorPlatform 
   def view(ptr: Ptr[Byte], size: Long): ByteVector =
     ByteVector.viewAt(ptr(_), size) // TODO pending ptr-backed ByteBuffers in Native stdlib ...
 
-  def fromBytePtr(ptr: Ptr[Byte], size: Long): ByteVector =
+  def fromPtr(ptr: Ptr[Byte], size: Long): ByteVector =
     view(ptr, size).copy
 }

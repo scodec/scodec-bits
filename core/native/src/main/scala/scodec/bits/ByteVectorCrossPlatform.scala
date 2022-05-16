@@ -37,10 +37,10 @@ import scala.scalanative.unsafe.alloc
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
   import ByteVector._
 
-  def copyToBytePtr(dest: Ptr[Byte], start: Long): Unit =
-    copyToBytePtr(dest, start, 0, size)
+  def copyToPtr(dest: Ptr[Byte], start: Long): Unit =
+    copyToPtr(dest, start, 0, size)
 
-  def copyToBytePtr(dest: Ptr[Byte], start: Long, offset: Long, size: Long): Unit = {
+  def copyToPtr(dest: Ptr[Byte], start: Long, offset: Long, size: Long): Unit = {
     var i = 0L
     while (i < size) {
       dest(start + i) = self(offset + i)
@@ -48,9 +48,9 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
     }
   }
 
-  def toBytePtr(implicit zone: Zone): Ptr[Byte] = {
+  def toPtr(implicit zone: Zone): Ptr[Byte] = {
     val dest = alloc[Byte](size)
-    copyToBytePtr(dest, 0)
+    copyToPtr(dest, 0)
     dest
   }
 }
