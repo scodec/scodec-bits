@@ -1,3 +1,6 @@
+[![Discord](https://img.shields.io/discord/632277896739946517.svg?label=&logo=discord&logoColor=ffffff&color=404244&labelColor=6A7EC2)](https://discord.gg/wKn3cpfRVz)
+[![Maven Central](https://img.shields.io/maven-central/v/org.scodec/scodec-bits_2.13)](https://maven-badges.herokuapp.com/maven-central/org.scodec/scodec-bits_2.13)
+
 scodec-bits
 ===========
 
@@ -12,7 +15,7 @@ Administrative
 
 This project is licensed under a [3-clause BSD license](LICENSE).
 
-The [scodec channel on Gitter](https://gitter.im/scodec/scodec) is a good place to go for help. Also consider using the [scodec tag on StackOverflow](http://stackoverflow.com/questions/tagged/scodec).
+The [scodec channel on Typelevel Discord](https://discord.gg/wKn3cpfRVz) is a good place to go for help.
 
 Introduction
 ------------
@@ -52,7 +55,7 @@ See the [releases page on the website](http://scodec.org/releases/).
 Building
 --------
 
-This project uses sbt and requires node.js to be installed in order to run Scala.js tests. To build, run `sbt publish-local`.
+This project uses sbt and requires node.js to be installed in order to run Scala.js tests. To build, run `sbt publishLocal`.
 
 Code of Conduct
 ---------------
