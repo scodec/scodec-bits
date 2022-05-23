@@ -1123,14 +1123,14 @@ sealed abstract class ByteVector
 
   private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector)(f: F3B): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i)) }
-    Chunk(View(at, 0, (size.min(other.size)).min(other2.size)))
+    Chunk(View(at, 0, size.min(other.size).min(other2.size)))
   }
 
   private[scodec] final def zipWithS(other: ByteVector, other2: ByteVector, other3: ByteVector)(
       f: F4B
   ): ByteVector = {
     val at = new At { def apply(i: Long) = f(ByteVector.this(i), other(i), other2(i), other3(i)) }
-    Chunk(View(at, 0, ((size.min(other.size)).min(other2.size)).min(other3.size)))
+    Chunk(View(at, 0, size.min(other.size).min(other2.size).min(other3.size)))
   }
 
   /** Returns a new vector where each byte is the result of evaluating the specified function
