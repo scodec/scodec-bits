@@ -37,6 +37,8 @@ import java.util.UUID
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.annotation.tailrec
+import java.nio.charset.StandardCharsets
+import java.nio.charset.CodingErrorAction
 
 /** An immutable vector of bytes, backed by a balanced binary tree of chunks. Most operations are
   * logarithmic in the depth of this tree, including `++`, `:+`, `+:`, `update`, and `insert`. Where
@@ -806,6 +808,11 @@ sealed abstract class ByteVector
     bldr.toString
   }
 
+  /** Generates a hex dump of this vector.
+    * @group conversions
+    */
+  final def toHexDump: String = HexDumpFormat.Default.render(this)
+
   /** Helper alias for [[toHex:String*]]
     *
     * @group conversions
@@ -1067,17 +1074,44 @@ sealed abstract class ByteVector
     }
   }
 
+  /** Like [[decodeString]] but does not fail on bad input.
+    * @group conversions
+    */
+  final def decodeStringLenient(
+      replaceMalformedInput: Boolean = true,
+      replaceUnmappableChars: Boolean = true,
+      replacement: String = "�"
+  )(implicit charset: Charset): String = {
+    val decoder = charset.newDecoder
+      .replaceWith(replacement)
+      .onMalformedInput(
+        if (replaceMalformedInput) CodingErrorAction.REPLACE else CodingErrorAction.IGNORE
+      )
+      .onUnmappableCharacter(
+        if (replaceUnmappableChars) CodingErrorAction.REPLACE else CodingErrorAction.IGNORE
+      )
+    decoder.decode(toByteBuffer).toString
+  }
+
   /** Decodes this vector as a string using the UTF-8 charset.
     * @group conversions
     */
   final def decodeUtf8: Either[CharacterCodingException, String] =
     decodeString(Charset.forName("UTF-8"))
 
+  /** Like [[decodeUtf8]] but does not fail on bad input. */
+  final def decodeUtf8Lenient: String =
+    decodeStringLenient()(Charset.forName("UTF-8"))
+
   /** Decodes this vector as a string using the US-ASCII charset.
     * @group conversions
     */
   final def decodeAscii: Either[CharacterCodingException, String] =
     decodeString(Charset.forName("US-ASCII"))
+
+  /** Like [[decodeAscii]] but does not fail on bad input. */
+  final def decodeAsciiLenient: String =
+    decodeStringLenient()(Charset.forName("US-ASCII"))
 
   final def not: ByteVector = mapS(new F1B { def apply(b: Byte) = (~b).toByte })
 
@@ -2297,5 +2331,113 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         prev
       }
     }
+  }
+
+  final class HexDumpFormat private (
+      includeAddressColumn: Boolean,
+      dataColumnCount: Int,
+      dataColumnWidthInBytes: Int,
+      includeAsciiColumn: Boolean,
+      alphabet: Bases.HexAlphabet
+  ) {
+    def withIncludeAddressColumn(newIncludeAddressColumn: Boolean): HexDumpFormat =
+      new HexDumpFormat(
+        newIncludeAddressColumn,
+        dataColumnCount,
+        dataColumnWidthInBytes,
+        includeAsciiColumn,
+        alphabet
+      )
+    def withDataColumnCount(newDataColumnCount: Int): HexDumpFormat =
+      new HexDumpFormat(
+        includeAddressColumn,
+        newDataColumnCount,
+        dataColumnWidthInBytes,
+        includeAsciiColumn,
+        alphabet
+      )
+    def withDataColumnWidthInBytes(newDataColumnWidthInBytes: Int): HexDumpFormat =
+      new HexDumpFormat(
+        includeAddressColumn,
+        dataColumnCount,
+        newDataColumnWidthInBytes,
+        includeAsciiColumn,
+        alphabet
+      )
+    def withIncludeAsciiColumn(newIncludeAsciiColumn: Boolean): HexDumpFormat =
+      new HexDumpFormat(
+        includeAddressColumn,
+        dataColumnCount,
+        dataColumnWidthInBytes,
+        newIncludeAsciiColumn,
+        alphabet
+      )
+    def withAlphabet(newAlphabet: Bases.HexAlphabet): HexDumpFormat =
+      new HexDumpFormat(
+        includeAddressColumn,
+        dataColumnCount,
+        dataColumnWidthInBytes,
+        includeAsciiColumn,
+        newAlphabet
+      )
+
+    def render(bytes: ByteVector): String = {
+      val bldr = new StringBuilder
+      val numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
+      val bytesPerLine = bytes.groupedIterator(numBytesPerLine)
+      bytesPerLine.zipWithIndex.foreach { case (bytesInLine, index) =>
+        renderLine(bldr, bytesInLine, index * numBytesPerLine)
+      }
+      bldr.toString
+    }
+
+    private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
+      if (includeAddressColumn) {
+        bldr.append(ByteVector.fromInt(address).toHex(alphabet))
+        bldr.append("  ")
+      }
+      bytes.groupedIterator(dataColumnWidthInBytes).foreach { columnBytes =>
+        renderHex(bldr, columnBytes)
+        bldr.append(" ")
+      }
+      if (includeAsciiColumn) {
+        val padding = {
+          val bytesOnFullLine = dataColumnWidthInBytes * dataColumnCount
+          val bytesOnThisLine = bytes.size.toInt
+          val dataBytePadding = (bytesOnFullLine - bytesOnThisLine) * 3 - 1
+          val numFullDataColumns = bytesOnThisLine / dataColumnWidthInBytes
+          val numAdditionalColumnSpacers = dataColumnCount - numFullDataColumns
+          dataBytePadding + numAdditionalColumnSpacers
+        }
+        bldr.append(" " * padding)
+        bldr.append('|')
+        renderAsciiBestEffort(bldr, bytes)
+        bldr.append('|')
+      }
+      bldr.append('\n')
+    }
+
+    private def renderHex(bldr: StringBuilder, bytes: ByteVector): Unit =
+      bytes.foreachS {
+        new F1BU {
+          def apply(b: Byte) = {
+            bldr
+              .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
+              .append(alphabet.toChar((b & 0x0f).toByte.toInt))
+              .append(' ')
+            ()
+          }
+        }
+      }
+
+    private def renderAsciiBestEffort(bldr: StringBuilder, bytes: ByteVector): Unit = {
+      val printable = bytes.decodeAsciiLenient.replaceAll("[^�\\p{Print}]", ".")
+      bldr.append(printable)
+    }
+  }
+
+  object HexDumpFormat {
+    val Default: HexDumpFormat = new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase)
+    val HexOnly: HexDumpFormat = new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase)
   }
 }
