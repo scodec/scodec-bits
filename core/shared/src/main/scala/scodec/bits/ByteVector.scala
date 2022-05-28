@@ -2338,7 +2338,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       dataColumnCount: Int,
       dataColumnWidthInBytes: Int,
       includeAsciiColumn: Boolean,
-      alphabet: Bases.HexAlphabet
+      alphabet: Bases.HexAlphabet,
+      ansiEnabled: Boolean
   ) {
     def withIncludeAddressColumn(newIncludeAddressColumn: Boolean): HexDumpFormat =
       new HexDumpFormat(
@@ -2346,7 +2347,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         dataColumnCount,
         dataColumnWidthInBytes,
         includeAsciiColumn,
-        alphabet
+        alphabet,
+        ansiEnabled
       )
     def withDataColumnCount(newDataColumnCount: Int): HexDumpFormat =
       new HexDumpFormat(
@@ -2354,7 +2356,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         newDataColumnCount,
         dataColumnWidthInBytes,
         includeAsciiColumn,
-        alphabet
+        alphabet,
+        ansiEnabled
       )
     def withDataColumnWidthInBytes(newDataColumnWidthInBytes: Int): HexDumpFormat =
       new HexDumpFormat(
@@ -2362,7 +2365,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         dataColumnCount,
         newDataColumnWidthInBytes,
         includeAsciiColumn,
-        alphabet
+        alphabet,
+        ansiEnabled
       )
     def withIncludeAsciiColumn(newIncludeAsciiColumn: Boolean): HexDumpFormat =
       new HexDumpFormat(
@@ -2370,7 +2374,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         dataColumnCount,
         dataColumnWidthInBytes,
         newIncludeAsciiColumn,
-        alphabet
+        alphabet,
+        ansiEnabled
       )
     def withAlphabet(newAlphabet: Bases.HexAlphabet): HexDumpFormat =
       new HexDumpFormat(
@@ -2378,7 +2383,17 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         dataColumnCount,
         dataColumnWidthInBytes,
         includeAsciiColumn,
-        newAlphabet
+        newAlphabet,
+        ansiEnabled
+      )
+    def withAnsi(newAnsiEnabled: Boolean): HexDumpFormat =
+      new HexDumpFormat(
+        includeAddressColumn,
+        dataColumnCount,
+        dataColumnWidthInBytes,
+        includeAsciiColumn,
+        alphabet,
+        newAnsiEnabled
       )
 
     def render(bytes: ByteVector): String = {
@@ -2391,9 +2406,16 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       bldr.toString
     }
 
+    object Ansi {
+      val Faint = "\u001b[;2m"
+      val Normal = "\u001b[;22m"
+    }
+
     private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
       if (includeAddressColumn) {
+        if (ansiEnabled) bldr.append(Ansi.Faint)
         bldr.append(ByteVector.fromInt(address).toHex(alphabet))
+        if (ansiEnabled) bldr.append(Ansi.Normal)
         bldr.append("  ")
       }
       bytes.groupedIterator(dataColumnWidthInBytes).foreach { columnBytes =>
@@ -2430,14 +2452,23 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         }
       }
 
+    private val FaintDot = s"${Ansi.Faint}.${Ansi.Normal}"
+    private val FaintUnmappable = s"${Ansi.Faint}�${Ansi.Normal}"
+    private val NonPrintablePattern = "[^�\\p{Print}]".r
+
     private def renderAsciiBestEffort(bldr: StringBuilder, bytes: ByteVector): Unit = {
-      val printable = bytes.decodeAsciiLenient.replaceAll("[^�\\p{Print}]", ".")
-      bldr.append(printable)
+      val decoded = bytes.decodeAsciiLenient
+      val nonPrintableReplacement = if (ansiEnabled) FaintDot else "."
+      val printable = NonPrintablePattern.replaceAllIn(decoded, nonPrintableReplacement)
+      val colorized = if (ansiEnabled) printable.replaceAll("�", FaintUnmappable) else printable
+      bldr.append(colorized)
     }
   }
 
   object HexDumpFormat {
-    val Default: HexDumpFormat = new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase)
-    val HexOnly: HexDumpFormat = new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase)
+    val Default: HexDumpFormat =
+      new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true)
+    val HexOnly: HexDumpFormat =
+      new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase, true)
   }
 }
