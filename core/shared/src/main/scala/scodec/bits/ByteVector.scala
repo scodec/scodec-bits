@@ -2409,6 +2409,16 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     object Ansi {
       val Faint = "\u001b[;2m"
       val Normal = "\u001b[;22m"
+      val Reset = "\u001b[0m"
+      def foregroundColor(bldr: StringBuilder, rgb: (Int, Int, Int)): Unit =
+        bldr
+          .append("\u001b[38;2;")
+          .append(rgb._1)
+          .append(";")
+          .append(rgb._2)
+          .append(";")
+          .append(rgb._3)
+          .append("m")
     }
 
     private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
@@ -2422,6 +2432,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         renderHex(bldr, columnBytes)
         bldr.append(" ")
       }
+      if (ansiEnabled)
+        bldr.append(Ansi.Reset)
       if (includeAsciiColumn) {
         val padding = {
           val bytesOnFullLine = dataColumnWidthInBytes * dataColumnCount
@@ -2432,9 +2444,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           dataBytePadding + numAdditionalColumnSpacers
         }
         bldr.append(" " * padding)
-        bldr.append('|')
+        bldr.append('│')
         renderAsciiBestEffort(bldr, bytes)
-        bldr.append('|')
+        bldr.append('│')
       }
       bldr.append('\n')
     }
@@ -2443,6 +2455,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       bytes.foreachS {
         new F1BU {
           def apply(b: Byte) = {
+            if (ansiEnabled) Ansi.foregroundColor(bldr, rgbForByte(b))
             bldr
               .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
               .append(alphabet.toChar((b & 0x0f).toByte.toInt))
@@ -2451,6 +2464,35 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           }
         }
       }
+
+    private def rgbForByte(b: Byte): (Int, Int, Int) = {
+      val maxHue = 240
+      val minHue = 40
+      val saturation = 0.4
+      val value = 0.75
+      val hue = ((b & 0xff) / 256.0) * (maxHue - minHue) + minHue
+      hsvToRgb(hue, saturation, value)
+    }
+
+    // From https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
+    private def hsvToRgb(hue: Double, saturation: Double, value: Double): (Int, Int, Int) = {
+      val c = saturation * value
+      val h = (hue / 60).toInt
+      val x = c * (1 - (h % 2 - 1).abs)
+      val z = 0d
+      val (r1, g1, b1) = h match {
+        case 0 => (c, x, z)
+        case 1 => (x, c, z)
+        case 2 => (z, c, x)
+        case 3 => (z, x, c)
+        case 4 => (x, z, c)
+        case 5 => (c, z, x)
+      }
+      val m = value - c
+      val (r, g, b) = (r1 + m, g1 + m, b1 + m)
+      def scale(v: Double) = (v * 256).toInt
+      (scale(r), scale(g), scale(b))
+    }
 
     private val FaintDot = s"${Ansi.Faint}.${Ansi.Normal}"
     private val FaintUnmappable = s"${Ansi.Faint}�${Ansi.Normal}"
