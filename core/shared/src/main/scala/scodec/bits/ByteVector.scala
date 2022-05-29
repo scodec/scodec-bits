@@ -32,13 +32,11 @@ package scodec.bits
 
 import java.io.{InputStream, OutputStream}
 import java.nio.{ByteBuffer, CharBuffer}
-import java.nio.charset.{CharacterCodingException, Charset}
+import java.nio.charset.{CharacterCodingException, Charset, CodingErrorAction}
 import java.util.UUID
 import java.util.concurrent.atomic.{AtomicInteger, AtomicLong}
 
 import scala.annotation.tailrec
-import java.nio.charset.StandardCharsets
-import java.nio.charset.CodingErrorAction
 
 /** An immutable vector of bytes, backed by a balanced binary tree of chunks. Most operations are
   * logarithmic in the depth of this tree, including `++`, `:+`, `+:`, `update`, and `insert`. Where
