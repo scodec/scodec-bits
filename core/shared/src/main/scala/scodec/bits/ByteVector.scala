@@ -808,10 +808,19 @@ sealed abstract class ByteVector
     bldr.toString
   }
 
-  /** Generates a hex dump of this vector.
+  /** Generates a hex dump of this vector using the default format (with ANSI enabled).
+    * To customize the output, use the `ByteVector.HexDumpFormat` class instead.
+    * For example, `ByteVector.HexDumpFormat.NoAnsi.render(bytes)` or
+    * `ByteVector.HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
+    *
     * @group conversions
     */
   final def toHexDump: String = HexDumpFormat.Default.render(this)
+
+  /** Like [[toHexDump]] but no ANSI escape codes are included.
+    * @group conversions
+    */
+  final def toHexDumpNoAnsi: String = HexDumpFormat.NoAnsi.render(this)
 
   /** Helper alias for [[toHex:String*]]
     *
@@ -2466,21 +2475,19 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       }
 
     private def rgbForByte(b: Byte): (Int, Int, Int) = {
-      val maxHue = 240
-      val minHue = 40
       val saturation = 0.4
       val value = 0.75
-      val hue = ((b & 0xff) / 256.0) * (maxHue - minHue) + minHue
+      val hue = ((b & 0xff) / 256.0) * 360.0
       hsvToRgb(hue, saturation, value)
     }
 
     // From https://en.wikipedia.org/wiki/HSL_and_HSV#HSV_to_RGB
     private def hsvToRgb(hue: Double, saturation: Double, value: Double): (Int, Int, Int) = {
       val c = saturation * value
-      val h = (hue / 60).toInt
+      val h = hue / 60
       val x = c * (1 - (h % 2 - 1).abs)
       val z = 0d
-      val (r1, g1, b1) = h match {
+      val (r1, g1, b1) = h.toInt match {
         case 0 => (c, x, z)
         case 1 => (x, c, z)
         case 2 => (z, c, x)
@@ -2510,7 +2517,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   object HexDumpFormat {
     val Default: HexDumpFormat =
       new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true)
-    val HexOnly: HexDumpFormat =
+    val NoAnsi: HexDumpFormat =
+      Default.withAnsi(false)
+    val NoAscii: HexDumpFormat =
       new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase, true)
   }
 }
