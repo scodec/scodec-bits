@@ -821,12 +821,6 @@ sealed abstract class ByteVector
     */
   final def toHexDumpColorized: String = HexDumpFormat.Default.render(this)
 
-  /** Like [[toHexDump]] but no ANSI escape codes are included.
-    * @group conversions
-    */
-  @deprecated("Use toHexDump", "1.1.33")
-  final def toHexDumpNoAnsi: String = toHexDump
-
   /** Prints this vector as a colorized hex dump to standard out.
     */
   final def printHexDump(): Unit = print(toHexDumpColorized)
