@@ -806,19 +806,34 @@ sealed abstract class ByteVector
     bldr.toString
   }
 
-  /** Generates a hex dump of this vector using the default format (with ANSI enabled).
+  /** Generates a hex dump of this vector using the default format (with no color / ANSI escapes).
+    * To customize the output, use the `ByteVector.HexDumpFormat` class instead.
+    * For example, `ByteVector.HexDumpFormat.NoAscii.render(bytes)` or
+    * `ByteVector.HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
+    *
+    * @group conversions
+    */
+  final def toHexDump: String = HexDumpFormat.NoAnsi.render(this)
+
+  /** Generates a colorized hex dump of this vector using the default format.
+    *
     * To customize the output, use the `ByteVector.HexDumpFormat` class instead.
     * For example, `ByteVector.HexDumpFormat.NoAnsi.render(bytes)` or
     * `ByteVector.HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
     *
     * @group conversions
     */
-  final def toHexDump: String = HexDumpFormat.Default.render(this)
+  final def toHexDumpColorized: String = HexDumpFormat.Default.render(this)
 
   /** Like [[toHexDump]] but no ANSI escape codes are included.
     * @group conversions
     */
-  final def toHexDumpNoAnsi: String = HexDumpFormat.NoAnsi.render(this)
+  @deprecated("Use toHexDump", "1.1.33")
+  final def toHexDumpNoAnsi: String = toHexDump
+
+  /** Prints this vector as a colorized hex dump to standard out.
+    */
+  final def printHexDump(): Unit = print(toHexDumpColorized)
 
   /** Helper alias for [[toHex:String*]]
     *
@@ -2413,7 +2428,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       bldr.toString
     }
 
-    object Ansi {
+    private object Ansi {
       val Faint = "\u001b[;2m"
       val Normal = "\u001b[;22m"
       val Reset = "\u001b[0m"
@@ -2513,11 +2528,17 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   }
 
   object HexDumpFormat {
+
+    /** Colorized hex dump that displays 2 columns of 8 bytes each, along with the address column and ASCII column. */
     val Default: HexDumpFormat =
       new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true)
+
+    /** Like [[Default]] but with ANSI color disabled. */
     val NoAnsi: HexDumpFormat =
       Default.withAnsi(false)
+
+    /** Like [[Default]] but with 3 columns of data and no ASCII column. */
     val NoAscii: HexDumpFormat =
-      new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase, true)
+      Default.withIncludeAsciiColumn(false).withDataColumnCount(3)
   }
 }
