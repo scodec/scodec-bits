@@ -2411,7 +2411,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     def render(bytes: ByteVector): String = {
       val bldr = new StringBuilder
       val numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
-      val bytesPerLine = bytes.groupedIterator(numBytesPerLine)
+      val bytesPerLine = bytes.groupedIterator(numBytesPerLine.toLong)
       bytesPerLine.zipWithIndex.foreach { case (bytesInLine, index) =>
         renderLine(bldr, bytesInLine, index * numBytesPerLine)
       }
@@ -2422,7 +2422,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       val Faint = "\u001b[;2m"
       val Normal = "\u001b[;22m"
       val Reset = "\u001b[0m"
-      def foregroundColor(bldr: StringBuilder, rgb: (Int, Int, Int)): Unit =
+      def foregroundColor(bldr: StringBuilder, rgb: (Int, Int, Int)): Unit = {
         bldr
           .append("\u001b[38;2;")
           .append(rgb._1)
@@ -2431,6 +2431,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           .append(";")
           .append(rgb._3)
           .append("m")
+        ()
+      }
     }
 
     private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
@@ -2440,7 +2442,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         if (ansiEnabled) bldr.append(Ansi.Normal)
         bldr.append("  ")
       }
-      bytes.groupedIterator(dataColumnWidthInBytes).foreach { columnBytes =>
+      bytes.groupedIterator(dataColumnWidthInBytes.toLong).foreach { columnBytes =>
         renderHex(bldr, columnBytes)
         bldr.append(" ")
       }
@@ -2461,6 +2463,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         bldr.append('│')
       }
       bldr.append('\n')
+      ()
     }
 
     private def renderHex(bldr: StringBuilder, bytes: ByteVector): Unit =
@@ -2514,6 +2517,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       val printable = NonPrintablePattern.replaceAllIn(decoded, nonPrintableReplacement)
       val colorized = if (ansiEnabled) printable.replaceAll("�", FaintUnmappable) else printable
       bldr.append(colorized)
+      ()
     }
   }
 
