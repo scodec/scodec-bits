@@ -815,11 +815,7 @@ sealed abstract class ByteVector
     */
   final def toHexDump: String = HexDumpFormat.NoAnsi.render(this)
 
-  /** Generates a colorized hex dump of this vector using the default format.
-    *
-    * To customize the output, use the `ByteVector.HexDumpFormat` class instead.
-    * For example, `ByteVector.HexDumpFormat.NoAnsi.render(bytes)` or
-    * `ByteVector.HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
+  /** Colorized version of [[toHexDump]] that uses ANSI escape codes.
     *
     * @group conversions
     */
