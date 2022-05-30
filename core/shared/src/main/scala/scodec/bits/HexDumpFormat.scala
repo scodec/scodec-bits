@@ -41,7 +41,8 @@ final class HexDumpFormat private (
     dataColumnWidthInBytes: Int,
     includeAsciiColumn: Boolean,
     alphabet: Bases.HexAlphabet,
-    ansiEnabled: Boolean
+    ansiEnabled: Boolean,
+    addressOffset: Int
 ) {
   def withIncludeAddressColumn(newIncludeAddressColumn: Boolean): HexDumpFormat =
     new HexDumpFormat(
@@ -50,7 +51,8 @@ final class HexDumpFormat private (
       dataColumnWidthInBytes,
       includeAsciiColumn,
       alphabet,
-      ansiEnabled
+      ansiEnabled,
+      addressOffset
     )
   def withDataColumnCount(newDataColumnCount: Int): HexDumpFormat =
     new HexDumpFormat(
@@ -59,7 +61,8 @@ final class HexDumpFormat private (
       dataColumnWidthInBytes,
       includeAsciiColumn,
       alphabet,
-      ansiEnabled
+      ansiEnabled,
+      addressOffset
     )
   def withDataColumnWidthInBytes(newDataColumnWidthInBytes: Int): HexDumpFormat =
     new HexDumpFormat(
@@ -68,7 +71,8 @@ final class HexDumpFormat private (
       newDataColumnWidthInBytes,
       includeAsciiColumn,
       alphabet,
-      ansiEnabled
+      ansiEnabled,
+      addressOffset
     )
   def withIncludeAsciiColumn(newIncludeAsciiColumn: Boolean): HexDumpFormat =
     new HexDumpFormat(
@@ -77,7 +81,8 @@ final class HexDumpFormat private (
       dataColumnWidthInBytes,
       newIncludeAsciiColumn,
       alphabet,
-      ansiEnabled
+      ansiEnabled,
+      addressOffset
     )
   def withAlphabet(newAlphabet: Bases.HexAlphabet): HexDumpFormat =
     new HexDumpFormat(
@@ -86,7 +91,8 @@ final class HexDumpFormat private (
       dataColumnWidthInBytes,
       includeAsciiColumn,
       newAlphabet,
-      ansiEnabled
+      ansiEnabled,
+      addressOffset
     )
   def withAnsi(newAnsiEnabled: Boolean): HexDumpFormat =
     new HexDumpFormat(
@@ -95,7 +101,18 @@ final class HexDumpFormat private (
       dataColumnWidthInBytes,
       includeAsciiColumn,
       alphabet,
-      newAnsiEnabled
+      newAnsiEnabled,
+      addressOffset
+    )
+  def withAddressOffset(newAddressOffset: Int): HexDumpFormat =
+    new HexDumpFormat(
+      includeAddressColumn,
+      dataColumnCount,
+      dataColumnWidthInBytes,
+      includeAsciiColumn,
+      alphabet,
+      ansiEnabled,
+      newAddressOffset
     )
 
   def render(bytes: ByteVector): String =
@@ -112,7 +129,7 @@ final class HexDumpFormat private (
     val bitsPerLine = bits.grouped(numBytesPerLine.toLong * 8L)
     bitsPerLine.zipWithIndex.foreach { case (bitsInLine, index) =>
       val bldr = new StringBuilder
-      renderLine(bldr, bitsInLine.bytes, index * numBytesPerLine)
+      renderLine(bldr, bitsInLine.bytes, addressOffset + index * numBytesPerLine)
       onLine(bldr.toString)
     }
   }
@@ -230,7 +247,7 @@ object HexDumpFormat {
 
   /** Colorized hex dump that displays 2 columns of 8 bytes each, along with the address column and ASCII column. */
   val Default: HexDumpFormat =
-    new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true)
+    new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true, 0)
 
   /** Like [[Default]] but with ANSI color disabled. */
   val NoAnsi: HexDumpFormat =
