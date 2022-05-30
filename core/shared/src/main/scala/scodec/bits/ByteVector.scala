@@ -806,19 +806,24 @@ sealed abstract class ByteVector
     bldr.toString
   }
 
-  /** Generates a hex dump of this vector using the default format (with ANSI enabled).
+  /** Generates a hex dump of this vector using the default format (with no color / ANSI escapes).
     * To customize the output, use the `ByteVector.HexDumpFormat` class instead.
-    * For example, `ByteVector.HexDumpFormat.NoAnsi.render(bytes)` or
+    * For example, `ByteVector.HexDumpFormat.NoAscii.render(bytes)` or
     * `ByteVector.HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
     *
     * @group conversions
     */
-  final def toHexDump: String = HexDumpFormat.Default.render(this)
+  final def toHexDump: String = HexDumpFormat.NoAnsi.render(this)
 
-  /** Like [[toHexDump]] but no ANSI escape codes are included.
+  /** Colorized version of [[toHexDump]] that uses ANSI escape codes.
+    *
     * @group conversions
     */
-  final def toHexDumpNoAnsi: String = HexDumpFormat.NoAnsi.render(this)
+  final def toHexDumpColorized: String = HexDumpFormat.Default.render(this)
+
+  /** Prints this vector as a colorized hex dump to standard out.
+    */
+  final def printHexDump(): Unit = print(toHexDumpColorized)
 
   /** Helper alias for [[toHex:String*]]
     *
@@ -2406,18 +2411,18 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     def render(bytes: ByteVector): String = {
       val bldr = new StringBuilder
       val numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
-      val bytesPerLine = bytes.groupedIterator(numBytesPerLine)
+      val bytesPerLine = bytes.groupedIterator(numBytesPerLine.toLong)
       bytesPerLine.zipWithIndex.foreach { case (bytesInLine, index) =>
         renderLine(bldr, bytesInLine, index * numBytesPerLine)
       }
       bldr.toString
     }
 
-    object Ansi {
+    private object Ansi {
       val Faint = "\u001b[;2m"
       val Normal = "\u001b[;22m"
       val Reset = "\u001b[0m"
-      def foregroundColor(bldr: StringBuilder, rgb: (Int, Int, Int)): Unit =
+      def foregroundColor(bldr: StringBuilder, rgb: (Int, Int, Int)): Unit = {
         bldr
           .append("\u001b[38;2;")
           .append(rgb._1)
@@ -2426,6 +2431,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           .append(";")
           .append(rgb._3)
           .append("m")
+        ()
+      }
     }
 
     private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
@@ -2435,7 +2442,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         if (ansiEnabled) bldr.append(Ansi.Normal)
         bldr.append("  ")
       }
-      bytes.groupedIterator(dataColumnWidthInBytes).foreach { columnBytes =>
+      bytes.groupedIterator(dataColumnWidthInBytes.toLong).foreach { columnBytes =>
         renderHex(bldr, columnBytes)
         bldr.append(" ")
       }
@@ -2456,6 +2463,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         bldr.append('│')
       }
       bldr.append('\n')
+      ()
     }
 
     private def renderHex(bldr: StringBuilder, bytes: ByteVector): Unit =
@@ -2509,15 +2517,22 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       val printable = NonPrintablePattern.replaceAllIn(decoded, nonPrintableReplacement)
       val colorized = if (ansiEnabled) printable.replaceAll("�", FaintUnmappable) else printable
       bldr.append(colorized)
+      ()
     }
   }
 
   object HexDumpFormat {
+
+    /** Colorized hex dump that displays 2 columns of 8 bytes each, along with the address column and ASCII column. */
     val Default: HexDumpFormat =
       new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true)
+
+    /** Like [[Default]] but with ANSI color disabled. */
     val NoAnsi: HexDumpFormat =
       Default.withAnsi(false)
+
+    /** Like [[Default]] but with 3 columns of data and no ASCII column. */
     val NoAscii: HexDumpFormat =
-      new HexDumpFormat(true, 3, 8, false, Bases.Alphabets.HexLowercase, true)
+      Default.withIncludeAsciiColumn(false).withDataColumnCount(3)
   }
 }
