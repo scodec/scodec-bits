@@ -730,6 +730,25 @@ sealed abstract class BitVector
     }
   }
 
+  /** Generates a hex dump of this vector using the default format (with no color / ANSI escapes).
+    * To customize the output, use the `HexDumpFormat` class instead.
+    * For example, `HexDumpFormat.NoAscii.render(bytes)` or
+    * `HexDumpFormat.Default.withIncludeAddressColumn(false).render(bytes)`.
+    *
+    * @group conversions
+    */
+  final def toHexDump: String = HexDumpFormat.NoAnsi.render(this)
+
+  /** Colorized version of [[toHexDump]] that uses ANSI escape codes.
+    *
+    * @group conversions
+    */
+  final def toHexDumpColorized: String = HexDumpFormat.Default.render(this)
+
+  /** Prints this vector as a colorized hex dump to standard out.
+    */
+  final def printHexDump(): Unit = HexDumpFormat.Default.print(this)
+
   /** Helper alias of [[toHex():String*]]
     *
     * @group conversions
