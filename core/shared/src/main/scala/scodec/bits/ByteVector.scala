@@ -823,7 +823,7 @@ sealed abstract class ByteVector
 
   /** Prints this vector as a colorized hex dump to standard out.
     */
-  final def printHexDump(): Unit = print(toHexDumpColorized)
+  final def printHexDump(): Unit = HexDumpFormat.Default.print(this)
 
   /** Helper alias for [[toHex:String*]]
     *
@@ -2410,13 +2410,22 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
 
     def render(bytes: ByteVector): String = {
       val bldr = new StringBuilder
+      render(bytes, line => { bldr.append(line); () })
+      bldr.toString
+    }
+
+    def render(bytes: ByteVector, onLine: String => Unit): Unit = {
       val numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
       val bytesPerLine = bytes.groupedIterator(numBytesPerLine.toLong)
       bytesPerLine.zipWithIndex.foreach { case (bytesInLine, index) =>
+        val bldr = new StringBuilder
         renderLine(bldr, bytesInLine, index * numBytesPerLine)
+        onLine(bldr.toString)
       }
-      bldr.toString
     }
+
+    def print(bytes: ByteVector): Unit =
+      render(bytes, line => Console.print(line))
 
     private object Ansi {
       val Faint = "\u001b[;2m"
@@ -2453,7 +2462,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           val bytesOnFullLine = dataColumnWidthInBytes * dataColumnCount
           val bytesOnThisLine = bytes.size.toInt
           val dataBytePadding = (bytesOnFullLine - bytesOnThisLine) * 3 - 1
-          val numFullDataColumns = bytesOnThisLine / dataColumnWidthInBytes
+          val numFullDataColumns = (bytesOnThisLine - 1) / dataColumnWidthInBytes
           val numAdditionalColumnSpacers = dataColumnCount - numFullDataColumns
           dataBytePadding + numAdditionalColumnSpacers
         }
