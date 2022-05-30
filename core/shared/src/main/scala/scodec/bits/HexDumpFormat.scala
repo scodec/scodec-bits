@@ -30,12 +30,11 @@
 
 package scodec.bits
 
-/**
- * Creates hex dumps for bit and byte vectors.
- * 
- * Formatting options can be specified by starting with `HexDumpFormat.Default`
- * and then calling various `withXyz` methods.
- */
+/** Creates hex dumps for bit and byte vectors.
+  *
+  * Formatting options can be specified by starting with `HexDumpFormat.Default`
+  * and then calling various `withXyz` methods.
+  */
 final class HexDumpFormat private (
     includeAddressColumn: Boolean,
     dataColumnCount: Int,
