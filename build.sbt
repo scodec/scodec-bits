@@ -19,6 +19,8 @@ ThisBuild / tlVersionIntroduced := Map(
   "2.11" -> "1.1.99" // Ignore 2.11 in mima
 )
 
+ThisBuild / tlMimaPreviousVersions ~= (_.filterNot(_ == "1.1.32"))
+
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"))
 
 ThisBuild / tlFatalWarningsInCi := false
@@ -67,14 +69,7 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.crc.vectorTable"),
   ProblemFilters.exclude[IncompatibleMethTypeProblem](
     "scodec.bits.ByteVector#ByteVectorInputStream#CustomAtomicInteger.getAndUpdate_"
-  ),
-  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector#HexDumpFormat.Ansi"),
-  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.toHexDumpNoAnsi"),
-  ProblemFilters.exclude[InaccessibleClassProblem]("scodec.bits.ByteVector$HexDumpFormat$Ansi$"),
-  ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$HexDumpFormat"),
-  ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$HexDumpFormat$"),
-  ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$HexDumpFormat$Ansi$"),
-  ProblemFilters.exclude[MissingFieldProblem]("scodec.bits.ByteVector.HexDumpFormat")
+  )
 )
 
 lazy val root = tlCrossRootProject.aggregate(core, benchmark)
