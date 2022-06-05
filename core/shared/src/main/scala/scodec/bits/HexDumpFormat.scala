@@ -36,13 +36,13 @@ package scodec.bits
   * and then calling various `withXyz` methods.
   */
 final class HexDumpFormat private (
-    includeAddressColumn: Boolean,
-    dataColumnCount: Int,
-    dataColumnWidthInBytes: Int,
-    includeAsciiColumn: Boolean,
-    alphabet: Bases.HexAlphabet,
-    ansiEnabled: Boolean,
-    addressOffset: Int
+    val includeAddressColumn: Boolean,
+    val dataColumnCount: Int,
+    val dataColumnWidthInBytes: Int,
+    val includeAsciiColumn: Boolean,
+    val alphabet: Bases.HexAlphabet,
+    val ansiEnabled: Boolean,
+    val addressOffset: Int
 ) {
   def withIncludeAddressColumn(newIncludeAddressColumn: Boolean): HexDumpFormat =
     new HexDumpFormat(
