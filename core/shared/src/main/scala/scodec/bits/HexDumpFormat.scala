@@ -42,8 +42,12 @@ final class HexDumpFormat private (
     val includeAsciiColumn: Boolean,
     val alphabet: Bases.HexAlphabet,
     val ansiEnabled: Boolean,
-    val addressOffset: Int
+    val addressOffset: Int,
+    val lengthLimit: Long
 ) {
+  @inline private def numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
+  @inline private def numBitsPerLine = numBytesPerLine * 8L
+
   def withIncludeAddressColumn(newIncludeAddressColumn: Boolean): HexDumpFormat =
     new HexDumpFormat(
       newIncludeAddressColumn,
@@ -52,7 +56,8 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       alphabet,
       ansiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withDataColumnCount(newDataColumnCount: Int): HexDumpFormat =
     new HexDumpFormat(
@@ -62,7 +67,8 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       alphabet,
       ansiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withDataColumnWidthInBytes(newDataColumnWidthInBytes: Int): HexDumpFormat =
     new HexDumpFormat(
@@ -72,7 +78,8 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       alphabet,
       ansiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withIncludeAsciiColumn(newIncludeAsciiColumn: Boolean): HexDumpFormat =
     new HexDumpFormat(
@@ -82,7 +89,8 @@ final class HexDumpFormat private (
       newIncludeAsciiColumn,
       alphabet,
       ansiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withAlphabet(newAlphabet: Bases.HexAlphabet): HexDumpFormat =
     new HexDumpFormat(
@@ -92,7 +100,8 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       newAlphabet,
       ansiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withAnsi(newAnsiEnabled: Boolean): HexDumpFormat =
     new HexDumpFormat(
@@ -102,7 +111,8 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       alphabet,
       newAnsiEnabled,
-      addressOffset
+      addressOffset,
+      lengthLimit
     )
   def withAddressOffset(newAddressOffset: Int): HexDumpFormat =
     new HexDumpFormat(
@@ -112,32 +122,52 @@ final class HexDumpFormat private (
       includeAsciiColumn,
       alphabet,
       ansiEnabled,
-      newAddressOffset
+      newAddressOffset,
+      lengthLimit
+    )
+  def withLengthLimit(newLengthLimit: Long): HexDumpFormat =
+    new HexDumpFormat(
+      includeAddressColumn,
+      dataColumnCount,
+      dataColumnWidthInBytes,
+      includeAsciiColumn,
+      alphabet,
+      ansiEnabled,
+      addressOffset,
+      newLengthLimit
     )
 
   def render(bytes: ByteVector): String =
     render(bytes.bits)
 
-  def render(bits: BitVector): String = {
+  def render(bits: => BitVector): String = {
     val bldr = new StringBuilder
     render(bits, line => { bldr.append(line); () })
     bldr.toString
   }
 
-  def render(bits: BitVector, onLine: String => Unit): Unit = {
-    val numBytesPerLine = dataColumnWidthInBytes * dataColumnCount
-    val bitsPerLine = bits.grouped(numBytesPerLine.toLong * 8L)
-    bitsPerLine.zipWithIndex.foreach { case (bitsInLine, index) =>
+  def render(bits: => BitVector, onLine: String => Unit): Unit =
+    render(bits, 0L, onLine)
+
+  @annotation.tailrec
+  private def render(bits: BitVector, position: Long, onLine: String => Unit): Unit = {
+    // Note: we don't use grouped(numBitsPerLine) here to avoid holding on to a reference to original vector
+    val takeFullLine = position + numBytesPerLine <= lengthLimit
+    val bitsToTake = if (takeFullLine) numBitsPerLine else (lengthLimit - position) * 8L
+    if (bits.nonEmpty && bitsToTake > 0L) {
+      val bitsInLine = bits.take(bitsToTake)
       val bldr = new StringBuilder
-      renderLine(bldr, bitsInLine.bytes, addressOffset + index * numBytesPerLine)
+      renderLine(bldr, bitsInLine.bytes, (addressOffset + position).toInt)
       onLine(bldr.toString)
+      if (takeFullLine)
+        render(bits.drop(numBitsPerLine), position + bitsInLine.size / 8, onLine)
     }
   }
 
   def print(bytes: ByteVector): Unit =
     print(bytes.bits)
 
-  def print(bits: BitVector): Unit =
+  def print(bits: => BitVector): Unit =
     render(bits, line => Console.print(line))
 
   private object Ansi {
@@ -247,7 +277,7 @@ object HexDumpFormat {
 
   /** Colorized hex dump that displays 2 columns of 8 bytes each, along with the address column and ASCII column. */
   val Default: HexDumpFormat =
-    new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true, 0)
+    new HexDumpFormat(true, 2, 8, true, Bases.Alphabets.HexLowercase, true, 0, Long.MaxValue)
 
   /** Like [[Default]] but with ANSI color disabled. */
   val NoAnsi: HexDumpFormat =

@@ -69,7 +69,10 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.crc.vectorTable"),
   ProblemFilters.exclude[IncompatibleMethTypeProblem](
     "scodec.bits.ByteVector#ByteVectorInputStream#CustomAtomicInteger.getAndUpdate_"
-  )
+  ),
+  ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.HexDumpFormat.render"),
+  ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.HexDumpFormat.print"),
+  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.HexDumpFormat.this")
 )
 
 lazy val root = tlCrossRootProject.aggregate(core, benchmark)
