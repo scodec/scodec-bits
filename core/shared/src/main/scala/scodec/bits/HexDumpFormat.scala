@@ -156,9 +156,8 @@ final class HexDumpFormat private (
     val bitsToTake = if (takeFullLine) numBitsPerLine else (lengthLimit - position) * 8L
     if (bits.nonEmpty && bitsToTake > 0L) {
       val bitsInLine = bits.take(bitsToTake)
-      val bldr = new StringBuilder
-      renderLine(bldr, bitsInLine.bytes, (addressOffset + position).toInt)
-      onLine(bldr.toString)
+      val line = renderLine(bitsInLine.bytes, (addressOffset + position).toInt)
+      onLine(line)
       if (takeFullLine)
         render(bits.drop(numBitsPerLine), position + bitsInLine.size / 8, onLine)
     }
@@ -187,7 +186,8 @@ final class HexDumpFormat private (
     }
   }
 
-  private def renderLine(bldr: StringBuilder, bytes: ByteVector, address: Int): Unit = {
+  private def renderLine(bytes: ByteVector, address: Int): String = {
+    val bldr = new StringBuilder
     if (includeAddressColumn) {
       if (ansiEnabled) bldr.append(Ansi.Faint)
       bldr.append(ByteVector.fromInt(address).toHex(alphabet))
@@ -202,9 +202,8 @@ final class HexDumpFormat private (
       bldr.append(Ansi.Reset)
     if (includeAsciiColumn) {
       val padding = {
-        val bytesOnFullLine = dataColumnWidthInBytes * dataColumnCount
         val bytesOnThisLine = bytes.size.toInt
-        val dataBytePadding = (bytesOnFullLine - bytesOnThisLine) * 3 - 1
+        val dataBytePadding = (numBytesPerLine - bytesOnThisLine) * 3 - 1
         val numFullDataColumns = (bytesOnThisLine - 1) / dataColumnWidthInBytes
         val numAdditionalColumnSpacers = dataColumnCount - numFullDataColumns
         dataBytePadding + numAdditionalColumnSpacers
@@ -215,21 +214,17 @@ final class HexDumpFormat private (
       bldr.append('│')
     }
     bldr.append('\n')
-    ()
+    bldr.toString
   }
 
   private def renderHex(bldr: StringBuilder, bytes: ByteVector): Unit =
-    bytes.foreachS {
-      new ByteVector.F1BU {
-        def apply(b: Byte) = {
-          if (ansiEnabled) Ansi.foregroundColor(bldr, rgbForByte(b))
-          bldr
-            .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
-            .append(alphabet.toChar((b & 0x0f).toByte.toInt))
-            .append(' ')
-          ()
-        }
-      }
+    bytes.foreachS { b =>
+      if (ansiEnabled) Ansi.foregroundColor(bldr, rgbForByte(b))
+      bldr
+        .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
+        .append(alphabet.toChar((b & 0x0f).toByte.toInt))
+        .append(' ')
+      ()
     }
 
   private def rgbForByte(b: Byte): (Int, Int, Int) = {
