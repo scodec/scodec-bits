@@ -218,13 +218,17 @@ final class HexDumpFormat private (
   }
 
   private def renderHex(bldr: StringBuilder, bytes: ByteVector): Unit =
-    bytes.foreachS { b =>
-      if (ansiEnabled) Ansi.foregroundColor(bldr, rgbForByte(b))
-      bldr
-        .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
-        .append(alphabet.toChar((b & 0x0f).toByte.toInt))
-        .append(' ')
-      ()
+    bytes.foreachS {
+      new ByteVector.F1BU {
+        def apply(b: Byte): Unit = {
+          if (ansiEnabled) Ansi.foregroundColor(bldr, rgbForByte(b))
+          bldr
+            .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
+            .append(alphabet.toChar((b & 0x0f).toByte.toInt))
+            .append(' ')
+          ()
+        }
+      }
     }
 
   private def rgbForByte(b: Byte): (Int, Int, Int) = {
