@@ -116,11 +116,11 @@ object Literals:
   object Ascii extends Validator[ByteVector]:
     def validate(s: String)(using Quotes): Either[String, Expr[ByteVector]] =
       ByteVector.encodeAscii(s) match
-        case Left(ex)    => Left(s"ascii string literal may only contain valid ascii: $ex")
+        case Left(ex) => Left(s"ascii string literal may only contain valid ascii: $ex")
         case Right(_) => Right('{ ByteVector.encodeAscii(${ Expr(s) }).fold(throw _, identity) })
 
   object Utf8 extends Validator[ByteVector]:
     def validate(s: String)(using Quotes): Either[String, Expr[ByteVector]] =
       ByteVector.encodeUtf8(s) match
-        case Left(ex)    => Left(s"UTF8 string literal may only contain valid UTF8: $ex")
+        case Left(ex) => Left(s"UTF8 string literal may only contain valid UTF8: $ex")
         case Right(_) => Right('{ ByteVector.encodeUtf8(${ Expr(s) }).fold(throw _, identity) })
