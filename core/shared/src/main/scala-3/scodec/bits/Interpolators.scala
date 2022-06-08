@@ -54,6 +54,28 @@ extension (inline ctx: StringContext)
   inline def bin(inline args: Any*): BitVector =
     ${ Literals.Bin('ctx, 'args) }
 
+/** Provides the `ascii` string interpolator, which returns `ByteVector` instances from ascii strings.
+  *
+  * @example {{{
+  * scala> val b = ascii"deadbeef"
+  * val b: scodec.bits.ByteVector = ByteVector(8 bytes, 0x6465616462656566)
+  * }}}
+  */
+extension (inline ctx: StringContext)
+  inline def ascii(inline args: Any*): ByteVector =
+    ${ Literals.Ascii('ctx, 'args) }
+
+/** Provides the `utf8` string interpolator, which returns `ByteVector` instances from utf8 strings.
+  *
+  * @example {{{
+  * scala> val b = utf8"ɟǝǝqpɐǝp"
+  * val b: scodec.bits.ByteVector = ByteVector(13 bytes, 0xc99fc79dc79d7170c990c79d70)
+  * }}}
+  */
+extension (inline ctx: StringContext)
+  inline def utf8(inline args: Any*): ByteVector =
+    ${ Literals.Utf8('ctx, 'args) }
+
 object Literals:
 
   trait Validator[A]:
@@ -90,3 +112,15 @@ object Literals:
       ByteVector.fromBin(s) match
         case None    => Left("binary string literal may only contain characters [0, 1]")
         case Some(_) => Right('{ BitVector.fromValidBin(${ Expr(s) }) })
+
+  object Ascii extends Validator[ByteVector]:
+    def validate(s: String)(using Quotes): Either[String, Expr[ByteVector]] =
+      ByteVector.encodeAscii(s) match
+        case Left(ex)    => Left(s"ascii string literal may only contain valid ascii: $ex")
+        case Right(_) => Right('{ ByteVector.encodeAscii(${ Expr(s) }).fold(throw _, identity) })
+
+  object Utf8 extends Validator[ByteVector]:
+    def validate(s: String)(using Quotes): Either[String, Expr[ByteVector]] =
+      ByteVector.encodeUtf8(s) match
+        case Left(ex)    => Left(s"UTF8 string literal may only contain valid UTF8: $ex")
+        case Right(_) => Right('{ ByteVector.encodeUtf8(${ Expr(s) }).fold(throw _, identity) })

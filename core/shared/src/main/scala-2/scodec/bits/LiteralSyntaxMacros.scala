@@ -81,4 +81,58 @@ object LiteralSyntaxMacros {
     reify(ByteVector.fromValidHex(stringBuilder.splice.toString))
   }
 
+  def asciiStringInterpolator(c: blackbox.Context)(args: c.Expr[String]*): c.Expr[ByteVector] = {
+    import c.universe._
+
+    val Apply(_, List(Apply(_, parts))) = c.prefix.tree
+    val partLiterals: List[String] = parts.map { case Literal(Constant(part: String)) =>
+      ByteVector.encodeAscii(part) match {
+        case Left(ex) =>
+          c.error(
+            c.enclosingPosition,
+            s"ascii string literal may only contain ascii characters: $ex"
+          )
+        case Right(_) => // do nothing
+      }
+      part
+    }
+
+    val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
+    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
+    val stringBuilder =
+      args.zip(partLiterals.tail).foldLeft(initialStringBuilder) { case (sb, (arg, part)) =>
+        val partExpr = c.Expr[String](Literal(Constant(part)))
+        reify(sb.splice.append(arg.splice).append(partExpr.splice))
+      }
+
+    reify(ByteVector.encodeAscii(stringBuilder.splice.toString).fold(throw _, identity))
+  }
+
+  def utf8StringInterpolator(c: blackbox.Context)(args: c.Expr[String]*): c.Expr[ByteVector] = {
+    import c.universe._
+
+    val Apply(_, List(Apply(_, parts))) = c.prefix.tree
+    val partLiterals: List[String] = parts.map { case Literal(Constant(part: String)) =>
+      ByteVector.encodeUtf8(part) match {
+        case Left(ex) =>
+          c.error(
+            c.enclosingPosition,
+            s"utf8 string literal may only contain UTF8 characters: $ex"
+          )
+        case Right(_) => // do nothing
+      }
+      part
+    }
+
+    val headPart = c.Expr[String](Literal(Constant(partLiterals.head)))
+    val initialStringBuilder = reify(new StringBuilder().append(headPart.splice))
+    val stringBuilder =
+      args.zip(partLiterals.tail).foldLeft(initialStringBuilder) { case (sb, (arg, part)) =>
+        val partExpr = c.Expr[String](Literal(Constant(part)))
+        reify(sb.splice.append(arg.splice).append(partExpr.splice))
+      }
+
+    reify(ByteVector.encodeUtf8(stringBuilder.splice.toString).fold(throw _, identity))
+  }
+
 }
