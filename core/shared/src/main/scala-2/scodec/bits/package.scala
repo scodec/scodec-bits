@@ -73,7 +73,7 @@ package object bits extends ScalaVersionSpecific {
       *
       * Named arguments are supported in the same manner as the standard `s` interpolator.
       */
-    def ascii(args: String*): ByteVector = macro LiteralSyntaxMacros.asciiStringInterpolator
+    def asciiBytes(args: String*): ByteVector = macro LiteralSyntaxMacros.asciiStringInterpolator
   }
 
   /** Provides the `utf8` string interpolator, which returns `ByteVector` instances from UTF8
@@ -85,7 +85,7 @@ package object bits extends ScalaVersionSpecific {
       *
       * Named arguments are supported in the same manner as the standard `s` interpolator.
       */
-    def utf8(args: String*): ByteVector = macro LiteralSyntaxMacros.utf8StringInterpolator
+    def utf8Bytes(args: String*): ByteVector = macro LiteralSyntaxMacros.utf8StringInterpolator
   }
 
   private[bits] implicit class EitherOps[L, R](val self: Either[L, R]) extends AnyVal {

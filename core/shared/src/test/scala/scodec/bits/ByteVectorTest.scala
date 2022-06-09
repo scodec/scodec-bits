@@ -775,11 +775,11 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("ascii interpolator") {
-    assertEquals(ascii"deadbeef", ByteVector.encodeAscii(s"deadbeef").toOption.get)
-    assert(compileErrors("""ascii"ɟǝǝqpɐǝp"""").contains("error"))
+    assertEquals(asciiBytes"deadbeef", ByteVector.encodeAscii(s"deadbeef").toOption.get)
+    assert(compileErrors("""asciiBytes"ɟǝǝqpɐǝp"""").contains("error"))
   }
 
   test("utf8 interpolator") {
-    assertEquals(utf8"ɟǝǝqpɐǝp", ByteVector.encodeUtf8(s"ɟǝǝqpɐǝp").toOption.get)
+    assertEquals(utf8Bytes"ɟǝǝqpɐǝp", ByteVector.encodeUtf8(s"ɟǝǝqpɐǝp").toOption.get)
   }
 }

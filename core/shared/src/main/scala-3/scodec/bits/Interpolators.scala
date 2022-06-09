@@ -62,7 +62,7 @@ extension (inline ctx: StringContext)
   * }}}
   */
 extension (inline ctx: StringContext)
-  inline def ascii(inline args: Any*): ByteVector =
+  inline def asciiBytes(inline args: Any*): ByteVector =
     ${ Literals.Ascii('ctx, 'args) }
 
 /** Provides the `utf8` string interpolator, which returns `ByteVector` instances from utf8 strings.
@@ -73,7 +73,7 @@ extension (inline ctx: StringContext)
   * }}}
   */
 extension (inline ctx: StringContext)
-  inline def utf8(inline args: Any*): ByteVector =
+  inline def utf8Bytes(inline args: Any*): ByteVector =
     ${ Literals.Utf8('ctx, 'args) }
 
 object Literals:
