@@ -658,7 +658,7 @@ sealed abstract class ByteVector
     foreachVPartial { v =>
       val copiedFromView = v.copyToBuffer(buffer)
       copied += copiedFromView
-      (copiedFromView == v.size)
+      copiedFromView == v.size
     }
     copied
   }
