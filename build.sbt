@@ -10,7 +10,7 @@ ThisBuild / organizationName := "Scodec"
 
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.15", "2.13.8", "3.1.2")
+ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.16", "2.13.8", "3.1.3")
 
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "1.1.27",
@@ -90,7 +90,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "1.0.0-M4" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "1.0.0-M6" % "test"
   )
 
 lazy val coreJVM = core.jvm

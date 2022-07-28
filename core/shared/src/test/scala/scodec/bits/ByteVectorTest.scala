@@ -151,7 +151,7 @@ class ByteVectorTest extends BitsSuite {
 
   property("consistent with Array[Byte] implementations (2)") {
     forAll { (b1: ByteVector, b2: ByteVector) =>
-      assert(Arrays.equals((b1 ++ b2).toArray, (b1.toArray ++ b2.toArray)))
+      assert(Arrays.equals((b1 ++ b2).toArray, b1.toArray ++ b2.toArray))
     }
   }
 
@@ -772,5 +772,14 @@ class ByteVectorTest extends BitsSuite {
       assert(is.read() == -1)
       assert(is.available() == 0)
     }
+  }
+
+  test("ascii interpolator") {
+    assertEquals(asciiBytes"deadbeef", ByteVector.encodeAscii(s"deadbeef").toOption.get)
+    assert(compileErrors("""asciiBytes"ɟǝǝqpɐǝp"""").contains("error"))
+  }
+
+  test("utf8 interpolator") {
+    assertEquals(utf8Bytes"ɟǝǝqpɐǝp", ByteVector.encodeUtf8(s"ɟǝǝqpɐǝp").toOption.get)
   }
 }
