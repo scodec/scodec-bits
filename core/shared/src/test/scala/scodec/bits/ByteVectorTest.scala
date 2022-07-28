@@ -773,4 +773,13 @@ class ByteVectorTest extends BitsSuite {
       assert(is.available() == 0)
     }
   }
+
+  test("ascii interpolator") {
+    assertEquals(asciiBytes"deadbeef", ByteVector.encodeAscii(s"deadbeef").toOption.get)
+    assert(compileErrors("""asciiBytes"ɟǝǝqpɐǝp"""").contains("error"))
+  }
+
+  test("utf8 interpolator") {
+    assertEquals(utf8Bytes"ɟǝǝqpɐǝp", ByteVector.encodeUtf8(s"ɟǝǝqpɐǝp").toOption.get)
+  }
 }

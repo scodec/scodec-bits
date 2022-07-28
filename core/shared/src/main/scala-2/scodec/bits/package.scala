@@ -64,6 +64,30 @@ package object bits extends ScalaVersionSpecific {
     def hex(args: ByteVector*): ByteVector = macro LiteralSyntaxMacros.hexStringInterpolator
   }
 
+  /** Provides the `ascii` string interpolator, which returns `ByteVector` instances from ascii
+    * strings.
+    */
+  final implicit class AsciiStringSyntax(val sc: StringContext) extends AnyVal {
+
+    /** Converts this ascii literal string to a `ByteVector`.
+      *
+      * Named arguments are supported in the same manner as the standard `s` interpolator.
+      */
+    def asciiBytes(args: String*): ByteVector = macro LiteralSyntaxMacros.asciiStringInterpolator
+  }
+
+  /** Provides the `utf8` string interpolator, which returns `ByteVector` instances from UTF8
+    * strings.
+    */
+  final implicit class Utf8StringSyntax(val sc: StringContext) extends AnyVal {
+
+    /** Converts this UTF8 literal string to a `ByteVector`.
+      *
+      * Named arguments are supported in the same manner as the standard `s` interpolator.
+      */
+    def utf8Bytes(args: String*): ByteVector = macro LiteralSyntaxMacros.utf8StringInterpolator
+  }
+
   private[bits] implicit class EitherOps[L, R](val self: Either[L, R]) extends AnyVal {
     def map[R2](f: R => R2): Either[L, R2] =
       self match {
