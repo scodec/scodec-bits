@@ -1816,7 +1816,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
         val bytesToRead = (in.size - pos).min(chunkSizeInBytes.toLong)
         val buf = in.map(java.nio.channels.FileChannel.MapMode.READ_ONLY, pos, bytesToRead)
         require(buf.limit() == bytesToRead)
-        Some((BitVector.view(buf), (in -> (pos + bytesToRead))))
+        Some((BitVector.view(buf), in -> (pos + bytesToRead)))
       }
     }
 
@@ -2106,7 +2106,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
 
   private def validBitsInLastByte(size: Long): Long = {
     val mod = size % 8
-    (if (mod == 0) 8 else mod)
+    if (mod == 0) 8 else mod
   }
 
   /** Gets a byte mask with the top `n` bits enabled. */

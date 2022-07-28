@@ -151,7 +151,7 @@ class ByteVectorTest extends BitsSuite {
 
   property("consistent with Array[Byte] implementations (2)") {
     forAll { (b1: ByteVector, b2: ByteVector) =>
-      assert(Arrays.equals((b1 ++ b2).toArray, (b1.toArray ++ b2.toArray)))
+      assert(Arrays.equals((b1 ++ b2).toArray, b1.toArray ++ b2.toArray))
     }
   }
 
