@@ -170,6 +170,7 @@ sealed abstract class ByteVector
     */
   def ++(other: ByteVector): ByteVector =
     if (this.isEmpty) other
+    else if (other.isEmpty) this
     else Chunks(Append(this, other)).bufferBy(64)
 
   /** Returns a new vector with the specified byte prepended.
