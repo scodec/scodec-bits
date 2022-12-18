@@ -2250,6 +2250,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     // for tiny ByteVectors
     override def ++(bs: ByteVector): ByteVector =
       if (bs.isEmpty) this
+      else if (isEmpty) bs
       else
       // threads race to increment id, winner gets to update tl mutably
       if (id.compareAndSet(stamp, stamp + 1) && (lastChunk.length - lastSize > bs.size)) {
