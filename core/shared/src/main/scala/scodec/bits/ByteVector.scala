@@ -170,6 +170,7 @@ sealed abstract class ByteVector
     */
   def ++(other: ByteVector): ByteVector =
     if (this.isEmpty) other
+    else if (other.isEmpty) this
     else Chunks(Append(this, other)).bufferBy(64)
 
   /** Returns a new vector with the specified byte prepended.
@@ -2249,6 +2250,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     // for tiny ByteVectors
     override def ++(bs: ByteVector): ByteVector =
       if (bs.isEmpty) this
+      else if (isEmpty) bs
       else
       // threads race to increment id, winner gets to update tl mutably
       if (id.compareAndSet(stamp, stamp + 1) && (lastChunk.length - lastSize > bs.size)) {
