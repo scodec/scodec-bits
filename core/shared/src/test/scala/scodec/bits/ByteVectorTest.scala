@@ -439,6 +439,12 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("toArrayUnsafe") {
+    val arr = "Hello, world!".getBytes
+    assert(arr eq ByteVector.view(arr).toArrayUnsafe)
+    assert(arr ne ByteVector.view(arr).drop(1).toArrayUnsafe)
+  }
+
   property("copyToStream roundtrip") {
     forAll { (b: ByteVector) =>
       val os = new ByteArrayOutputStream()

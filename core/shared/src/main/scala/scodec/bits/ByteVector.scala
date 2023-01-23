@@ -613,6 +613,17 @@ sealed abstract class ByteVector
     buf
   }
 
+  /** Zero-copy version of [[toArray]]. In the case where this vector is a simple wrapper
+    * around an underlying array, the array is returned directly instead of copying it.
+    * In all other cases, a copy is returned.
+    *
+    * @group conversions
+    */
+  final def toArrayUnsafe: Array[Byte] = this match {
+    case Chunk(v) => v.toArrayUnsafe
+    case _        => toArray
+  }
+
   /** Copies the contents of this vector to array `xs`, beginning at index `start`.
     *
     * @group conversions
