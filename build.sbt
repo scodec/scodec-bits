@@ -10,13 +10,12 @@ ThisBuild / organizationName := "Scodec"
 
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.11.12", "2.12.17", "2.13.10", "3.2.1")
+ThisBuild / crossScalaVersions := Seq("2.12.17", "2.13.10", "3.2.2")
 
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "1.1.27",
   "2.13" -> "1.1.12",
-  "2.12" -> "1.1.2",
-  "2.11" -> "1.1.99" // Ignore 2.11 in mima
+  "2.12" -> "1.1.2"
 )
 
 ThisBuild / tlMimaPreviousVersions ~= (_.filterNot(_ == "1.1.32"))
