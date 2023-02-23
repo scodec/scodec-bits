@@ -819,6 +819,12 @@ sealed abstract class ByteVector
           update(atArr(j))
           j += 1
         }
+      case View(atByteBuffer: AtByteBuffer, offset, length) =>
+        val buf = atByteBuffer.buf.duplicate()
+        buf.position(offset.toInt)
+        buf.limit((offset + length).toInt)
+        while (buf.hasRemaining())
+          update(buf.get())
       case other =>
         other.foreach(new F1BU {
           def apply(b: Byte) = update(b)
