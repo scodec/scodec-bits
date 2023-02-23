@@ -806,14 +806,23 @@ sealed abstract class ByteVector
   final def toHex(alphabet: Bases.HexAlphabet): String = {
     val out = new Array[Char](size.toInt * 2)
     var i = 0
-    foreachS {
-      new F1BU {
-        def apply(b: Byte) = {
-          out(i) = alphabet.toChar(b >> 4 & 0x0f)
-          out(i + 1) = alphabet.toChar(b & 0x0f)
-          i += 2
+    def update(b: Byte): Unit = {
+      out(i) = alphabet.toChar(b >> 4 & 0x0f)
+      out(i + 1) = alphabet.toChar(b & 0x0f)
+      i += 2
+    }
+    foreachV {
+      case View(atArr: AtArray, offset, length) =>
+        var j = offset
+        val end = offset + length
+        while (j < end) {
+          update(atArr(j))
+          j += 1
         }
-      }
+      case other =>
+        other.foreach(new F1BU {
+          def apply(b: Byte) = update(b)
+        })
     }
     new String(out)
   }
