@@ -804,18 +804,33 @@ sealed abstract class ByteVector
     * @group conversions
     */
   final def toHex(alphabet: Bases.HexAlphabet): String = {
-    val bldr = new StringBuilder
-    foreachS {
-      new F1BU {
-        def apply(b: Byte) = {
-          bldr
-            .append(alphabet.toChar((b >> 4 & 0x0f).toByte.toInt))
-            .append(alphabet.toChar((b & 0x0f).toByte.toInt))
-          ()
-        }
-      }
+    val out = new Array[Char](size.toInt * 2)
+    var i = 0
+    def update(b: Byte): Unit = {
+      out(i) = alphabet.toChar(b >> 4 & 0x0f)
+      out(i + 1) = alphabet.toChar(b & 0x0f)
+      i += 2
     }
-    bldr.toString
+    foreachV {
+      case View(atArr: AtArray, offset, length) =>
+        var j = offset
+        val end = offset + length
+        while (j < end) {
+          update(atArr(j))
+          j += 1
+        }
+      case View(atByteBuffer: AtByteBuffer, offset, length) =>
+        val buf = atByteBuffer.buf.duplicate()
+        buf.position(offset.toInt)
+        buf.limit((offset + length).toInt)
+        while (buf.hasRemaining())
+          update(buf.get())
+      case other =>
+        other.foreach(new F1BU {
+          def apply(b: Byte) = update(b)
+        })
+    }
+    new String(out)
   }
 
   /** Generates a hex dump of this vector using the default format (with no color / ANSI escapes).

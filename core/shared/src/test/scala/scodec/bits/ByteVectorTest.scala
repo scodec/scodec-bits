@@ -186,6 +186,10 @@ class ByteVectorTest extends BitsSuite {
     )
   }
 
+  property("toHex fromHex roundtrip") {
+    forAll((b: ByteVector) => ByteVector.fromHex(b.toHex).get == b)
+  }
+
   test("toBin") {
     assert(deadbeef.toBin == "11011110101011011011111011101111")
   }
