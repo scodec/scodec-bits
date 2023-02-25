@@ -103,13 +103,10 @@ object Bases {
     /** Abstract hex alphabet that supports `{0-9, A-F, a-f}` for looking up an index from a char.
       */
     private[bits] abstract class LenientHex extends HexAlphabet {
-      def toIndex(c: Char) =
-        c match {
-          case c if c >= '0' && c <= '9' => c - '0'
-          case c if c >= 'a' && c <= 'f' => 10 + (c - 'a')
-          case c if c >= 'A' && c <= 'F' => 10 + (c - 'A')
-          case _                         => throw new IllegalArgumentException
-        }
+      final def toIndex(c: Char) = {
+        val i = Character.digit(c, 16)
+        if (i < 0) if (ignore(c)) -1 else throw new IllegalArgumentException else i
+      }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
 
@@ -189,7 +186,7 @@ object Bases {
         .filterNot(c => List('O', 'I', 'l').contains(c))
         .toArray
       def toChar(i: Int) = Chars(i)
-      def toIndex(c: Char) =
+      def toIndex(c: Char) = {
         c match {
           case c if c >= '1' && c <= '9' => c - '1'
           case c if c >= 'A' && c <= 'H' => c - 'A' + 9
@@ -199,6 +196,7 @@ object Bases {
           case c if c >= 'm' && c <= 'z' => c - 'm' + 9 + 8 + 5 + 11 + 11
           case _                         => throw new IllegalArgumentException
         }
+      }
 
       def ignore(c: Char) = c.isWhitespace
     }
@@ -210,7 +208,7 @@ object Bases {
     sealed trait Base64Base extends Base64Alphabet {
       override val pad = '='
       override def toChar(i: Int) = Base64Base.Chars(i)
-      override def toIndex(c: Char) =
+      override def toIndex(c: Char) = {
         c match {
           case c if c >= 'A' && c <= 'Z' => c - 'A'
           case c if c >= 'a' && c <= 'z' => c - 'a' + 26
@@ -219,6 +217,7 @@ object Bases {
           case '/'                       => 63
           case _                         => throw new IllegalArgumentException
         }
+      }
       override def ignore(c: Char) = c.isWhitespace
     }
 
@@ -244,7 +243,7 @@ object Bases {
     sealed trait Base64UrlBase extends Base64Alphabet {
       override val pad = '='
       override def toChar(i: Int) = Base64UrlBase.Chars(i)
-      override def toIndex(c: Char) =
+      override def toIndex(c: Char) = {
         c match {
           case c if c >= 'A' && c <= 'Z' => c - 'A'
           case c if c >= 'a' && c <= 'z' => c - 'a' + 26
@@ -253,6 +252,7 @@ object Bases {
           case '_'                       => 63
           case _                         => throw new IllegalArgumentException
         }
+      }
       override def ignore(c: Char) = c.isWhitespace
     }
 
