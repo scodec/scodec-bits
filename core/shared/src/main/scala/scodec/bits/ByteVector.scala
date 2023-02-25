@@ -1753,7 +1753,14 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     var j = 0
     while (idx < length) {
       val c = withoutPrefix.charAt(idx)
-      val nibble = alphabet.toIndex(c)
+      val nibble =
+        try alphabet.toIndex(c)
+        catch {
+          case _: IllegalArgumentException =>
+            throw new IllegalArgumentException(
+              s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
+            )
+        }
       if (nibble >= 0) {
         if (midByte) {
           out(j) = (hi | nibble).toByte
