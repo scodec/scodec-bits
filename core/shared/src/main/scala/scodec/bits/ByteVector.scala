@@ -1732,22 +1732,12 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Either[String, ByteVector] =
-    try Right(fromHexInternal2(str, alphabet)._1)
+    try Right(fromHexInternal(str, alphabet)._1)
     catch {
       case t: IllegalArgumentException => Left(t.getMessage)
     }
 
   private[bits] def fromHexInternal(
-      str: String,
-      alphabet: Bases.HexAlphabet
-  ): Either[String, (ByteVector, Int)] = {
-    try Right(fromHexInternal2(str, alphabet))
-    catch {
-      case t: IllegalArgumentException => Left(t.getMessage)
-    }
-  }
- 
-  private[bits] def fromHexInternal2(
       str: String,
       alphabet: Bases.HexAlphabet
   ): (ByteVector, Int) = {
@@ -1797,7 +1787,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Option[ByteVector] = 
-    try Some(fromHexInternal2(str, alphabet)._1)
+    try Some(fromHexInternal(str, alphabet)._1)
     catch {
       case t: IllegalArgumentException => None
     }
