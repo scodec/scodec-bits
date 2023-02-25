@@ -1786,7 +1786,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   def fromHex(
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
-  ): Option[ByteVector] = 
+  ): Option[ByteVector] =
     try Some(fromHexInternal(str, alphabet)._1)
     catch {
       case t: IllegalArgumentException => None
