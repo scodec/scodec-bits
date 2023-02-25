@@ -178,11 +178,13 @@ class ByteVectorTest extends BitsSuite {
 
     assertEquals(
       ByteVector
-        .fromHexDescriptive("garbage"), Left("Invalid hexadecimal character 'g' at index 0")
+        .fromHexDescriptive("garbage"),
+      Left("Invalid hexadecimal character 'g' at index 0")
     )
     assertEquals(
       ByteVector
-        .fromHexDescriptive("deadbefg"), Left("Invalid hexadecimal character 'g' at index 7")
+        .fromHexDescriptive("deadbefg"),
+      Left("Invalid hexadecimal character 'g' at index 7")
     )
   }
 
