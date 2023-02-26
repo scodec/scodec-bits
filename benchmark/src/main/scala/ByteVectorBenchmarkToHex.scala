@@ -37,24 +37,21 @@ import java.util.concurrent.TimeUnit
 @BenchmarkMode(Array(Mode.Throughput))
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Benchmark)
-class ByteVectorBenchmark {
+class ByteVectorBenchmarkToHex {
   @Param(Array("1000", "10000", "100000"))
   var size: Int = _
 
   private var bv: ByteVector = _
 
-  def bytes: Array[Byte] = {
+  @Setup(Level.Trial)
+  def setup(): Unit = {
     val r = new scala.util.Random(size)
-    val bs = new Array[Byte](size * 3)
+    val bs = new Array[Byte](size)
     r.nextBytes(bs)
-    bs
+    bv = ByteVector.view(bs)
   }
 
-  @Setup(Level.Trial)
-  def setup(): Unit =
-    bv = ByteVector.view(bytes)
-
   @Benchmark
-  def encodeHex: String =
+  def toHex: String =
     bv.toHex
 }

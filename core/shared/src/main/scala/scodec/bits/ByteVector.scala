@@ -1732,52 +1732,66 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Either[String, ByteVector] =
-    fromHexInternal(str, alphabet).map { case (res, _) => res }
+    try Right(fromHexInternal(str, alphabet)._1)
+    catch {
+      case t: IllegalArgumentException => Left(t.getMessage)
+    }
 
   private[bits] def fromHexInternal(
       str: String,
       alphabet: Bases.HexAlphabet
-  ): Either[String, (ByteVector, Int)] = {
-    val prefixed = (str.startsWith("0x")) || (str.startsWith("0X"))
+  ): (ByteVector, Int) = {
+    val prefixed = str.length >= 2 && str.charAt(0) == '0' && {
+      val second = str.charAt(1)
+      second == 'x' || second == 'X'
+    }
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, hi, count = 0
     var midByte = false
-    var err: String = null
-    val bldr = ByteBuffer.allocate((str.size + 1) / 2)
-    while (idx < withoutPrefix.length && (err eq null)) {
-      val c = withoutPrefix(idx)
-      if (!alphabet.ignore(c))
-        try {
-          val nibble = alphabet.toIndex(c)
+    val length = withoutPrefix.length
+    val out = new Array[Byte]((length + 1) / 2)
+    var j = 0
+    val defaults =
+      (alphabet eq Bases.Alphabets.HexLowercase) || (alphabet eq Bases.Alphabets.HexUppercase)
+    try
+      while (idx < length) {
+        val c = withoutPrefix.charAt(idx)
+        val nibble =
+          if (defaults) {
+            Character.digit(c, 16) match {
+              case i if i >= 0                                => i
+              case i if Character.isWhitespace(c) || c == '_' => -1
+              case _                                          => throw new IllegalArgumentException
+            }
+          } else alphabet.toIndex(c)
+        if (nibble >= 0) {
           if (midByte) {
-            bldr.put((hi | nibble).toByte)
+            out(j) = (hi | nibble).toByte
+            j += 1
             midByte = false
           } else {
-            hi = (nibble << 4).toByte.toInt
+            hi = nibble << 4
             midByte = true
           }
           count += 1
-        } catch {
-          case _: IllegalArgumentException =>
-            err = s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         }
-      idx += 1
-    }
-    if (err eq null)
-      Right(
-        (
-          if (midByte) {
-            bldr.put(hi.toByte)
-            bldr.flip()
-            ByteVector(bldr).shiftRight(4, false)
-          } else {
-            bldr.flip()
-            ByteVector(bldr)
-          },
-          count
+        idx += 1
+      }
+    catch {
+      case _: IllegalArgumentException =>
+        val c = withoutPrefix.charAt(idx)
+        throw new IllegalArgumentException(
+          s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         )
-      )
-    else Left(err)
+    }
+    val result = if (midByte) {
+      out(j) = hi.toByte
+      j += 1
+      ByteVector.view(out).take(j).shiftRight(4, false)
+    } else {
+      ByteVector.view(out).take(j)
+    }
+    (result, count)
   }
 
   /** Constructs a `ByteVector` from a hexadecimal string or returns `None` if the string is not
@@ -1789,7 +1803,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   def fromHex(
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
-  ): Option[ByteVector] = fromHexDescriptive(str, alphabet).toOption
+  ): Option[ByteVector] =
+    try Some(fromHexInternal(str, alphabet)._1)
+    catch {
+      case t: IllegalArgumentException => None
+    }
 
   /** Constructs a `ByteVector` from a hexadecimal string or throws an IllegalArgumentException if
     * the string is not valid hexadecimal.

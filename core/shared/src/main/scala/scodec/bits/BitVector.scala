@@ -1545,9 +1545,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.HexAlphabet = Bases.Alphabets.HexLowercase
   ): Either[String, BitVector] =
-    ByteVector.fromHexInternal(str, alphabet).map { case (bytes, count) =>
+    try {
+      val (bytes, count) = ByteVector.fromHexInternal(str, alphabet)
       val toDrop = if (count % 2 == 0) 0 else 4
-      bytes.toBitVector.drop(toDrop.toLong)
+      Right(bytes.toBitVector.drop(toDrop.toLong))
+    } catch {
+      case t: IllegalArgumentException => Left(t.getMessage)
     }
 
   /** Constructs a `BitVector` from a hexadecimal string or returns `None` if the string is not
