@@ -71,7 +71,8 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ),
   ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.HexDumpFormat.render"),
   ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.HexDumpFormat.print"),
-  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.HexDumpFormat.this")
+  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.HexDumpFormat.this"),
+  ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.fromHexInternal")
 )
 
 lazy val root = tlCrossRootProject.aggregate(core, benchmark)
@@ -136,8 +137,7 @@ lazy val coreJS = core.js.settings(
     ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.cipher"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.BitVector.cipher$default$4"),
     ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher"),
-    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher$default$4"),
-    ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.fromHexInternal")
+    ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector.cipher$default$4")
   )
 )
 
