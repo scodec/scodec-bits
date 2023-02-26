@@ -1751,10 +1751,18 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     val length = withoutPrefix.length
     val out = new Array[Byte]((length + 1) / 2)
     var j = 0
+    val defaults =
+      (alphabet eq Bases.Alphabets.HexLowercase) || (alphabet eq Bases.Alphabets.HexUppercase)
     while (idx < length) {
       val c = withoutPrefix.charAt(idx)
       val nibble =
-        try alphabet.toIndex(c)
+        try
+          if (defaults) {
+            val i = Character.digit(c, 16)
+            if (i < 0)
+              if (Character.isWhitespace(c) || c == '_') -1 else throw new IllegalArgumentException
+            else i
+          } else alphabet.toIndex(c)
         catch {
           case _: IllegalArgumentException =>
             throw new IllegalArgumentException(
