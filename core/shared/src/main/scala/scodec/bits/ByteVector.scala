@@ -1753,15 +1753,15 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     var j = 0
     val defaults =
       (alphabet eq Bases.Alphabets.HexLowercase) || (alphabet eq Bases.Alphabets.HexUppercase)
-    try {
+    try
       while (idx < length) {
         val c = withoutPrefix.charAt(idx)
         val nibble =
           if (defaults) {
             Character.digit(c, 16) match {
-              case i if i >= 0 => i
+              case i if i >= 0                                => i
               case i if Character.isWhitespace(c) || c == '_' => -1
-              case _ => throw new IllegalArgumentException
+              case _                                          => throw new IllegalArgumentException
             }
           } else alphabet.toIndex(c)
         if (nibble >= 0) {
@@ -1777,7 +1777,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         }
         idx += 1
       }
-    } catch {
+    catch {
       case _: IllegalArgumentException =>
         val c = withoutPrefix.charAt(idx)
         throw new IllegalArgumentException(
