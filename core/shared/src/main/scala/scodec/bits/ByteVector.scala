@@ -1753,34 +1753,36 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     var j = 0
     val defaults =
       (alphabet eq Bases.Alphabets.HexLowercase) || (alphabet eq Bases.Alphabets.HexUppercase)
-    while (idx < length) {
-      val c = withoutPrefix.charAt(idx)
-      val nibble =
-        try
+    try {
+      while (idx < length) {
+        val c = withoutPrefix.charAt(idx)
+        val nibble =
           if (defaults) {
-            val i = Character.digit(c, 16)
-            if (i < 0)
-              if (Character.isWhitespace(c) || c == '_') -1 else throw new IllegalArgumentException
-            else i
+            Character.digit(c, 16) match {
+              case i if i >= 0 => i
+              case i if Character.isWhitespace(c) || c == '_' => -1
+              case _ => throw new IllegalArgumentException
+            }
           } else alphabet.toIndex(c)
-        catch {
-          case _: IllegalArgumentException =>
-            throw new IllegalArgumentException(
-              s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
-            )
+        if (nibble >= 0) {
+          if (midByte) {
+            out(j) = (hi | nibble).toByte
+            j += 1
+            midByte = false
+          } else {
+            hi = nibble << 4
+            midByte = true
+          }
+          count += 1
         }
-      if (nibble >= 0) {
-        if (midByte) {
-          out(j) = (hi | nibble).toByte
-          j += 1
-          midByte = false
-        } else {
-          hi = nibble << 4
-          midByte = true
-        }
-        count += 1
+        idx += 1
       }
-      idx += 1
+    } catch {
+      case _: IllegalArgumentException =>
+        val c = withoutPrefix.charAt(idx)
+        throw new IllegalArgumentException(
+          s"Invalid hexadecimal character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
+        )
     }
     val result = if (midByte) {
       out(j) = hi.toByte
