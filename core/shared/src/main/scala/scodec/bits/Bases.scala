@@ -103,7 +103,7 @@ object Bases {
     /** Abstract hex alphabet that supports `{0-9, A-F, a-f}` for looking up an index from a char.
       */
     private[bits] abstract class LenientHex extends HexAlphabet {
-      final def toIndex(c: Char) = {
+      def toIndex(c: Char) = {
         val i = Character.digit(c, 16)
         if (i < 0) if (ignore(c)) -1 else throw new IllegalArgumentException else i
       }
