@@ -469,6 +469,14 @@ class ByteVectorTest extends BitsSuite {
     }
   }
 
+  test("toByteBuffer is read-only when appropriate") {
+    val arr = "Hello, world!".getBytes
+    val bv = ByteVector.view(arr)
+    assert(bv.toByteBuffer.isReadOnly)
+    assert(bv.drop(1).toByteBuffer.isReadOnly)
+    assert(!(bv ++ bv).toByteBuffer.isReadOnly)
+  }
+
   property("dropping from a view is consistent with dropping from a strict vector") {
     forAll { (b: ByteVector, n0: Long) =>
       val view = ByteVector.view(b.toArray)

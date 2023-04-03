@@ -755,15 +755,16 @@ sealed abstract class ByteVector
 
   /** Represents the contents of this vector as a read-only `java.nio.ByteBuffer`.
     *
-    * The returned buffer is read-only with limit set to the minimum number of bytes needed to
+    * The returned buffer has limit set to the minimum number of bytes needed to
     * represent the contents of this vector, position set to zero, and remaining set to the limit.
+    * It is read-only when it is backed by the same array as this vector i.e. it was created without copying.
     *
     * @group conversions
     */
   final def toByteBuffer: ByteBuffer =
     this match {
       case Chunk(v) => v.asByteBuffer
-      case _        => ByteBuffer.wrap(toArray).asReadOnlyBuffer()
+      case _        => ByteBuffer.wrap(toArray)
     }
 
   /** Converts the contents of this byte vector to a binary string of `size * 8` digits.
@@ -1377,7 +1378,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     def asByteBuffer(offset: Long, size: Int): ByteBuffer = {
       val arr = new Array[Byte](size)
       copyToArray(arr, 0, offset, size)
-      ByteBuffer.wrap(arr).asReadOnlyBuffer()
+      ByteBuffer.wrap(arr)
     }
     def copyToArray(xs: Array[Byte], start: Int, offset: Long, size: Int): Unit = {
       var i = 0
@@ -1406,7 +1407,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   private object AtEmpty extends At {
     def apply(i: Long) = throw new IllegalArgumentException("empty view")
     override def asByteBuffer(start: Long, size: Int): ByteBuffer =
-      ByteBuffer.allocate(0).asReadOnlyBuffer()
+      ByteBuffer.allocate(0)
     override def copyToBuffer(buffer: ByteBuffer, offset: Long, size: Int): Int = 0
   }
 
