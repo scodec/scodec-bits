@@ -1493,7 +1493,12 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     def toArrayUnsafe: Array[Byte] =
       at match {
         case atarr: AtArray if offset == 0 && size == atarr.arr.size => atarr.arr
-        case _                                                       => toArray
+        case atbuf: AtByteBuffer if {
+              val buf = atbuf.buf
+              buf.hasArray && offset == 0 && buf.arrayOffset == 0 && size == buf.array.length
+            } =>
+          atbuf.buf.array
+        case _ => toArray
       }
     def copyToBuffer(buffer: ByteBuffer): Int =
       at.copyToBuffer(buffer, offset, toIntSize(size))

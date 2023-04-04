@@ -449,6 +449,8 @@ class ByteVectorTest extends BitsSuite {
     val arr = "Hello, world!".getBytes
     assert(arr eq ByteVector.view(arr).toArrayUnsafe)
     assert(arr ne ByteVector.view(arr).drop(1).toArrayUnsafe)
+    assert(arr eq ByteVector.view(ByteBuffer.wrap(arr)).toArrayUnsafe)
+    assert(arr ne ByteVector.view(ByteBuffer.wrap(arr)).drop(1).toArrayUnsafe)
   }
 
   property("copyToStream roundtrip") {
