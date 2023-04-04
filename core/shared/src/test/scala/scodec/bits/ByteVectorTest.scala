@@ -449,6 +449,8 @@ class ByteVectorTest extends BitsSuite {
     val arr = "Hello, world!".getBytes
     assert(arr eq ByteVector.view(arr).toArrayUnsafe)
     assert(arr ne ByteVector.view(arr).drop(1).toArrayUnsafe)
+    assert(arr eq ByteVector.view(ByteBuffer.wrap(arr)).toArrayUnsafe)
+    assert(arr ne ByteVector.view(ByteBuffer.wrap(arr)).drop(1).toArrayUnsafe)
   }
 
   property("copyToStream roundtrip") {
@@ -467,6 +469,22 @@ class ByteVectorTest extends BitsSuite {
       assert(b == fromBuffer)
       assert(fromBuffer == b)
     }
+  }
+
+  test("toByteBuffer is read-only when appropriate") {
+    val arr = "Hello, world!".getBytes
+    val bv = ByteVector.view(arr)
+    assert(bv.toByteBuffer.isReadOnly)
+    assert(bv.drop(1).toByteBuffer.isReadOnly)
+    assert(!(bv ++ bv).toByteBuffer.isReadOnly)
+  }
+
+  test("toByteBufferUnsafe") {
+    val arr = "Hello, world!".getBytes
+    assert(arr eq ByteVector.view(arr).toByteBufferUnsafe.array)
+    assert(arr eq ByteVector.view(arr).drop(1).toByteBufferUnsafe.array)
+    assert(arr eq ByteVector.view(ByteBuffer.wrap(arr)).toByteBufferUnsafe.array)
+    assert(arr eq ByteVector.view(ByteBuffer.wrap(arr)).drop(1).toByteBufferUnsafe.array)
   }
 
   property("dropping from a view is consistent with dropping from a strict vector") {
