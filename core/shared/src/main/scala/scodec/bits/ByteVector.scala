@@ -767,6 +767,18 @@ sealed abstract class ByteVector
       case _        => ByteBuffer.wrap(toArray)
     }
 
+  /** Zero-copy version of [[toByteBuffer]]. In the case where this vector is a wrapper
+    * around a buffer or array, a buffer backed by the same data is returned. The
+    * returned buffer has an independent position and limit.
+    *
+    * @group conversions
+    */
+  final def toByteBufferUnsafe: ByteBuffer =
+    this match {
+      case Chunk(v) => v.asByteBufferUnsafe
+      case _        => ByteBuffer.wrap(toArray)
+    }
+
   /** Converts the contents of this byte vector to a binary string of `size * 8` digits.
     *
     * @group conversions
@@ -1380,6 +1392,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       copyToArray(arr, 0, offset, size)
       ByteBuffer.wrap(arr)
     }
+    def asByteBufferUnsafe(offset: Long, size: Int): ByteBuffer =
+      asByteBuffer(offset, size)
     def copyToArray(xs: Array[Byte], start: Int, offset: Long, size: Int): Unit = {
       var i = 0
       while (i < size) {
@@ -1414,8 +1428,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   private class AtArray(val arr: Array[Byte]) extends At {
     def apply(i: Long) = arr(i.toInt)
 
-    override def asByteBuffer(start: Long, size: Int): ByteBuffer = {
-      val b = ByteBuffer.wrap(arr, start.toInt, size).asReadOnlyBuffer()
+    override def asByteBuffer(start: Long, size: Int): ByteBuffer =
+      asByteBufferUnsafe(start, size).asReadOnlyBuffer()
+
+    override def asByteBufferUnsafe(start: Long, size: Int): ByteBuffer = {
+      val b = ByteBuffer.wrap(arr, start.toInt, size)
       if (start == 0 && size == arr.length) b
       else b.slice()
     }
@@ -1443,8 +1460,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       ()
     }
 
-    override def asByteBuffer(offset: Long, size: Int): ByteBuffer = {
-      val b = buf.asReadOnlyBuffer()
+    override def asByteBuffer(offset: Long, size: Int): ByteBuffer =
+      asByteBufferUnsafe(offset, size).asReadOnlyBuffer()
+
+    override def asByteBufferUnsafe(offset: Long, size: Int): ByteBuffer = {
+      val b = buf
       if (offset == 0 && b.position() == 0 && size == b.remaining()) b
       else {
         b.position(offset.toInt)
@@ -1479,6 +1499,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       cont
     }
     def asByteBuffer: ByteBuffer = at.asByteBuffer(offset, toIntSize(size))
+    def asByteBufferUnsafe: ByteBuffer = at.asByteBufferUnsafe(offset, toIntSize(size))
     def copyToStream(s: OutputStream): Unit =
       at.copyToStream(s, offset, size)
     def copyToArray(xs: Array[Byte], start: Int): Unit =
