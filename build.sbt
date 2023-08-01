@@ -96,7 +96,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
 lazy val coreJVM = core.jvm
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "31.1-jre" % "test"
+      "com.google.guava" % "guava" % "32.1.2-jre" % "test"
     )
   )
 
