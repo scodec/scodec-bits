@@ -10,7 +10,7 @@ ThisBuild / organizationName := "Scodec"
 
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.12.17", "2.13.10", "3.3.1")
+ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.12", "3.3.1")
 
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "1.1.27",
@@ -96,7 +96,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
 lazy val coreJVM = core.jvm
   .settings(
     libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "31.1-jre" % "test"
+      "com.google.guava" % "guava" % "32.1.2-jre" % "test"
     )
   )
 
