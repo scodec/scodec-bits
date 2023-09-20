@@ -35,6 +35,7 @@ import org.scalacheck.Prop.forAll
 import Arbitrary.arbitrary
 import Arbitraries._
 
+import java.util.{Base64 => JBase64}
 import java.util.concurrent.Callable
 
 class ByteVectorJvmTest extends BitsSuite {
@@ -53,36 +54,31 @@ class ByteVectorJvmTest extends BitsSuite {
 
   property("toBase64") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64
-      assert(ByteVector.view(guavaB64.decode(b.toBase64)) == b)
+      assert(ByteVector.view(JBase64.getDecoder.decode(b.toBase64)) == b)
     }
   }
 
   property("toBase64NoPad") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64.omitPadding()
-      assert(ByteVector.view(guavaB64.decode(b.toBase64NoPad)) == b)
+      assert(ByteVector.view(JBase64.getDecoder.decode(b.toBase64NoPad)) == b)
     }
   }
 
   property("toBase64Url") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64Url()
-      assert(ByteVector.view(guavaB64.decode(b.toBase64Url)) == b)
+      assert(ByteVector.view(JBase64.getUrlDecoder.decode(b.toBase64Url)) == b)
     }
   }
 
   property("toBase64UrlNoPad") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64Url().omitPadding()
-      assert(ByteVector.view(guavaB64.decode(b.toBase64UrlNoPad)) == b)
+      assert(ByteVector.view(JBase64.getUrlDecoder.decode(b.toBase64UrlNoPad)) == b)
     }
   }
 
   property("fromBase64") {
     forAll { (b: ByteVector) =>
-      val guavaB64 = com.google.common.io.BaseEncoding.base64
-      assert(ByteVector.fromValidBase64(guavaB64.encode(b.toArray)) == b)
+      assert(ByteVector.fromValidBase64(JBase64.getEncoder.encodeToString(b.toArray)) == b)
     }
   }
 

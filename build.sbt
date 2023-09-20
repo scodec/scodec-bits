@@ -97,11 +97,6 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
   )
 
 lazy val coreJVM = core.jvm
-  .settings(
-    libraryDependencies ++= Seq(
-      "com.google.guava" % "guava" % "32.1.2-jre" % "test"
-    )
-  )
 
 lazy val coreJS = core.js.settings(
   scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule)),
