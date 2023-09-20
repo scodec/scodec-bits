@@ -10,7 +10,7 @@ ThisBuild / organizationName := "Scodec"
 
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.12", "3.2.2")
+ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.12", "3.3.1")
 
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "1.1.27",
