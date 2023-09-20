@@ -32,7 +32,7 @@ package scodec.bits
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.{Arrays, UUID}
+import java.util.{Arrays, UUID, Base64 => JBase64}
 import Arbitraries._
 import org.scalacheck._
 import Prop.forAll
@@ -811,5 +811,75 @@ class ByteVectorTest extends BitsSuite {
 
   test("utf8 interpolator") {
     assertEquals(utf8Bytes"ɟǝǝqpɐǝp", ByteVector.encodeUtf8(s"ɟǝǝqpɐǝp").toOption.get)
+  }
+
+  property("toBase64") {
+    forAll { (b: ByteVector) =>
+      assert(ByteVector.view(JBase64.getDecoder.decode(b.toBase64)) == b)
+    }
+  }
+
+  property("toBase64NoPad") {
+    forAll { (b: ByteVector) =>
+      assert(ByteVector.view(JBase64.getDecoder.decode(b.toBase64NoPad)) == b)
+    }
+  }
+
+  property("toBase64Url") {
+    forAll { (b: ByteVector) =>
+      assert(ByteVector.view(JBase64.getUrlDecoder.decode(b.toBase64Url)) == b)
+    }
+  }
+
+  property("toBase64UrlNoPad") {
+    forAll { (b: ByteVector) =>
+      assert(ByteVector.view(JBase64.getUrlDecoder.decode(b.toBase64UrlNoPad)) == b)
+    }
+  }
+
+  property("fromBase64") {
+    forAll { (b: ByteVector) =>
+      assert(ByteVector.fromValidBase64(JBase64.getEncoder.encodeToString(b.toArray)) == b)
+    }
+  }
+
+  test("fromBase64 - digit count non-divisble by 4") {
+    assert(
+      ByteVector.fromBase64Descriptive("A") == Left(
+        "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+      )
+    )
+    assert(ByteVector.fromBase64Descriptive("AB") == Right(hex"00"))
+    assert(ByteVector.fromBase64Descriptive("ABC") == Right(hex"0010"))
+    assert(ByteVector.fromBase64Descriptive("ABCD") == Right(hex"001083"))
+    assert(
+      ByteVector.fromBase64Descriptive("ABCDA") == Left(
+        "Final base 64 quantum had only 1 digit - must have at least 2 digits"
+      )
+    )
+    assert(ByteVector.fromBase64Descriptive("ABCDAB") == Right(hex"00108300"))
+  }
+
+  test("fromBase64 - padding") {
+    assert(ByteVector.fromBase64Descriptive("AB==") == Right(hex"00"))
+    val paddingError = Left(
+      "Malformed padding - final quantum may optionally be padded with one or two padding characters such that the quantum is completed"
+    )
+    assert(ByteVector.fromBase64Descriptive("A=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("A====") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("AB=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("AB===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("ABC==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("=") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("==") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("===") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("====") == paddingError)
+    assert(ByteVector.fromBase64Descriptive("=====") == paddingError)
+  }
+
+  test("fromBase64 - empty input string") {
+    assert(ByteVector.fromBase64Descriptive("") == Right(ByteVector.empty))
   }
 }
