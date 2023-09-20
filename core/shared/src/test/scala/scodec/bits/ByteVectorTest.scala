@@ -32,7 +32,7 @@ package scodec.bits
 
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
-import java.util.{Arrays, UUID, Base64 => JBase64}
+import java.util.{Arrays, Base64 => JBase64, UUID}
 import Arbitraries._
 import org.scalacheck._
 import Prop.forAll
