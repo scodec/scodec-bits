@@ -22,7 +22,7 @@ ThisBuild / tlMimaPreviousVersions ~= (_.filterNot(_ == "1.1.32"))
 
 ThisBuild / githubWorkflowJavaVersions := Seq(JavaSpec.temurin("8"))
 
-ThisBuild / tlFatalWarningsInCi := false
+ThisBuild / tlFatalWarnings := false
 
 ThisBuild / scmInfo := Some(
   ScmInfo(url("https://github.com/scodec/scodec-bits"), "git@github.com:scodec/scodec-bits.git")
