@@ -487,6 +487,18 @@ class ByteVectorTest extends BitsSuite {
     assert(arr eq ByteVector.view(ByteBuffer.wrap(arr)).drop(1).toByteBufferUnsafe.array)
   }
 
+  test("toByteBufferUnsafe has independent position+limit") {
+    val bv = ByteVector.view(ByteBuffer.wrap("Hello, world!".getBytes))
+    val bb1 = bv.toByteBufferUnsafe
+    assertEquals(bb1.position(), 0)
+    assertEquals(bb1.limit(), 13)
+    val bb2 = bv.toByteBufferUnsafe
+    bb2.position(1)
+    bb2.limit(2)
+    assertEquals(bb1.position(), 0)
+    assertEquals(bb1.limit(), 13)
+  }
+
   property("dropping from a view is consistent with dropping from a strict vector") {
     forAll { (b: ByteVector, n0: Long) =>
       val view = ByteVector.view(b.toArray)

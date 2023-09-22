@@ -1464,7 +1464,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       asByteBufferUnsafe(offset, size).asReadOnlyBuffer()
 
     override def asByteBufferUnsafe(offset: Long, size: Int): ByteBuffer = {
-      val b = buf
+      val b = buf.duplicate()
       if (offset == 0 && b.position() == 0 && size == b.remaining()) b
       else {
         b.position(offset.toInt)
