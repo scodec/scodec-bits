@@ -93,7 +93,7 @@ lazy val core = crossProject(JVMPlatform, JSPlatform, NativePlatform)
       (base / "NOTICE") +: (base / "LICENSE") +: ((base / "licenses") * "LICENSE_*").get
     },
     scalacOptions := scalacOptions.value.filterNot(_ == "-source:3.0-migration"),
-    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "1.0.0-M10" % "test"
+    libraryDependencies += "org.scalameta" %%% "munit-scalacheck" % "1.0.0-M11" % "test"
   )
 
 lazy val coreJVM = core.jvm
