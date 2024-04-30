@@ -1787,7 +1787,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
           if (defaults) {
             Character.digit(c, 16) match {
               case i if i >= 0                                => i
-              case i if Character.isWhitespace(c) || c == '_' => -1
+              case _ if Character.isWhitespace(c) || c == '_' => Bases.IgnoreChar
+              case _ if c == ';' || c == '#'                  => Bases.IgnoreRestOfLine
               case _                                          => throw new IllegalArgumentException
             }
           } else alphabet.toIndex(c)
@@ -1801,6 +1802,9 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
             midByte = true
           }
           count += 1
+        } else if (nibble == Bases.IgnoreRestOfLine) {
+          // Ignore rest of line
+          while (idx < length && withoutPrefix.charAt(idx) != '\n') idx += 1
         }
         idx += 1
       }
@@ -1860,50 +1864,71 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
   def fromBinDescriptive(
       str: String,
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
-  ): Either[String, ByteVector] = fromBinInternal(str, alphabet).map { case (res, _) => res }
+  ): Either[String, ByteVector] =
+    try Right(fromBinInternal(str, alphabet)._1)
+    catch {
+      case t: IllegalArgumentException => Left(t.getMessage)
+    }
 
   private[bits] def fromBinInternal(
       str: String,
-      alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
-  ): Either[String, (ByteVector, Int)] = {
-    val prefixed = (str.startsWith("0b")) || (str.startsWith("0B"))
+      alphabet: Bases.BinaryAlphabet
+  ): (ByteVector, Int) = {
+    val prefixed = str.length >= 2 && str.charAt(0) == '0' && {
+      val second = str.charAt(1)
+      second == 'b' || second == 'B'
+    }
     val withoutPrefix = if (prefixed) str.substring(2) else str
     var idx, byte, bits, count = 0
-    var err: String = null
-    val bldr = ByteBuffer.allocate((str.size + 7) / 8)
-    while (idx < withoutPrefix.length && (err eq null)) {
-      val c = withoutPrefix(idx)
-      if (!alphabet.ignore(c))
-        try {
-          byte = (byte << 1) | (1 & alphabet.toIndex(c))
+    val length = withoutPrefix.length
+    val out = new Array[Byte]((length + 7) / 8)
+    var j = 0
+    val defaults = alphabet eq Bases.Alphabets.Binary
+    try
+      while (idx < length) {
+        val c = withoutPrefix.charAt(idx)
+        val bit =
+          if (defaults) {
+            c match {
+              case '0' => 0
+              case '1' => 1
+              case _ if Character.isWhitespace(c) || c == '_' => Bases.IgnoreChar
+              case _ if c == ';' || c == '#'                  => Bases.IgnoreRestOfLine
+              case _                                          => throw new IllegalArgumentException
+            }
+          } else alphabet.toIndex(c)
+        if (bit >= 0) {
+          byte = (byte << 1) | bit
           bits += 1
           count += 1
-        } catch {
-          case _: IllegalArgumentException =>
-            err = s"Invalid binary character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
+          if (bits == 8) {
+            out(j) = byte.toByte
+            j += 1
+            bits = 0
+            byte = 0
+          }
+        } else if (bit == Bases.IgnoreRestOfLine) {
+          // Ignore rest of line
+          while (idx < length && withoutPrefix.charAt(idx) != '\n') idx += 1
         }
-      if (bits == 8) {
-        bldr.put(byte.toByte)
-        byte = 0
-        bits = 0
+        idx += 1
       }
-      idx += 1
-    }
-    if (err eq null)
-      Right(
-        (
-          if (bits > 0) {
-            bldr.put((byte << (8 - bits)).toByte)
-            bldr.flip()
-            ByteVector(bldr).shiftRight((8 - bits).toLong, false)
-          } else {
-            bldr.flip()
-            ByteVector(bldr)
-          },
-          count
+    catch {
+      case _: IllegalArgumentException =>
+        val c = withoutPrefix.charAt(idx)
+        throw new IllegalArgumentException(
+          s"Invalid binary character '$c' at index ${idx + (if (prefixed) 2 else 0)}"
         )
-      )
-    else Left(err)
+    }
+
+     val result = if (bits > 0) {
+      out(j) = ((byte << (8 - bits))).toByte
+      j += 1
+      ByteVector.view(out).shiftRight((8 - bits).toLong, false)
+    } else {
+      ByteVector.view(out).take(j)
+    }
+    (result, count)
   }
 
   /** Constructs a `ByteVector` from a binary string or returns `None` if the string is not valid
