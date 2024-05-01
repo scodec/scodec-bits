@@ -87,10 +87,10 @@ object Bases {
       def toChar(i: Int) = if (i == 0) '0' else '1'
       def toIndex(c: Char) =
         c match {
-          case '0' => 0
-          case '1' => 1
+          case '0'            => 0
+          case '1'            => 1
           case c if ignore(c) => IgnoreChar
-          case _   => throw new IllegalArgumentException
+          case _              => throw new IllegalArgumentException
         }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -100,10 +100,10 @@ object Bases {
       def toChar(i: Int) = if (i == 0) 't' else 'f'
       def toIndex(c: Char) =
         c match {
-          case 't' | 'T' => 0
-          case 'f' | 'F' => 1
+          case 't' | 'T'      => 0
+          case 'f' | 'F'      => 1
           case c if ignore(c) => IgnoreChar
-          case _         => throw new IllegalArgumentException
+          case _              => throw new IllegalArgumentException
         }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }

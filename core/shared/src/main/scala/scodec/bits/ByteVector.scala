@@ -1890,8 +1890,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         val bit =
           if (defaults) {
             c match {
-              case '0' => 0
-              case '1' => 1
+              case '0'                                        => 0
+              case '1'                                        => 1
               case _ if Character.isWhitespace(c) || c == '_' => Bases.IgnoreChar
               case _ if c == ';' || c == '#'                  => Bases.IgnoreRestOfLine
               case _                                          => throw new IllegalArgumentException
@@ -1921,8 +1921,8 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         )
     }
 
-     val result = if (bits > 0) {
-      out(j) = ((byte << (8 - bits))).toByte
+    val result = if (bits > 0) {
+      out(j) = (byte << (8 - bits)).toByte
       j += 1
       ByteVector.view(out).shiftRight((8 - bits).toLong, false)
     } else {

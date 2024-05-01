@@ -189,11 +189,14 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fromHexDescriptive with comments") {
-    assertEquals(ByteVector.fromHexDescriptive("""
+    assertEquals(
+      ByteVector.fromHexDescriptive("""
       deadbeef ; first line
       01020304 # second line
       05060708
-    """), Right(hex"deadbeef0102030405060708"))
+    """),
+      Right(hex"deadbeef0102030405060708")
+    )
 
     object CustomAlphabet extends Bases.Alphabets.LenientHex {
       private val Chars =
@@ -201,15 +204,21 @@ class ByteVectorTest extends BitsSuite {
       def toChar(i: Int) = Chars(i)
       override def toIndex(c: Char): Int = c match {
         case '$' => Bases.IgnoreRestOfLine
-        case _ => super.toIndex(c)
+        case _   => super.toIndex(c)
       }
     }
 
-    assertEquals(ByteVector.fromHexDescriptive("""
+    assertEquals(
+      ByteVector.fromHexDescriptive(
+        """
       deadbeef $ first line
       01020304 $ second line
       05060708
-    """, CustomAlphabet), Right(hex"deadbeef0102030405060708"))
+    """,
+        CustomAlphabet
+      ),
+      Right(hex"deadbeef0102030405060708")
+    )
   }
 
   property("toHex fromHex roundtrip") {
@@ -239,11 +248,14 @@ class ByteVectorTest extends BitsSuite {
   }
 
   test("fromBinDescriptive with comments") {
-    assertEquals(ByteVector.fromBinDescriptive("""
+    assertEquals(
+      ByteVector.fromBinDescriptive("""
       00110011 ; first line
       11001100 # second line
       11110000
-    """), Right(bin"001100111100110011110000".bytes))
+    """),
+      Right(bin"001100111100110011110000".bytes)
+    )
 
     object CustomAlphabet extends Bases.BinaryAlphabet {
       def toChar(i: Int) = i match {
@@ -254,18 +266,23 @@ class ByteVectorTest extends BitsSuite {
         case '0' => 0
         case '1' => 1
         case '$' => Bases.IgnoreRestOfLine
-        case _ => Bases.IgnoreChar
+        case _   => Bases.IgnoreChar
       }
       def ignore(c: Char): Boolean = c.isWhitespace
     }
 
-    assertEquals(ByteVector.fromBinDescriptive("""
+    assertEquals(
+      ByteVector.fromBinDescriptive(
+        """
       00110011 $ first line
       11001100 $ second line
       11110000
-    """, CustomAlphabet), Right(bin"001100111100110011110000".bytes))
+    """,
+        CustomAlphabet
+      ),
+      Right(bin"001100111100110011110000".bytes)
+    )
   }
-
 
   test("fromValidBin") {
     assert(ByteVector.fromValidBin(deadbeef.toBin) == deadbeef)
