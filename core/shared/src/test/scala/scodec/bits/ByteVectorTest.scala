@@ -221,6 +221,17 @@ class ByteVectorTest extends BitsSuite {
     )
   }
 
+  property("hex with comments example") {
+    val packet = hex"""
+      ; Start of first packet from https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/mpeg2_mp2t_with_cc_drop01.pcap
+      01 00 5e 7b ad 47 00 0c db 78 7d 00 08 00                      ; Ethernet header
+      45 00 05 40 b6 9f 40 00 0c 11 de 95 51 a3 96 3c e9 70 03 28    ; IPv4 header
+      c3 50 15 7c 05 2c 00 00                                        ; UDP header
+      47 02 00 1e                                                    ; MP2T header
+    """
+    assertEquals(packet.size, 46L)
+  }
+
   property("toHex fromHex roundtrip") {
     forAll((b: ByteVector) => ByteVector.fromHex(b.toHex).get == b)
   }
