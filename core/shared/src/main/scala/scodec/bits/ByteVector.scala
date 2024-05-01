@@ -1753,6 +1753,10 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     * is not valid hexadecimal.
     *
     * The string may start with a `0x` and it may contain whitespace or underscore characters.
+    *
+    * Single-line comments are supported - by default, any text after a #, ;, or | charater is ignored
+    * until the start of the next line, though comment charaters are specified by the specified alphabet.
+    *
     * @group base
     */
   def fromHexDescriptive(
@@ -1858,6 +1862,10 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     * not valid binary.
     *
     * The string may start with a `0b` and it may contain whitespace or underscore characters.
+    *
+    * Single-line comments are supported - by default, any text after a #, ;, or | charater is ignored
+    * until the start of the next line, though comment charaters are specified by the specified alphabet.
+    *
     * @group base
     */
   def fromBinDescriptive(
