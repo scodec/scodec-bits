@@ -82,15 +82,26 @@ object Bases {
   /** Predefined alphabets for use in base conversions. */
   object Alphabets {
 
+    private[bits] object HexBinCommentChar {
+      def unapply(c: Char): Option[Char] =
+        c match {
+          case '#' => Some('#')
+          case ';' => Some(';')
+          case '|' => Some('|')
+          case _   => None
+        }
+    }
+
     /** Binary alphabet that uses `{0, 1}` and allows whitespace and underscores for separation. */
     object Binary extends BinaryAlphabet {
       def toChar(i: Int) = if (i == 0) '0' else '1'
       def toIndex(c: Char) =
         c match {
-          case '0'            => 0
-          case '1'            => 1
-          case c if ignore(c) => IgnoreChar
-          case _              => throw new IllegalArgumentException
+          case '0'                  => 0
+          case '1'                  => 1
+          case c if ignore(c)       => IgnoreChar
+          case HexBinCommentChar(_) => IgnoreRestOfLine
+          case _                    => throw new IllegalArgumentException
         }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -100,10 +111,11 @@ object Bases {
       def toChar(i: Int) = if (i == 0) 't' else 'f'
       def toIndex(c: Char) =
         c match {
-          case 't' | 'T'      => 0
-          case 'f' | 'F'      => 1
-          case c if ignore(c) => IgnoreChar
-          case _              => throw new IllegalArgumentException
+          case 't' | 'T'            => 0
+          case 'f' | 'F'            => 1
+          case c if ignore(c)       => IgnoreChar
+          case HexBinCommentChar(_) => IgnoreRestOfLine
+          case _                    => throw new IllegalArgumentException
         }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }
@@ -113,7 +125,12 @@ object Bases {
     private[bits] abstract class LenientHex extends HexAlphabet {
       def toIndex(c: Char) = {
         val i = Character.digit(c, 16)
-        if (i < 0) if (ignore(c)) IgnoreChar else throw new IllegalArgumentException else i
+        if (i >= 0) i
+        else
+          c match {
+            case c if ignore(c)       => IgnoreChar
+            case HexBinCommentChar(_) => IgnoreRestOfLine
+          }
       }
       def ignore(c: Char) = c.isWhitespace || c == '_'
     }

@@ -1785,12 +1785,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
         val c = withoutPrefix.charAt(idx)
         val nibble =
           if (defaults) {
-            Character.digit(c, 16) match {
-              case i if i >= 0                                => i
-              case _ if Character.isWhitespace(c) || c == '_' => Bases.IgnoreChar
-              case _ if c == ';' || c == '#'                  => Bases.IgnoreRestOfLine
-              case _                                          => throw new IllegalArgumentException
-            }
+            val i = Character.digit(c, 16)
+            if (i >= 0) i
+            else if (Character.isWhitespace(c) || c == '_') Bases.IgnoreChar
+            else if (Bases.Alphabets.HexBinCommentChar.unapply(c).isDefined) Bases.IgnoreRestOfLine
+            else throw new IllegalArgumentException
           } else alphabet.toIndex(c)
         if (nibble >= 0) {
           if (midByte) {
@@ -1893,7 +1892,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
               case '0'                                        => 0
               case '1'                                        => 1
               case _ if Character.isWhitespace(c) || c == '_' => Bases.IgnoreChar
-              case _ if c == ';' || c == '#'                  => Bases.IgnoreRestOfLine
+              case Bases.Alphabets.HexBinCommentChar(_)       => Bases.IgnoreRestOfLine
               case _                                          => throw new IllegalArgumentException
             }
           } else alphabet.toIndex(c)
