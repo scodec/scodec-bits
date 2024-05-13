@@ -188,6 +188,50 @@ class ByteVectorTest extends BitsSuite {
     )
   }
 
+  test("fromHexDescriptive with comments") {
+    assertEquals(
+      ByteVector.fromHexDescriptive("""
+      deadbeef ; first line
+      01020304 # second line
+      05060708
+    """),
+      Right(hex"deadbeef0102030405060708")
+    )
+
+    object CustomAlphabet extends Bases.Alphabets.LenientHex {
+      private val Chars =
+        Array('0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f')
+      def toChar(i: Int) = Chars(i)
+      override def toIndex(c: Char): Int = c match {
+        case '$' => Bases.IgnoreRestOfLine
+        case _   => super.toIndex(c)
+      }
+    }
+
+    assertEquals(
+      ByteVector.fromHexDescriptive(
+        """
+      deadbeef $ first line
+      01020304 $ second line
+      05060708
+    """,
+        CustomAlphabet
+      ),
+      Right(hex"deadbeef0102030405060708")
+    )
+  }
+
+  property("hex with comments example") {
+    val packet = hex"""
+      ; Start of first packet from https://wiki.wireshark.org/uploads/__moin_import__/attachments/SampleCaptures/mpeg2_mp2t_with_cc_drop01.pcap
+      01 00 5e 7b ad 47 00 0c db 78 7d 00 08 00                      ; Ethernet header
+      45 00 05 40 b6 9f 40 00 0c 11 de 95 51 a3 96 3c e9 70 03 28    ; IPv4 header
+      c3 50 15 7c 05 2c 00 00                                        ; UDP header
+      47 02 00 1e                                                    ; MP2T header
+    """
+    assertEquals(packet.size, 46L)
+  }
+
   property("toHex fromHex roundtrip") {
     forAll((b: ByteVector) => ByteVector.fromHex(b.toHex).get == b)
   }
@@ -211,6 +255,43 @@ class ByteVectorTest extends BitsSuite {
     )
     assert(
       ByteVector.fromBinDescriptive("0B1101a000") == Left("Invalid binary character 'a' at index 6")
+    )
+  }
+
+  test("fromBinDescriptive with comments") {
+    assertEquals(
+      ByteVector.fromBinDescriptive("""
+      00110011 ; first line
+      11001100 # second line
+      11110000
+    """),
+      Right(bin"001100111100110011110000".bytes)
+    )
+
+    object CustomAlphabet extends Bases.BinaryAlphabet {
+      def toChar(i: Int) = i match {
+        case 0 => '0'
+        case 1 => '1'
+      }
+      def toIndex(c: Char): Int = c match {
+        case '0' => 0
+        case '1' => 1
+        case '$' => Bases.IgnoreRestOfLine
+        case _   => Bases.IgnoreChar
+      }
+      def ignore(c: Char): Boolean = c.isWhitespace
+    }
+
+    assertEquals(
+      ByteVector.fromBinDescriptive(
+        """
+      00110011 $ first line
+      11001100 $ second line
+      11110000
+    """,
+        CustomAlphabet
+      ),
+      Right(bin"001100111100110011110000".bytes)
     )
   }
 
