@@ -30,9 +30,8 @@
 
 package scodec.bits
 
-import scala.scalanative.unsafe.Ptr
-import scala.scalanative.unsafe.Zone
-import scala.scalanative.unsafe.alloc
+import scala.scalanative.unsafe.{Ptr, Zone, alloc}
+import scala.scalanative.unsigned._
 
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
   import ByteVector._
@@ -49,7 +48,7 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
   }
 
   def toPtr(implicit zone: Zone): Ptr[Byte] = {
-    val dest = alloc[Byte](size)
+    val dest = alloc[Byte](size.toCSize)
     copyToPtr(dest, 0)
     dest
   }

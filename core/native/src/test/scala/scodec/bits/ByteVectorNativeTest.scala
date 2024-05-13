@@ -43,7 +43,7 @@ class ByteVectorNativeTest extends BitsSuite {
   }
 
   test("view(Ptr[Byte])") {
-    Zone { implicit z =>
+    Zone.acquire { implicit z =>
       val ptr = alloc[Byte](4)
       setDEADBEEF(ptr)
       val byteVector: ByteVector = ByteVector.view(ptr, 4)
@@ -54,7 +54,7 @@ class ByteVectorNativeTest extends BitsSuite {
   }
 
   test("fromPtr") {
-    Zone { implicit z =>
+    Zone.acquire { implicit z =>
       val ptr = alloc[Byte](4)
       setDEADBEEF(ptr)
       val byteVector: ByteVector = ByteVector.fromPtr(ptr, 4)
@@ -65,7 +65,7 @@ class ByteVectorNativeTest extends BitsSuite {
   }
 
   test("copyToPtr") {
-    Zone { implicit z =>
+    Zone.acquire { implicit z =>
       val ptr = alloc[Byte](6)
       ptr(0) = 0xaa.toByte
       ptr(5) = 0xff.toByte
@@ -75,7 +75,7 @@ class ByteVectorNativeTest extends BitsSuite {
   }
 
   test("toPtr") {
-    Zone { implicit z =>
+    Zone.acquire { implicit z =>
       assert(ByteVector.view(hex"deadbeef".toPtr, 4) === hex"deadbeef")
     }
   }
