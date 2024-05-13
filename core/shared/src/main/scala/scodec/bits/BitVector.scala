@@ -1500,13 +1500,16 @@ object BitVector extends BitVectorCompanionCrossPlatform {
       str: String,
       alphabet: Bases.BinaryAlphabet = Bases.Alphabets.Binary
   ): Either[String, BitVector] =
-    ByteVector.fromBinInternal(str, alphabet).map { case (bytes, size) =>
-      val toDrop = size match {
+    try {
+      val (bytes, count) = ByteVector.fromBinInternal(str, alphabet)
+      val toDrop = count match {
         case 0               => 0
         case n if n % 8 == 0 => 0
         case n               => 8 - (n % 8)
       }
-      bytes.toBitVector.drop(toDrop.toLong)
+      Right(bytes.toBitVector.drop(toDrop.toLong))
+    } catch {
+      case t: IllegalArgumentException => Left(t.getMessage)
     }
 
   /** Constructs a `BitVector` from a binary string or returns `None` if the string is not valid

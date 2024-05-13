@@ -10,7 +10,7 @@ ThisBuild / organizationName := "Scodec"
 
 ThisBuild / startYear := Some(2013)
 
-ThisBuild / crossScalaVersions := Seq("2.12.19", "2.13.13", "3.3.3")
+ThisBuild / crossScalaVersions := Seq("2.12.19", "2.13.14", "3.3.3")
 
 ThisBuild / tlVersionIntroduced := Map(
   "3" -> "1.1.27",
@@ -75,7 +75,11 @@ ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[IncompatibleMethTypeProblem]("scodec.bits.HexDumpFormat.print"),
   ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.HexDumpFormat.this"),
   ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.fromHexInternal"),
-  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector#AtEmpty.apply")
+  ProblemFilters.exclude[DirectMissingMethodProblem]("scodec.bits.ByteVector#AtEmpty.apply"),
+  ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.fromBinInternal"),
+  ProblemFilters.exclude[DirectMissingMethodProblem](
+    "scodec.bits.ByteVector.fromBinInternal$default$2"
+  )
 )
 
 lazy val root = tlCrossRootProject.aggregate(core, benchmark)
