@@ -30,7 +30,7 @@
 
 package scodec.bits
 
-import scala.scalanative.unsafe.{alloc, Ptr, Zone}
+import scala.scalanative.unsafe.{Ptr, Zone, alloc}
 import scala.scalanative.unsigned._
 
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
