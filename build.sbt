@@ -3,7 +3,7 @@ import com.typesafe.tools.mima.core._
 addCommandAlias("fmt", "; compile:scalafmt; test:scalafmt; scalafmtSbt")
 addCommandAlias("fmtCheck", "; compile:scalafmtCheck; test:scalafmtCheck; scalafmtSbtCheck")
 
-ThisBuild / tlBaseVersion := "1.1"
+ThisBuild / tlBaseVersion := "1.2"
 
 ThisBuild / organization := "org.scodec"
 ThisBuild / organizationName := "Scodec"
@@ -144,7 +144,7 @@ lazy val coreJS = core.js.settings(
 )
 
 lazy val coreNative = core.native.settings(
-  tlVersionIntroduced ++= List("2.12", "2.13", "3").map(_ -> "1.1.32").toMap
+  tlVersionIntroduced ++= List("2.12", "2.13", "3").map(_ -> "1.2.0").toMap
 )
 
 lazy val benchmark: Project = project
