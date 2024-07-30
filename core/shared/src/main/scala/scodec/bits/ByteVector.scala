@@ -1165,7 +1165,7 @@ sealed abstract class ByteVector
   final def decodeAsciiLenient: String =
     decodeStringLenient()(Charset.forName("US-ASCII"))
 
-  final def not: ByteVector = mapS(new F1B { def apply(b: Byte) = (~b).toByte })
+  final def not: ByteVector = mapS(new F1B { def apply(b: Byte) = ~b.toByte })
 
   final def or(other: ByteVector): ByteVector =
     zipWithS(other)(new F2B { def apply(b: Byte, b2: Byte) = (b | b2).toByte })
