@@ -1293,6 +1293,21 @@ sealed abstract class ByteVector
       case _                => false
     }
 
+  /** Like [[equals]] but compares all bytes instead of returning after first non-matching byte.
+    * @group collection
+    */
+  def equalsConstantTime(other: ByteVector): Boolean =
+    if (this.size != other.size) false
+    else {
+      var result, idx = 0
+      val s = this.size
+      while (idx < s) {
+        result = result | (this(idx) ^ other(idx))
+        idx += 1
+      }
+      result == 0
+    }
+
   /** Display the size and bytes of this `ByteVector`. For bit vectors beyond a certain size, only a
     * hash of the contents are shown.
     * @group collection
