@@ -59,6 +59,13 @@ class ByteVectorTest extends BitsSuite {
     forAll((b: ByteVector, b2: ByteVector) => assert((b == b2) == (b === b2)))
   }
 
+  property("equalsConstantTime") {
+    forAll(bytesWithIndex) { case (b, m) =>
+      assert((b.take(m) ++ b.drop(m)).equalsConstantTime(b))
+    } &&
+    forAll((b: ByteVector, b2: ByteVector) => assert((b === b2) == (b.equalsConstantTime(b2))))
+  }
+
   test("compact is a no-op for already compact byte vectors") {
     val b = ByteVector(0x80)
     assert((b.compact eq b.compact) == true)
