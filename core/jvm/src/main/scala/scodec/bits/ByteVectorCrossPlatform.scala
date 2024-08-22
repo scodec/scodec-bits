@@ -30,16 +30,7 @@
 
 package scodec.bits
 
-import java.security.{
-  AlgorithmParameters,
-  GeneralSecurityException,
-  Key,
-  MessageDigest,
-  SecureRandom
-}
 import java.util.zip.{DataFormatException, Deflater, Inflater}
-
-import javax.crypto.Cipher
 
 private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
 
@@ -129,89 +120,4 @@ private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
         }
       } finally inflater.end()
     }
-
-  /** Computes a SHA-1 digest of this byte vector.
-    * @group conversions
-    */
-  final def sha1: ByteVector = digest("SHA-1")
-
-  /** Computes a SHA-256 digest of this byte vector.
-    * @group conversions
-    */
-  final def sha256: ByteVector = digest("SHA-256")
-
-  /** Computes an MD5 digest of this byte vector.
-    * @group conversions
-    */
-  final def md5: ByteVector = digest("MD5")
-
-  /** Computes a digest of this byte vector.
-    * @param algorithm
-    *   digest algorithm to use
-    * @group conversions
-    */
-  final def digest(algorithm: String): ByteVector = digest(MessageDigest.getInstance(algorithm))
-
-  /** Computes a digest of this byte vector.
-    * @param digest
-    *   digest to use
-    * @group conversions
-    */
-  final def digest(digest: MessageDigest): ByteVector = {
-    foreachV { v =>
-      digest.update(v.toArray)
-    }
-    ByteVector.view(digest.digest)
-  }
-
-  /** Encrypts this byte vector using the specified cipher and key.
-    *
-    * @param ci
-    *   cipher to use for encryption
-    * @param key
-    *   key to encrypt with
-    * @param aparams
-    *   optional algorithm paramaters used for encryption (e.g., initialization vector)
-    * @param sr
-    *   secure random
-    * @group crypto
-    */
-  final def encrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
-      sr: SecureRandom
-  ): Either[GeneralSecurityException, ByteVector] =
-    cipher(ci, key, Cipher.ENCRYPT_MODE, aparams)
-
-  /** Decrypts this byte vector using the specified cipher and key.
-    *
-    * @param ci
-    *   cipher to use for decryption
-    * @param key
-    *   key to decrypt with
-    * @param aparams
-    *   optional algorithm paramaters used for decryption (e.g., initialization vector)
-    * @param sr
-    *   secure random
-    * @group crypto
-    */
-  final def decrypt(ci: Cipher, key: Key, aparams: Option[AlgorithmParameters] = None)(implicit
-      sr: SecureRandom
-  ): Either[GeneralSecurityException, ByteVector] =
-    cipher(ci, key, Cipher.DECRYPT_MODE, aparams)
-
-  private[bits] def cipher(
-      ci: Cipher,
-      key: Key,
-      opmode: Int,
-      aparams: Option[AlgorithmParameters] = None
-  )(implicit sr: SecureRandom): Either[GeneralSecurityException, ByteVector] =
-    try {
-      aparams.fold(ci.init(opmode, key, sr))(aparams => ci.init(opmode, key, aparams, sr))
-      foreachV { view =>
-        ci.update(view.toArrayUnsafe); ()
-      }
-      Right(ByteVector.view(ci.doFinal()))
-    } catch {
-      case e: GeneralSecurityException => Left(e)
-    }
-
 }

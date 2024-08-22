@@ -79,7 +79,8 @@ import scala.annotation.tailrec
   *   vector.
   */
 sealed abstract class ByteVector
-    extends ByteVectorCrossPlatform
+    extends ByteVectorCryptoCrossPlatform
+    with ByteVectorCrossPlatform
     with BitwiseOperations[ByteVector, Long]
     with Ordered[ByteVector]
     with Serializable {

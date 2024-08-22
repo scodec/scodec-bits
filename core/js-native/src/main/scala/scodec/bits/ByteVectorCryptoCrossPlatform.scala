@@ -29,26 +29,45 @@
  */
 
 package scodec.bits
+import scodec.bits.hashing.*
 
-import scala.scalanative.unsafe.{Ptr, Zone, alloc}
-import scala.scalanative.unsigned._
+private[bits] trait ByteVectorCryptoCrossPlatform { self: ByteVector =>
 
-private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
-
-  def copyToPtr(dest: Ptr[Byte], start: Long): Unit =
-    copyToPtr(dest, start, 0, size)
-
-  def copyToPtr(dest: Ptr[Byte], start: Long, offset: Long, size: Long): Unit = {
-    var i = 0L
-    while (i < size) {
-      dest(start + i) = self(offset + i)
-      i += 1
+  def md5: ByteVector = {
+    val hasher = new Md5()
+    foreachV { v =>
+      hasher.update(v.toArray, v.offset.toInt, (v.size - v.offset).toInt)
     }
+    ByteVector.view(hasher.digest())
   }
 
-  def toPtr(implicit zone: Zone): Ptr[Byte] = {
-    val dest = alloc[Byte](size.toCSize)
-    copyToPtr(dest, 0)
-    dest
+  def sha1: ByteVector = {
+    val hasher = new Sha1()
+    foreachV { v =>
+      hasher.update(v.toArray, v.offset.toInt, (v.size - v.offset).toInt)
+    }
+    ByteVector.view(hasher.digest())
   }
+
+  def sha256: ByteVector = {
+    val hasher = new Sha256()
+    foreachV { v =>
+      hasher.update(v.toArray, v.offset.toInt, (v.size - v.offset).toInt)
+    }
+    ByteVector.view(hasher.digest())
+  }
+
+  private def digest(hasher: Hasher): ByteVector = {
+    foreachV { v =>
+      hasher.update(v.toArray, v.offset.toInt, (v.size - v.offset).toInt)
+    }
+
+    return ByteVector(hasher.digest())
+  }
+
+  /** Returns the 160-bit SHA-1 HMAC of this buffer. */
+  final def hmacSha1(key: ByteVector) = digest(Hmac.sha1(key))
+
+  /** Returns the 256-bit SHA-256 HMAC of this buffer. */
+  final def hmacSha256(key: ByteVector) = digest(Hmac.sha256(key))
 }

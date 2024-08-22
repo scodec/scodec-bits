@@ -28,8 +28,33 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package scodec.bits
+package scodec.bits.internal
 
-private[bits] trait BitVectorCompanionCrossPlatform extends BitVectorPlatform {
-  self: BitVector.type =>
+private[bits] object syntax {
+
+  implicit class IntOps(val i: Int) extends AnyVal {
+    def leftRotate(bitCount: Int): Int =
+      (i << bitCount) | (i >>> (32 - bitCount))
+  }
+
+  implicit final class ByteArrayOps(val src: Array[Byte]) extends AnyVal {
+    def copyInto(
+        dest: Array[Byte],
+        destinationOffset: Int = 0,
+        startIndex: Int = 0,
+        endIndex: Int = src.size
+    ): Array[Byte] = {
+      System.arraycopy(src, startIndex, dest, destinationOffset, endIndex - startIndex)
+      dest
+    }
+    def copyOf(length: Int): Array[Byte] = java.util.Arrays.copyOf(src, length)
+    def fill(value: Byte): Unit =
+      java.util.Arrays.fill(src, value)
+    def fill(value: Byte, fromIndex: Int, toIndex: Int): Unit =
+      java.util.Arrays.fill(src, fromIndex, toIndex, value)
+  }
+  implicit final class IntArrayOps(val src: Array[Int]) extends AnyVal {
+    def fill(value: Int): Unit =
+      java.util.Arrays.fill(src, value)
+  }
 }

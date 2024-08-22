@@ -29,5 +29,56 @@
  */
 
 package scodec.bits
+package hashing
 
-private[bits] trait BitVectorCrossPlatform { self: BitVector => }
+import scodec.bits.internal.syntax.*
+
+private[bits] class Hmac private (
+    private val hasher: Hasher,
+    private val outerKey: Array[Byte]
+) extends Hasher {
+  override def update(input: Array[Byte], offset: Int, byteCount: Int): Unit =
+    hasher.update(input, offset, byteCount)
+
+  override def digest(): Array[Byte] = {
+    val digest = hasher.digest()
+
+    hasher.update(outerKey, 0, outerKey.size)
+    hasher.update(digest, 0, digest.size)
+
+    hasher.digest()
+  }
+}
+
+object Hmac {
+  private val IPAD: Byte = 54
+  private val OPAD: Byte = 92
+
+  def sha1(key: ByteVector): Hmac =
+    create(key, hasher = new Sha1(), blockLength = 64)
+
+  def sha256(key: ByteVector): Hmac =
+    create(key, hasher = new Sha256(), blockLength = 64)
+
+  private def create(
+      key: ByteVector,
+      hasher: Hasher,
+      blockLength: Int
+  ): Hmac = {
+    val keySize = key.size
+    val paddedKey =
+      if (keySize == 0) throw new IllegalArgumentException("Empty key")
+      else if (keySize == blockLength) key.toArray
+      else if (keySize < blockLength) key.toArray.copyOf(blockLength)
+      else { hasher.update(key.toArray, 0, key.size.toInt); hasher.digest() }.copyOf(blockLength)
+    val innerKey = Array.tabulate[Byte](blockLength)(it => (paddedKey(it) ^ IPAD).toByte)
+    val outerKey = Array.tabulate(blockLength)(it => (paddedKey(it) ^ OPAD).toByte)
+
+    hasher.update(innerKey, 0, innerKey.size)
+
+    return new Hmac(
+      hasher,
+      outerKey
+    )
+  }
+}

@@ -29,26 +29,6 @@
  */
 
 package scodec.bits
+package hashing
 
-import scala.scalanative.unsafe.{Ptr, Zone, alloc}
-import scala.scalanative.unsigned._
-
-private[bits] trait ByteVectorCrossPlatform { self: ByteVector =>
-
-  def copyToPtr(dest: Ptr[Byte], start: Long): Unit =
-    copyToPtr(dest, start, 0, size)
-
-  def copyToPtr(dest: Ptr[Byte], start: Long, offset: Long, size: Long): Unit = {
-    var i = 0L
-    while (i < size) {
-      dest(start + i) = self(offset + i)
-      i += 1
-    }
-  }
-
-  def toPtr(implicit zone: Zone): Ptr[Byte] = {
-    val dest = alloc[Byte](size.toCSize)
-    copyToPtr(dest, 0)
-    dest
-  }
-}
+trait HashingSuitePlatform
