@@ -166,13 +166,10 @@ private[bits] final class Md5 extends Hasher {
 
     if (unprocessedLimit > 56) {
       java.util.Arrays.fill(unprocessed, unprocessedLimit, 64,0.toByte)
-      //unprocessed.fill(by 0, from unprocessedLimit,to 64)
       processChunk(unprocessed, 0)
       java.util.Arrays.fill(unprocessed, 0, unprocessedLimit, 0.toByte)
-      //unprocessed.fill(by 0,from 0,to unprocessedLimit)
     } else {
       java.util.Arrays.fill(unprocessed, unprocessedLimit, 56,0.toByte)
-      //unprocessed.fill(by 0,from unprocessedLimit,to 56)
     }
     unprocessed(56) = (messageLengthBits       ).toByte
     unprocessed(57) = (messageLengthBits >>>  8).toByte
