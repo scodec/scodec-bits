@@ -61,7 +61,7 @@ trait HashingSuitePlatform { self: HashingSuite =>
         ByteVector(digest.digest()).toHex
       }
       val theOther = {
-        val digest = MessageDigest.getInstance("SHA1")
+        val digest = MessageDigest.getInstance("SHA-1")
         digest.update(str.getBytes("UTF-8"))
         ByteVector(digest.digest()).toHex
       }
@@ -77,7 +77,7 @@ trait HashingSuitePlatform { self: HashingSuite =>
         ByteVector(digest.digest()).toHex
       }
       val theOther = {
-        val digest = MessageDigest.getInstance("SHA256")
+        val digest = MessageDigest.getInstance("SHA-256")
         digest.update(str.getBytes("UTF-8"))
         ByteVector(digest.digest()).toHex
       }
