@@ -198,7 +198,7 @@ sealed abstract class ByteVector
       @annotation.tailrec
       def go(cur: ByteVector, n1: Long, accR: List[ByteVector]): ByteVector =
         cur match {
-          case Chunk(bs) => accR.foldLeft(Chunk(bs.drop(n1)): ByteVector)(_ ++ _).unbuffer
+          case Chunk(bs)    => accR.foldLeft(Chunk(bs.drop(n1)): ByteVector)(_ ++ _).unbuffer
           case Append(l, r) =>
             if (n1 > l.size) go(r, n1 - l.size, accR)
             else go(l, n1, r :: accR)
@@ -255,7 +255,7 @@ sealed abstract class ByteVector
       @annotation.tailrec
       def go(accL: ByteVector, cur: ByteVector, n1: Long): ByteVector =
         cur match {
-          case Chunk(bs) => accL ++ Chunk(bs.take(n1))
+          case Chunk(bs)    => accL ++ Chunk(bs.take(n1))
           case Append(l, r) =>
             if (n1 > l.size) go(accL ++ l, r, n1 - l.size)
             else go(accL, l, n1)
@@ -955,7 +955,7 @@ sealed abstract class ByteVector
       def go(value: BigInt, chars: List[Char]): String =
         value match {
           case ZERO => (ones ++ chars).mkString
-          case _ =>
+          case _    =>
             val (div, rem) = value /% RADIX
             go(div, alphabet.toChar(rem.toInt) +: chars)
         }
@@ -2154,7 +2154,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     while (idx < str.length) {
       str(idx) match {
         case c if alphabet.ignore(c) => // ignore
-        case c =>
+        case c                       =>
           val cidx =
             if (padding == 0)
               if (c == Pad)

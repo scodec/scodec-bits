@@ -84,7 +84,7 @@ object Literals:
     def apply(strCtxExpr: Expr[StringContext], argsExpr: Expr[Seq[Any]])(using Quotes): Expr[A] =
       strCtxExpr.value match
         case Some(sc) => apply(sc.parts, argsExpr)
-        case None =>
+        case None     =>
           quotes.reflect.report.error("StringContext args must be statically known")
           ???
 

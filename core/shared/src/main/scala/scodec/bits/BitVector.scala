@@ -1220,11 +1220,11 @@ sealed abstract class BitVector
           l.internalPretty(prefix + "  ") + "\n" +
           r.internalPretty(prefix + "  ")
       case Bytes(b, n) => prefix + s"bits $n\n" + b.pretty("  " + prefix)
-      case Drop(u, n) =>
+      case Drop(u, n)  =>
         prefix + s"drop ${n}\n" +
           u.internalPretty(prefix + "  ")
       case s @ Suspend(_) => prefix + "suspend\n" + s.underlying.internalPretty(prefix + "  ")
-      case c: Chunks =>
+      case c: Chunks      =>
         prefix + "chunks\n" +
           c.chunks.left.internalPretty("  ") + "\n" +
           c.chunks.right.internalPretty("  ")
@@ -1957,7 +1957,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
 
     @volatile var knownSize: Long = right match {
       case _: Suspend => -1L
-      case _ => // eagerly compute the size if we're strict
+      case _          => // eagerly compute the size if we're strict
         val sz = left.size + right.size
         sz
     }
@@ -2031,7 +2031,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
                 sizeLowerBound = math.max(seen + l.size, sizeLowerBound); false
               } else go(r, n - l.size, seen + l.size)
             case s: Suspend => go(s.underlying, n, seen)
-            case _ =>
+            case _          =>
               sizeLowerBound = math.max(seen, sizeLowerBound)
               cur.size < n
           }
