@@ -37,8 +37,6 @@ ThisBuild / developers ++= List(
   tlGitHubDev("pchiusano", "Paul Chiusano")
 )
 
-ThisBuild / tlSonatypeUseLegacyHost := true
-
 ThisBuild / mimaBinaryIssueFilters ++= Seq(
   ProblemFilters.exclude[IncompatibleResultTypeProblem]("scodec.bits.ByteVector.grouped"),
   ProblemFilters.exclude[MissingClassProblem]("scodec.bits.ByteVector$GroupedOp"),
