@@ -982,4 +982,23 @@ class ByteVectorTest extends BitsSuite {
   test("fromBase64 - empty input string") {
     assert(ByteVector.fromBase64Descriptive("") == Right(ByteVector.empty))
   }
+
+  property("sliding") {
+    forAll { (b: ByteVector, n0: Int) =>
+      val n = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val expected =
+        b.toArray.sliding(n.toInt).map(ByteVector.view).toList
+      assertEquals(b.sliding(n).toList, expected)
+    }
+  }
+
+  property("sliding with step") {
+    forAll { (b: ByteVector, n0: Int, step0: Int) =>
+      val n = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val step = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val expected =
+        b.toArray.sliding(n.toInt, step.toInt).map(ByteVector.view).toList
+      assertEquals(b.sliding(n, step).toList, expected)
+    }
+  }
 }
