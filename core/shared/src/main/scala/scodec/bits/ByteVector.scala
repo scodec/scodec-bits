@@ -1946,7 +1946,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     val result = if (bits > 0) {
       out(j) = (byte << (8 - bits)).toByte
       j += 1
-      ByteVector.view(out).shiftRight((8 - bits).toLong, false)
+      ByteVector.view(out).take(j).shiftRight((8 - bits).toLong, false)
     } else {
       ByteVector.view(out).take(j)
     }

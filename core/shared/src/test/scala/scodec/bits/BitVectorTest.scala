@@ -456,6 +456,13 @@ class BitVectorTest extends BitsSuite {
     intercept[IllegalArgumentException](BitVector.fromValidBin("0x0102"))
   }
 
+  test("fromValidBin (3)") {
+    assertEquals(
+      BitVector.fromValidBin("00101 10000 00100"),
+      BitVector.fromValidBin("001011000000100")
+    )
+  }
+
   test("bin string interpolator") {
     assert(bin"0010" == BitVector(0x20).take(4))
     compileErrors("""bin"asdf"""")
