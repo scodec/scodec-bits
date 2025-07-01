@@ -752,4 +752,23 @@ class BitVectorTest extends BitsSuite {
       assertEquals(b.reverseBitOrder.reverseBitOrder, b)
     }
   }
+
+  property("sliding") {
+    forAll { (b: BitVector, n0: Int) =>
+      val n = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val expected =
+        b.toBin.sliding(n.toInt).map(BitVector.fromValidBin(_)).toList
+      assertEquals(b.sliding(n).toList, expected)
+    }
+  }
+
+  property("sliding with step") {
+    forAll { (b: BitVector, n0: Int, step0: Int) =>
+      val n = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val step = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1
+      val expected =
+        b.toBin.sliding(n.toInt, step.toInt).map(BitVector.fromValidBin(_)).toList
+      assertEquals(b.sliding(n, step).toList, expected)
+    }
+  }
 }

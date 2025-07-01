@@ -303,6 +303,24 @@ sealed abstract class ByteVector
   final def slice(from: Long, until: Long): ByteVector =
     drop(from).take(until - (from.max(0)))
 
+  /** Returns an iterator of fixed size slices of this vector, stepping a single byte between consecutive elements.
+    *
+    * @group collection
+    */
+  final def sliding(n: Long): Iterator[ByteVector] =
+    sliding(n, 1L)
+
+  /** Returns an iterator of fixed size slices of this vector, stepping the specified number of bytes between consecutive elements.
+    *
+    * @group collection
+    */
+  final def sliding(n: Long, step: Long): Iterator[ByteVector] = {
+    assert(n > 0 && step > 0, "both n and step must be positive")
+    def limit(itr: Iterator[Long]): Iterator[Long] =
+      if (step < n) itr.take((size - n).toInt + 1) else itr.takeWhile(_ < size)
+    limit(Iterator.iterate(0L)(_ + step)).map(idx => slice(idx, idx + n))
+  }
+
   /** Returns a vector whose contents are the results of taking the first `n` bytes of this vector.
     *
     * If this vector does not contain at least `n` bytes, an error message is returned.
