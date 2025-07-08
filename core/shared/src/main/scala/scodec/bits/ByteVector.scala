@@ -1101,7 +1101,7 @@ sealed abstract class ByteVector
   final def toInt(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Int =
     bits.toInt(signed, ordering)
 
-  /** Converts the contents of this vector to an int.
+  /** Converts the contents of this vector to a long.
     *
     * @param signed
     *   whether sign extension should be performed
@@ -1113,6 +1113,20 @@ sealed abstract class ByteVector
     */
   final def toLong(signed: Boolean = true, ordering: ByteOrdering = ByteOrdering.BigEndian): Long =
     bits.toLong(signed, ordering)
+
+  /** Converts the contents of this vector to a `BigInt`.
+    *
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @group conversions
+    */
+  final def toBigInt(
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BigInt =
+    bits.toBigInt(signed, ordering)
 
   /** Converts the contents of this byte vector to a UUID.
     *
@@ -1766,6 +1780,22 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
       ordering: ByteOrdering = ByteOrdering.BigEndian
   ): ByteVector =
     BitVector.fromLong(l, size * 8, ordering).bytes
+
+  /** Constructs a `ByteVector` with the 2's complement encoding of the specified value.
+    * @param l
+    *   value to encode
+    * @param size
+    *   size of vector
+    * @param ordering
+    *   byte ordering of vector
+    * @group numeric
+    */
+  def fromBigInt(
+      l: BigInt,
+      size: Int,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): ByteVector =
+    BitVector.fromBigInt(l, size * 8, ordering).bytes
 
   /** Constructs a `ByteVector` containing the binary representation of the specified UUID. The
     * bytes are in MSB-to-LSB order.

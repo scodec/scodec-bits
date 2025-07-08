@@ -1119,6 +1119,59 @@ sealed abstract class BitVector
     }
   }
 
+  /** Convert a slice of bits from this vector (`start` until `start+bits`) to a `BigInt`.
+    *
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @throws IllegalArgumentException
+    *   if the slice refers to indices that are out of range
+    * @group conversions
+    */
+  final def sliceToBigInt(
+      start: Long,
+      bits: Int,
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BigInt =
+    if (start % 8 != 0) drop(start).sliceToBigInt(0, bits, signed, ordering)
+    else if (ordering == ByteOrdering.LittleEndian)
+      drop(start).invertReverseByteOrder.sliceToBigInt(0, bits, signed, ByteOrdering.BigEndian)
+    else getBigEndianBigInt(start, bits, signed)
+
+  private def getBigEndianBigInt(start: Long, bits: Int, signed: Boolean): BigInt = {
+    require(sizeGreaterThanOrEqual(start + bits) && bits >= 0)
+    if (bits == 0) BigInt(0)
+    else {
+      val firstBit = apply(start)
+      val signBit = signed && firstBit
+      // Include an explicit sign bit of 0 when we're unsigned and the first bit is high
+      val explicitZeroSignBit = !signed && firstBit
+      val explicitZeroSign = if (explicitZeroSignBit) BitVector.zero else BitVector.empty
+      val mod = (bits + explicitZeroSign.size) % 8
+      val pad = if (mod == 0) BitVector.empty else BitVector.fill(8 - mod)(signBit)
+      val arr = (explicitZeroSign ++ pad ++ slice(start, start + bits)).toByteArray
+      BigInt(arr)
+    }
+  }
+
+  /** Converts the contents of this vector to a `BigInt`.
+    *
+    * @param signed
+    *   whether sign extension should be performed
+    * @param ordering
+    *   order bytes should be processed in
+    * @group conversions
+    */
+  final def toBigInt(
+      signed: Boolean = true,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BigInt =
+    if (ordering == ByteOrdering.LittleEndian)
+      invertReverseByteOrder.toBigInt(signed, ByteOrdering.BigEndian)
+    else getBigEndianBigInt(0, size.toInt, signed)
+
   /** Converts the contents of this bit vector to a UUID.
     *
     * @throws IllegalArgumentException
@@ -1490,6 +1543,29 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     val buffer = ByteBuffer.allocate(8).order(ByteOrder.BIG_ENDIAN).putLong(l)
     buffer.flip()
     val relevantBits = (BitVector.view(buffer) << (64L - size)).take(size.toLong)
+    if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
+  }
+
+  /** Constructs a bit vector with the 2's complement encoding of the specified value.
+    * @param l
+    *   value to encode
+    * @param size
+    *   size of vector
+    * @param ordering
+    *   byte ordering of vector
+    * @group numeric
+    */
+  def fromBigInt(
+      v: BigInt,
+      size: Int,
+      ordering: ByteOrdering = ByteOrdering.BigEndian
+  ): BitVector = {
+    require(size > 0)
+    val arr = v.toByteArray
+    val bits = BitVector.view(arr)
+    val relevantBits =
+      if (bits.size < size) BitVector.fill(size - bits.size)(bits.head) ++ bits
+      else bits.takeRight(size)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 
