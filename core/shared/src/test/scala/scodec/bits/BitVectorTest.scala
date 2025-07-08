@@ -659,19 +659,19 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
-  property("BigInt conversions (1) - consistent with toLong without options".only) {
+  property("BigInt conversions (1) - consistent with toLong without options") {
     forAll { (n: Long) =>
       assertEquals(BitVector.fromLong(n).toBigInt(), BigInt(n))
     }
   }
 
-  property("BigInt conversions (2) - consistent with toInt without options".only) {
+  property("BigInt conversions (2) - consistent with toInt without options") {
     forAll { (n: Int) =>
       assertEquals(BitVector.fromInt(n).toBigInt(), BigInt(n))
     }
   }
 
-  property("BigInt conversions (3) - consistent with toLong".only) {
+  property("BigInt conversions (3) - consistent with toLong") {
     forAll { (n: Long, s0: Int, signed: Boolean, bigEndian: Boolean) =>
       val ordering = if (bigEndian) ByteOrdering.BigEndian else ByteOrdering.LittleEndian
       val enc = BitVector.fromLong(n)
@@ -685,7 +685,7 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
-  property("BigInt conversions (4) - verify sign handling".only) {
+  property("BigInt conversions (4) - verify sign handling") {
     forAll { (n: Long) =>
       assertEquals(
         BitVector.fromLong(n).toBigInt(signed = false),
@@ -694,12 +694,12 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
-  test("BigInt conversions (5) - bigger than Long".only) {
+  test("BigInt conversions (5) - bigger than Long") {
     val bits = hex"01 ffff ffff ffff ffff".bits
     assertEquals(bits.toBigInt(), ((BigInt(-1L >>> 1) << 1) + 1) * 2 + 1)
   }
 
-  property("BigInt conversions (6) - roundtrip".only) {
+  property("BigInt conversions (6) - roundtrip") {
     forAll { (n: BigInt) =>
       assertEquals(BitVector.fromBigInt(n, n.bitLength + 1).toBigInt(), n)
     }
