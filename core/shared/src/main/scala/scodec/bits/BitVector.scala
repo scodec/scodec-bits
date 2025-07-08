@@ -1547,7 +1547,7 @@ object BitVector extends BitVectorCompanionCrossPlatform {
   }
 
   /** Constructs a bit vector with the 2's complement encoding of the specified value.
-    * @param l
+    * @param value
     *   value to encode
     * @param size
     *   size of vector
@@ -1556,13 +1556,12 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     * @group numeric
     */
   def fromBigInt(
-      v: BigInt,
+      value: BigInt,
       size: Int,
       ordering: ByteOrdering = ByteOrdering.BigEndian
   ): BitVector = {
     require(size > 0)
-    val arr = v.toByteArray
-    val bits = BitVector.view(arr)
+    val bits = BitVector.view(value.toByteArray)
     val relevantBits =
       if (bits.size < size) BitVector.fill(size - bits.size)(bits.head) ++ bits
       else bits.takeRight(size)

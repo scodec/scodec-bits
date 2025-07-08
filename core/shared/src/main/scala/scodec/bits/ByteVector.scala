@@ -1782,7 +1782,7 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     BitVector.fromLong(l, size * 8, ordering).bytes
 
   /** Constructs a `ByteVector` with the 2's complement encoding of the specified value.
-    * @param l
+    * @param value
     *   value to encode
     * @param size
     *   size of vector
@@ -1791,11 +1791,11 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     * @group numeric
     */
   def fromBigInt(
-      l: BigInt,
+      value: BigInt,
       size: Int,
       ordering: ByteOrdering = ByteOrdering.BigEndian
   ): ByteVector =
-    BitVector.fromBigInt(l, size * 8, ordering).bytes
+    BitVector.fromBigInt(value, size * 8, ordering).bytes
 
   /** Constructs a `ByteVector` containing the binary representation of the specified UUID. The
     * bytes are in MSB-to-LSB order.
