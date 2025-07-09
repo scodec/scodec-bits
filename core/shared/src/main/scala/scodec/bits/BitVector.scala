@@ -1550,21 +1550,22 @@ object BitVector extends BitVectorCompanionCrossPlatform {
     * @param value
     *   value to encode
     * @param size
-    *   size of vector
+    *   size of vector; if undefined, the minimum number of bits are used
     * @param ordering
     *   byte ordering of vector
     * @group numeric
     */
   def fromBigInt(
       value: BigInt,
-      size: Int,
+      size: Option[Int],
       ordering: ByteOrdering = ByteOrdering.BigEndian
   ): BitVector = {
-    require(size > 0)
+    val actualSize = size.getOrElse(value.bitLength + 1)
+    require(actualSize > 0)
     val bits = BitVector.view(value.toByteArray)
     val relevantBits =
-      if (bits.size < size) BitVector.fill(size - bits.size)(bits.head) ++ bits
-      else bits.takeRight(size)
+      if (bits.size < actualSize) BitVector.fill(actualSize - bits.size)(bits.head) ++ bits
+      else bits.takeRight(actualSize)
     if (ordering == ByteOrdering.BigEndian) relevantBits else relevantBits.reverseByteOrder
   }
 

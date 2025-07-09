@@ -1785,17 +1785,17 @@ object ByteVector extends ByteVectorCompanionCrossPlatform {
     * @param value
     *   value to encode
     * @param size
-    *   size of vector
+    *   size of vector; if undefined, the minimum number of bytes are used
     * @param ordering
     *   byte ordering of vector
     * @group numeric
     */
   def fromBigInt(
       value: BigInt,
-      size: Int,
+      size: Option[Int],
       ordering: ByteOrdering = ByteOrdering.BigEndian
   ): ByteVector =
-    BitVector.fromBigInt(value, size * 8, ordering).bytes
+    BitVector.fromBigInt(value, size.map(_ * 8), ordering).bytes
 
   /** Constructs a `ByteVector` containing the binary representation of the specified UUID. The
     * bytes are in MSB-to-LSB order.

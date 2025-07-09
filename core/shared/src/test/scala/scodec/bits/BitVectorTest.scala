@@ -701,7 +701,13 @@ class BitVectorTest extends BitsSuite {
 
   property("BigInt conversions (6) - roundtrip") {
     forAll { (n: BigInt) =>
-      assertEquals(BitVector.fromBigInt(n, n.bitLength + 1).toBigInt(), n)
+      assertEquals(BitVector.fromBigInt(n, Some(n.bitLength + 1)).toBigInt(), n)
+    }
+  }
+
+  property("BigInt conversions (7) - roundtrip arbitrary size") {
+    forAll { (n: BigInt) =>
+      assertEquals(BitVector.fromBigInt(n, None).toBigInt(), n)
     }
   }
 
