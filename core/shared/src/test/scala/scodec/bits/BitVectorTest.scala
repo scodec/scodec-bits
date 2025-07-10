@@ -805,6 +805,11 @@ class BitVectorTest extends BitsSuite {
     }
   }
 
+  test("reverseBitOrder - #557") {
+    assertEquals(bin"1010 1011 1100 1111".take(12).reverseBitOrder.toBin, bin"1101 0101 0011".toBin)
+    assertEquals(bin"0000 1010 1011 1100".drop(4).reverseBitOrder.toBin, bin"1101 0101 0011".toBin)
+  }
+
   property("sliding") {
     forAll { (b: BitVector, n0: Int) =>
       val n = (if (b.nonEmpty) (n0 % b.size).abs else 0) + 1

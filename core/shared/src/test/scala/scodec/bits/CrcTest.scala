@@ -30,7 +30,7 @@
 
 package scodec.bits
 
-import munit.ScalaCheckSuite
+import munit.{Location, ScalaCheckSuite}
 import org.scalacheck.Arbitrary
 import org.scalacheck.Prop.forAll
 import Arbitraries._
@@ -84,7 +84,7 @@ class CrcTest extends ScalaCheckSuite {
   }
 
   val checkBytes = BitVector("123456789".getBytes("US-ASCII"))
-  def check(crc: BitVector => BitVector, expected: String) =
+  def check(crc: BitVector => BitVector, expected: String)(implicit loc: Location) =
     assert(crc(checkBytes) == BitVector.fromValidHex(expected))
 
   test("CRC-3/ROHC") {
@@ -127,6 +127,18 @@ class CrcTest extends ScalaCheckSuite {
   test("CRC-32") {
     val crc32 = crcWith("04c11db7", "ffffffff", true, true, "ffffffff")
     check(crc32, "cbf43926")
+  }
+
+  test("CRC-32 - #557".only) {
+    val expected = crc.crc32(bin"101010111100")
+    val inputs = List(
+      hex"abc".bits.takeRight(12),
+      hex"aabc".bits.takeRight(12),
+      hex"abcd".bits.take(12),
+      hex"aabc".bits.drop(4)
+    )
+
+    inputs.foreach(in => assertEquals(crc.crc32(in), expected))
   }
 
   test("CRC-32c") {
