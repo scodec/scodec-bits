@@ -503,8 +503,16 @@ sealed abstract class BitVector
     *
     * @group collection
     */
-  final def reverseBitOrder: BitVector =
-    BitVector(compact.underlying.map(reverseBitsInByte _)).dropRight(8 - validBitsInLastByte(size))
+  final def reverseBitOrder: BitVector = {
+    val reversed = compact.underlying.map(reverseBitsInByte _)
+    if (size % 8 == 0)
+      BitVector(reversed)
+    else {
+      val lastIdx = reversed.size - 1
+      val toDrop = 8 - validBitsInLastByte(size)
+      BitVector(reversed.update(lastIdx, (reversed(lastIdx) << toDrop).toByte)).dropRight(toDrop)
+    }
+  }
 
   /** Returns the number of bits that are high.
     *
