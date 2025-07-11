@@ -129,7 +129,7 @@ class CrcTest extends ScalaCheckSuite {
     check(crc32, "cbf43926")
   }
 
-  test("CRC-32 - #557".only) {
+  test("CRC-32 - #557") {
     val expected = crc.crc32(bin"101010111100")
     val inputs = List(
       hex"abc".bits.takeRight(12),
