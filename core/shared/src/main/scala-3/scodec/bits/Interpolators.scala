@@ -54,10 +54,10 @@ extension (inline ctx: StringContext)
   inline def bin(inline args: Any*): BitVector =
     ${ Literals.Bin('ctx, 'args) }
 
-/** Provides the `ascii` string interpolator, which returns `ByteVector` instances from ascii strings.
+/** Provides the `asciiBytes` string interpolator, which returns `ByteVector` instances from ascii strings.
   *
   * @example {{{
-  * scala> val b = ascii"deadbeef"
+  * scala> val b = asciiBytes"deadbeef"
   * val b: scodec.bits.ByteVector = ByteVector(8 bytes, 0x6465616462656566)
   * }}}
   */
@@ -65,10 +65,10 @@ extension (inline ctx: StringContext)
   inline def asciiBytes(inline args: Any*): ByteVector =
     ${ Literals.Ascii('ctx, 'args) }
 
-/** Provides the `utf8` string interpolator, which returns `ByteVector` instances from utf8 strings.
+/** Provides the `utf8Bytes` string interpolator, which returns `ByteVector` instances from utf8 strings.
   *
   * @example {{{
-  * scala> val b = utf8"ɟǝǝqpɐǝp"
+  * scala> val b = utf8Bytes"ɟǝǝqpɐǝp"
   * val b: scodec.bits.ByteVector = ByteVector(13 bytes, 0xc99fc79dc79d7170c990c79d70)
   * }}}
   */
