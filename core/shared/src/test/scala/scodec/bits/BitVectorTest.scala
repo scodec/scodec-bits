@@ -129,6 +129,11 @@ class BitVectorTest extends BitsSuite {
     assert(BitVector.empty.toByteVector == ByteVector.empty)
   }
 
+  test("empty lastOption") {
+    assert(BitVector.empty.lastOption == None)
+    assert(BitVector.empty.lift(-1) == None)
+  }
+
   test("apply") {
     val vec = BitVector(ByteVector(0xf0, 0x0f))
     assert(vec(0))
