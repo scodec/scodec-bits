@@ -158,7 +158,7 @@ sealed abstract class BitVector
     * @group collection
     */
   final def lift(n: Long): Option[Boolean] =
-    if (sizeGreaterThan(n)) Some(get(n))
+    if (n >= 0 && sizeGreaterThan(n)) Some(get(n))
     else None
 
   private[bits] def unchunk = this
